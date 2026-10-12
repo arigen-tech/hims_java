@@ -80,6 +80,7 @@ public interface StoreInternalIndentTRepository extends JpaRepository<StoreInter
     JOIN t.itemId i
     LEFT JOIN i.unitAU u
     WHERE t.indentM.indentMId = :indentMId
+    ORDER BY i.nomenclature ASC
 """)
     List<IndentDetailsResponseForIndentTracking>
     findIndentDetailsForTracking(@Param("indentMId") Long indentMId);
@@ -238,7 +239,10 @@ LEFT JOIN (
     SELECT item_id, SUM(closing_stock) AS store_available_stock
     FROM store_item_batch_stock
     WHERE department_id = :requestedDeptId
-    AND expiry_date >= :inventoryDrugExpDate
+     AND (
+        expiry_date IS NULL
+        OR expiry_date >= :inventoryDrugExpDate
+     )
     GROUP BY item_id
 ) store_stock
 ON store_stock.item_id = t.item_id
@@ -247,7 +251,10 @@ LEFT JOIN (
     SELECT item_id, SUM(closing_stock) AS dept_available_stock
     FROM store_item_batch_stock
     WHERE department_id = :currentDeptId
-    AND expiry_date >= :inventoryDrugExpDate
+    AND (
+        expiry_date IS NULL
+        OR expiry_date >= :inventoryDrugExpDate
+    )
     GROUP BY item_id
 ) dept_stock
 ON dept_stock.item_id = t.item_id

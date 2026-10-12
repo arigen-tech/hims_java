@@ -75,8 +75,10 @@ public class IpdPatientRequest {
     @Size(max = 100, message = "NOK name should not exceed 100 characters")
     private String nokName;
 
+    @NotNull(message = "NOK Relation ID is required")
     private Long nokRelationId;
 
+    @NotBlank(message = "ContactNo is required")
     @Size(max = 20, message = "Contact number should not exceed 20 characters")
     private String contactNo;
 

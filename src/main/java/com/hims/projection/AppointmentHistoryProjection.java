@@ -37,10 +37,16 @@ public interface AppointmentHistoryProjection {
 
     String getReason();
 
-    String getPaymentStatus();
+    String getVisitPaymentStatus();
 
     Double getBilledAmount();
 
     Long getBillingHeaderId();
+     Long getPaymentId();
+     String getPaymentGatewayMode();
+    String getPaymentGatewayModeName();
+
+
+    String getPaymentV2PaymentStatusCode();
 }
 

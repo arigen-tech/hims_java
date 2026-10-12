@@ -13,13 +13,16 @@ import com.hims.request.OpdQuestionMasterRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpdQuestionMasterResponse;
 import com.hims.response.QuestionWiseAnswerResponse;
+import com.hims.response.UserContext;
 import com.hims.service.OpdQuestionMasterService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.HTTP;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -38,6 +41,9 @@ public class OpdQuestionMasterServiceImpl implements OpdQuestionMasterService {
     private final AuthUtil authUtil;
     private final OpdQuestionMasterRepository opdQuestionMasterRepository;
     private final MasQuestionOptionValueRepository masQuestionOptionValueRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Override
@@ -81,8 +87,8 @@ public class OpdQuestionMasterServiceImpl implements OpdQuestionMasterService {
     public ApiResponse<OpdQuestionMasterResponse> create(OpdQuestionMasterRequest request) {
         log.info("Creating OPD Question Master");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -99,8 +105,8 @@ public class OpdQuestionMasterServiceImpl implements OpdQuestionMasterService {
                     .question(request.getQuestion())
                     .questionHeading(masQuestionHeading.get())
                     .status(AppConstants.STATUS_Y.toLowerCase())
-                    .createdBy(user.getFullName())
-                    .lastUpdatedBy(user.getFullName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -126,8 +132,8 @@ public class OpdQuestionMasterServiceImpl implements OpdQuestionMasterService {
                         "OPD Question Master not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
@@ -141,7 +147,7 @@ public class OpdQuestionMasterServiceImpl implements OpdQuestionMasterService {
             }
             entity.setQuestion(request.getQuestion());
             entity.setQuestionHeading(masQuestionHeading.get());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -172,15 +178,15 @@ public class OpdQuestionMasterServiceImpl implements OpdQuestionMasterService {
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

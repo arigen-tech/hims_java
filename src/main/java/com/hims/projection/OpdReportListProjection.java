@@ -1,5 +1,7 @@
 package com.hims.projection;
 
+import java.time.LocalDateTime;
+
 public interface OpdReportListProjection {
     Long getVisitId();
     Long getPatientId();
@@ -11,7 +13,8 @@ public interface OpdReportListProjection {
     String getAge();
     String getSpecialty();
     String getDoctorName();
-    String getVisitDateTime();
+    String getNisNo();
+    LocalDateTime getVisitDateTime();
     Long getPrescriptionHdId();
     String getPrescriptionStatus();
 }

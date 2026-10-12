@@ -7,7 +7,9 @@ import com.hims.entity.repository.ObMasConceptionRepository;
 import com.hims.request.ObMasConceptionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.ObMasConceptionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.ObMasConceptionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,9 @@ public class ObMasConceptionServiceImpl implements ObMasConceptionService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<ObMasConceptionResponse>> getAll(int flag) {
@@ -80,8 +85,8 @@ public class ObMasConceptionServiceImpl implements ObMasConceptionService {
 
         log.info("Creating Conception={}", request.getConceptionType());
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404
@@ -91,8 +96,8 @@ public class ObMasConceptionServiceImpl implements ObMasConceptionService {
             ObMasConception conception = ObMasConception.builder()
                     .conceptionType(request.getConceptionType())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -123,8 +128,8 @@ public class ObMasConceptionServiceImpl implements ObMasConceptionService {
                         "Conception not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404
@@ -132,7 +137,7 @@ public class ObMasConceptionServiceImpl implements ObMasConceptionService {
             }
 
             conception.setConceptionType(request.getConceptionType());
-            conception.setLastUpdatedBy(user.getFirstName());
+            conception.setLastUpdatedBy(userContext.getUserFullName());
             conception.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(conception);
@@ -170,8 +175,8 @@ public class ObMasConceptionServiceImpl implements ObMasConceptionService {
                 );
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404
@@ -179,7 +184,7 @@ public class ObMasConceptionServiceImpl implements ObMasConceptionService {
             }
 
             conception.setStatus(status);
-            conception.setLastUpdatedBy(user.getFirstName());
+            conception.setLastUpdatedBy(userContext.getUserFullName());
             conception.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(conception);

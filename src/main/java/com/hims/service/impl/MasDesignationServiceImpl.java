@@ -3,13 +3,14 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasDesignation;
 import com.hims.entity.MasUserType;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasDesignationRepository;
 import com.hims.entity.repository.MasUserTypeRepository;
 import com.hims.request.MasDesignationRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDesignationResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasDesignationService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ public class MasDesignationServiceImpl  implements MasDesignationService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasDesignationResponse>> getAll(int flag) {
@@ -89,14 +93,14 @@ public class MasDesignationServiceImpl  implements MasDesignationService {
                         null, new TypeReference<>() {},
                         "Invalid User Type", 400);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasDesignation designation = MasDesignation.builder()
                     .designationName(request.getDesignationName())
                     .userTypeId(userType)
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -131,11 +135,11 @@ public class MasDesignationServiceImpl  implements MasDesignationService {
                         null, new TypeReference<>() {},
                         "Invalid User Type", 400);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             designation.setDesignationName(request.getDesignationName());
             designation.setUserTypeId(userType);
-            designation.setLastUpdatedBy(user.getFirstName());
+            designation.setLastUpdatedBy(userContext.getUserFullName());
             designation.setLastUpdateDate(LocalDateTime.now());
 
             designationRepo.save(designation);
@@ -166,10 +170,10 @@ public class MasDesignationServiceImpl  implements MasDesignationService {
                         null, new TypeReference<>() {},
                         "Invalid status", 400);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             designation.setStatus(status);
-            designation.setLastUpdatedBy(user.getFirstName());
+            designation.setLastUpdatedBy(userContext.getUserFullName());
             designation.setLastUpdateDate(LocalDateTime.now());
 
             designationRepo.save(designation);

@@ -6,11 +6,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -84,7 +84,7 @@ public class BillingHeader {
 
     @NotNull
     @Column(name = "billing_date", nullable = false)
-    private Instant billingDate;
+    private LocalDateTime billingDate;
 
     @Column(name = "total_amount", precision = 10, scale = 2)
     private BigDecimal totalAmount;
@@ -110,24 +110,27 @@ public class BillingHeader {
     private String createdBy;
 
     @Column(name = "created_dt")
-    private Instant createdDt;
+    @CreationTimestamp
+    private LocalDateTime createdDt;
 
     @Column(name = "updated_dt")
-    private Instant updatedDt;
+    @UpdateTimestamp
+    private LocalDateTime updatedDt;
 
 
     @Column(name = "billing_hd_id")//, nullable = false
     private Integer billingHdId;
 
     @Column(name = "bill_date")
-    private OffsetDateTime billDate;
+    private LocalDateTime billDate;
 
     @Size(max = 100)
     @Column(name = "invoice_no", length = 100)
     private String invoiceNo;
 
     @Column(name = "updated_at")
-    private OffsetDateTime updatedAt;
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "discount_id")

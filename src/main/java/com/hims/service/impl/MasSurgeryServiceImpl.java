@@ -10,7 +10,9 @@ import com.hims.entity.repository.MasSurgeryTypeRepository;
 import com.hims.request.MasSurgeryRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasSurgeryResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasSurgeryService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,9 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
 
     private final MasSurgeryRepository repository;
     private final MasSurgeryTypeRepository surgeryTypeRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     private AuthUtil authUtil;
@@ -107,7 +112,7 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
     @Override
     public ApiResponse<MasSurgeryResponse> createMasSurgery(MasSurgeryRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             MasSurgeryType surgeryType = surgeryTypeRepository.findById(request.getSurgeryTypeId())
                     .orElseThrow(() -> new RuntimeException("Invalid Surgery Type"));
 
@@ -120,7 +125,7 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
                     .isAdmissionRequired(request.getIsAdmissionRequired())
                     .isImplantRequired(request.getIsImplantRequired())
                     .status(AppConstants.STATUS_Y)
-                    .lastUpdatedBy(user.getFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdatedDate(LocalDateTime.now())
                     .build();
 
@@ -141,7 +146,7 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
             if (entity == null) {
                 return ResponseUtils.createNotFoundResponse("Surgery not found", 404);
             }
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasSurgeryType surgeryType = surgeryTypeRepository.findById(request.getSurgeryTypeId())
                     .orElseThrow(() -> new RuntimeException("Invalid Surgery Type"));
@@ -153,7 +158,7 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
             entity.setIsAnesthesiaRequired(request.getIsAnesthesiaRequired());
             entity.setIsAdmissionRequired(request.getIsAdmissionRequired());
             entity.setIsImplantRequired(request.getIsImplantRequired());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {});
@@ -177,9 +182,9 @@ public class MasSurgeryServiceImpl implements MasSurgeryService {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid status", HttpStatus.BAD_REQUEST.value());
             }
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             entity.setStatus(status.toUpperCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {});

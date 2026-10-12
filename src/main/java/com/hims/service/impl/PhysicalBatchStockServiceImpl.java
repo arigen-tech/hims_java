@@ -8,6 +8,7 @@ import com.hims.request.StoreStockTakingMRequest2;
 import com.hims.request.StoreStockTakingTRequest;
 import com.hims.response.*;
 import com.hims.service.PhysicalBatchStockService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
@@ -44,6 +45,9 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
     @Autowired
     private StoreStockLedgerRepository storeStockLedgerRepository;
 
+    @Autowired
+    private UserContextService userContextService;
+
     private final RandomNumGenerator randomNumGenerator;
     public PhysicalBatchStockServiceImpl(RandomNumGenerator randomNumGenerator) {
         this.randomNumGenerator = randomNumGenerator;
@@ -58,8 +62,8 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
     @Transactional
     @Override
     public ApiResponse<String> createPhysicalStock(StoreStockTakingMRequest storeStockTakingM) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
                     "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
@@ -70,13 +74,13 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
 
         StoreStockTakingM stock=new StoreStockTakingM();
        stock.setReason(storeStockTakingM.getReasonForTraking());
-       stock.setHospitalId(currentUser.getHospital());
+       stock.setHospitalId(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new RuntimeException("Hospital not found")));
        stock.setDepartmentId(depObj);
         stock.setPhysicalDate(LocalDateTime.now());
        stock.setStockTakingNo(createInvoice() );
         stock.setLastChgDate(LocalDateTime.now());
         stock.setStatus(storeStockTakingM.getStatus());
-        stock.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName());
+        stock.setCreatedBy(userContext.getUserFullName());
 
         StoreStockTakingM stock1=storeStockTakingMRepository.save(stock);
 
@@ -156,8 +160,8 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
 
     @Override
     public ApiResponse<String> updatePhysicalById(Long id, StoreStockTakingMRequest storeStockTakingMRequest) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
                     "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
@@ -181,7 +185,7 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
         MasDepartment depObj = masDepartmentRepository.getById(deptId);
         m.setDepartmentId(depObj);
         m.setLastChgDate(LocalDateTime.now());
-        m.setCreatedBy(currentUser.getCreatedBy());
+        m.setCreatedBy(userContext.getUserFullName());
         if (storeStockTakingMRequest.getStatus().equals("s") || storeStockTakingMRequest.getStatus() == null) {
             m.setStatus("s");
         } else if (storeStockTakingMRequest.getStatus().equals("p")) {
@@ -195,8 +199,8 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
     @Transactional
     @Override
     public ApiResponse<String> approvedPhysical( StoreStockTakingMRequest2 request) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -206,12 +210,10 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
             return ResponseUtils.createNotFoundResponse("StoreStockTakingM not found", 404);
         }
         StoreStockTakingM stockM = stockMOptional.get();
-        String fName = currentUser.getFirstName()
-                + (currentUser.getMiddleName() != null ? " " + currentUser.getMiddleName() : "")
-                + " " + currentUser.getLastName();
+
 
         stockM.setApprovedDt(LocalDateTime.now());
-        stockM.setApprovedBy(fName);
+        stockM.setApprovedBy(userContext.getUserFullName());
         stockM.setReason(request.getReason());
 
         if ("a".equals(request.getStatus())) {
@@ -240,7 +242,7 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
                 storeStockLedger.setTxnReferenceId(dt.getTakingTId());
                 storeStockLedger.setTxnDate(LocalDate.now());
                 storeStockLedger.setCreatedDt(LocalDateTime.now());
-                storeStockLedger.setCreatedBy(fName);
+                storeStockLedger.setCreatedBy(userContext.getUserFullName());
                 if (dt.getStockDeficient() != null) {
                     storeStockLedger.setQtyOut(dt.getStockDeficient());
                 }
@@ -285,8 +287,8 @@ public class PhysicalBatchStockServiceImpl implements PhysicalBatchStockService 
     public ApiResponse<List<StockItemResponse>> getItems() {
         try {
             log.info("getItems method started...");
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current user not found",HttpStatus.UNAUTHORIZED.value());
             }
             List<Long> list = storeItemBatchStockRepository.findAll().stream().map(StoreItemBatchStock::getItemId).map(MasStoreItem::getItemId).distinct().toList();

@@ -9,6 +9,7 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.DgUomRequest;
 import com.hims.response.*;
 import com.hims.service.DgUomService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,8 @@ public class DgUomServiceImp implements DgUomService {
     @Autowired
     private DgUomRepository dgUomRepository;
     @Autowired
+    private UserContextService userContextService;
+    @Autowired
     UserRepo userRepo;
     private String getCurrentTimeFormatted() {
 
@@ -50,12 +53,12 @@ public class DgUomServiceImp implements DgUomService {
             }
             dgUom.setName(dgUomRequest.getName());
             dgUom.setUomCode(dgUomRequest.getUomCode());
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            dgUom.setLastChgBy(currentUser.getUsername());
+            dgUom.setLastChgBy(userContext.getUserFullName());
             dgUom.setLastChgDate(Instant.now());
             dgUom.setLastChgTime(getCurrentTimeFormatted());
             return ResponseUtils.createSuccessResponse(convertedToResponse(dgUomRepository.save(dgUom)), new TypeReference<>() {
@@ -106,12 +109,12 @@ public class DgUomServiceImp implements DgUomService {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                 }, "Invalid status. Status should be 'y' or 'n'", 400);
             }
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                newDgUom.setLastChgBy(currentUser.getUsername());
+                newDgUom.setLastChgBy(userContext.getUserFullName());
                 return ResponseUtils.createSuccessResponse(convertedToResponse(dgUomRepository.save(newDgUom)), new TypeReference<>() {
                 });
 
@@ -133,12 +136,12 @@ public class DgUomServiceImp implements DgUomService {
             }
             newDgUom.setName(dgUomRequest.getName());
             newDgUom.setUomCode(dgUomRequest.getUomCode());
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            newDgUom.setLastChgBy(currentUser.getUsername());
+            newDgUom.setLastChgBy(userContext.getUserFullName());
             newDgUom.setLastChgDate(Instant.now());
             newDgUom.setLastChgTime(getCurrentTimeFormatted());
             return ResponseUtils.createSuccessResponse(convertedToResponse(dgUomRepository.save( newDgUom)), new TypeReference<>() {

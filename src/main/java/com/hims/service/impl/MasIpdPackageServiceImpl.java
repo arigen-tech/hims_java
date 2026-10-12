@@ -7,11 +7,9 @@ import com.hims.entity.repository.*;
 import com.hims.projection.IpdPackageDetailsProjection;
 import com.hims.request.IpdPackageRequest;
 import com.hims.request.MasIpdPackageInclusionRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.IpdPackageDetailsResponse;
-import com.hims.response.IpdPackageResponse;
-import com.hims.response.MasIpdPackageInclusionResponse;
+import com.hims.response.*;
 import com.hims.service.MasIpdPackageService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -42,12 +40,15 @@ public class MasIpdPackageServiceImpl implements MasIpdPackageService {
     @Autowired
     private MasIpdPackageInclusionRepository masIpdPackageInclusionRepository;
 
+    @Autowired
+    private UserContextService userContextService;
+
 
     @Override
     @Transactional
     public ApiResponse<String> savePackage(IpdPackageRequest request) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -58,7 +59,7 @@ public class MasIpdPackageServiceImpl implements MasIpdPackageService {
         pkg.setStatus(AppConstants.STATUS_Y.toLowerCase());
         pkg.setPackageTypeId(masAdmissionCategoryRepository.findById(request.getPackageTypeId()).orElseThrow());
         pkg.setDeptId(masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow());
-        pkg.setLastChgBy(currentUser.getFullName());
+        pkg.setLastChgBy(userContext.getUserFullName());
         pkg.setLastChgDate(LocalDateTime.now());
         pkg.setGeneratedExclusions(request.getGeneratedExclusions());
         pkg.setGeneratedInclusions(request.getGeneratedInclusions());
@@ -71,7 +72,7 @@ public class MasIpdPackageServiceImpl implements MasIpdPackageService {
                     MasIpdPackageInclusion inc = new MasIpdPackageInclusion();
                     inc.setMasIpdPackage(masIpdPackage);
                     inc.setServiceCategoryId(masIpdServiceCategoryRepository.findById(i.getServiceCategoryId()).orElseThrow());
-                    inc.setCreatedBy(currentUser.getFullName());
+                    inc.setCreatedBy(userContext.getUserFullName());
                     String includeFlag = (i.getIncludedFlag() != null &&
                                     i.getIncludedFlag().equalsIgnoreCase(AppConstants.STATUS_Y))
                                     ? AppConstants.STATUS_Y.toLowerCase()
@@ -87,7 +88,7 @@ public class MasIpdPackageServiceImpl implements MasIpdPackageService {
                     }
                     inc.setStatus(AppConstants.STATUS_Y.toLowerCase());
                     inc.setCreatedDate(LocalDateTime.now());
-                    inc.setLastUpdatedBy(currentUser.getFullName());
+                    inc.setLastUpdatedBy(userContext.getUserFullName());
                     inc.setLastUpdatedDate(LocalDateTime.now());
                     return inc;
                 }).toList();
@@ -123,9 +124,9 @@ public class MasIpdPackageServiceImpl implements MasIpdPackageService {
             if (entity == null) {
                 return ResponseUtils.createNotFoundResponse("IPD Package not found", HttpStatus.NOT_FOUND.value()
                 );}
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             entity.setStatus(status.toLowerCase());
-            entity.setLastChgBy(user.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
             masIpdPackageRepository.save(entity);
             return ResponseUtils.createSuccessResponse(toResponse(entity), new TypeReference<>() {});
@@ -194,7 +195,7 @@ public class MasIpdPackageServiceImpl implements MasIpdPackageService {
     public ApiResponse<String> updatePackage(Long id, IpdPackageRequest request) {
 
         try {
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             MasIpdPackage pkg = masIpdPackageRepository.findById(id).orElse(null);
             if (pkg == null) {
                 return ResponseUtils.createNotFoundResponse("Package not found", HttpStatus.NOT_FOUND.value());
@@ -205,7 +206,7 @@ public class MasIpdPackageServiceImpl implements MasIpdPackageService {
             pkg.setDeptId(masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow());
             pkg.setGeneratedExclusions(request.getGeneratedExclusions());
             pkg.setGeneratedInclusions(request.getGeneratedInclusions());
-            pkg.setLastChgBy(currentUser.getFullName());
+            pkg.setLastChgBy(userContext.getUserFullName());
             pkg.setLastChgDate(LocalDateTime.now());
             masIpdPackageRepository.save(pkg);
 
@@ -239,7 +240,7 @@ public class MasIpdPackageServiceImpl implements MasIpdPackageService {
                         inc.setLimitAmount(null);
                         inc.setLimitQty(null);
                     }
-                    inc.setLastUpdatedBy(currentUser.getFullName());
+                    inc.setLastUpdatedBy(userContext.getUserFullName());
                     inc.setLastUpdatedDate(LocalDateTime.now());
                 }
             }

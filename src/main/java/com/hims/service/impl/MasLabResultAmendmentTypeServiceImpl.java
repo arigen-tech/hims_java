@@ -1,17 +1,21 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasLabResultAmendmentType;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasLabResultAmendmentTypeRepository;
 import com.hims.request.MasLabResultAmendmentTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasLabResultAmendmentTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasLabResultAmendmentTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +28,9 @@ public class MasLabResultAmendmentTypeServiceImpl implements MasLabResultAmendme
 
     private final MasLabResultAmendmentTypeRepository repository;
 
+    @Autowired
+    private UserContextService userContextService;
+
     private final AuthUtil authUtil;
 
     @Override
@@ -32,8 +39,8 @@ public class MasLabResultAmendmentTypeServiceImpl implements MasLabResultAmendme
         try {
             log.info("create() started");
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse(
                         "Current User Not Found",
                         HttpStatus.NOT_FOUND.value());
@@ -44,9 +51,9 @@ public class MasLabResultAmendmentTypeServiceImpl implements MasLabResultAmendme
             entity.setAmendmentTypeCode(request.getAmendmentTypeCode());
             entity.setAmendmentTypeName(request.getAmendmentTypeName());
             entity.setDescription(request.getDescription());
-            entity.setStatus("y");
-            entity.setCreatedBy(user.getFirstName() + " " + user.getLastName());
-            entity.setLastUpdatedBy(user.getFirstName() + " " + user.getLastName());
+            entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
 
             MasLabResultAmendmentType saved = repository.save(entity);
 
@@ -70,8 +77,8 @@ public class MasLabResultAmendmentTypeServiceImpl implements MasLabResultAmendme
         try {
             log.info("update() started");
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse(
                         "Current User Not Found",
                         HttpStatus.NOT_FOUND.value());
@@ -86,7 +93,7 @@ public class MasLabResultAmendmentTypeServiceImpl implements MasLabResultAmendme
             entity.setAmendmentTypeName(request.getAmendmentTypeName());
             entity.setDescription(request.getDescription());
             entity.setLastUpdatedBy(
-                    user.getFirstName() + " " + user.getLastName());
+                    userContext.getUserFullName());
 
             MasLabResultAmendmentType saved = repository.save(entity);
 
@@ -110,8 +117,8 @@ public class MasLabResultAmendmentTypeServiceImpl implements MasLabResultAmendme
         try {
             log.info("changeActiveStatus() started");
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse(
                         "Current User Not Found",
                         HttpStatus.NOT_FOUND.value());
@@ -124,7 +131,7 @@ public class MasLabResultAmendmentTypeServiceImpl implements MasLabResultAmendme
 
             entity.setStatus(status);
             entity.setLastUpdatedBy(
-                    user.getFirstName() + " " + user.getLastName());
+                    userContext.getUserFullName());
 
             MasLabResultAmendmentType saved = repository.save(entity);
 
@@ -146,8 +153,8 @@ public class MasLabResultAmendmentTypeServiceImpl implements MasLabResultAmendme
     public ApiResponse<MasLabResultAmendmentTypeResponse> getById(Long amendmentTypeId) {
 
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse(
                         "Current User Not Found",
                         HttpStatus.NOT_FOUND.value());
@@ -176,8 +183,8 @@ public class MasLabResultAmendmentTypeServiceImpl implements MasLabResultAmendme
     getAll(int flag) {
 
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse(
                         "Current User Not Found",
                         HttpStatus.NOT_FOUND.value());

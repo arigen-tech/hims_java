@@ -9,6 +9,7 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -41,7 +42,7 @@ public class OpdPatientDetail {
     private String temperature;
 
     @Column(name = "opd_date")
-    private Instant opdDate;
+    private LocalDateTime opdDate;
 
     @Size(max = 12)
     @Column(name = "rr", length = 12)

@@ -3,9 +3,10 @@ package com.hims.jwt;
 
 
 import com.hims.entity.User;
+import com.hims.entity.Patient;
 import com.hims.entity.repository.MasEmployeeRepository;
 import com.hims.entity.repository.MasHospitalRepository;
-import com.hims.entity.repository.MasUserTypeRepository;
+import com.hims.entity.repository.PatientRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.exception.SDDException;
 import io.jsonwebtoken.Claims;
@@ -14,6 +15,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -27,8 +29,17 @@ import java.util.function.Function;
 public class JwtHelper {
 
 
-    public static final long JWT_TOKEN_VALIDITY = 7 * 24 * 60 * 60;
-    public static final long REFRESH_TOKEN_VALIDITY = 7 * 24 * 60 * 60;
+    @Value("${jwt.expiration}")
+    private long jwtTokenValidity;
+
+    @Value("${jwt.refresh.expiration}")
+    private long refreshTokenValidity;
+
+    @Value("${jwt.patient.expiration}")
+    private long patientTokenValidity;
+
+    @Value("${jwt.patient.refresh.expiration}")
+    private long patientRefreshTokenValidity;
 
     @Autowired
     private HttpServletRequest request;
@@ -37,13 +48,17 @@ public class JwtHelper {
     private UserRepo userRepo;
 
     @Autowired
+    private PatientRepository patientRepository;
+
+    @Autowired
     private MasHospitalRepository masHospitalRepository;
 
     @Autowired
     private MasEmployeeRepository masEmployeeRepository;
 
 //     private final String secret = "afafasfafafasfasfasfafacasdasfasxASFACASDFACASDFASFASFDAFASFASDAADSCSDFADCVSGCFVADXCcadwavfsfarvf";
-private static final  String secret = "1KCrT4BFo9EMUNJjQ0y8VswrKFSJmIHp1jZJVP1IU5999EOqb3E1gmNpf5FzYXIZrwpPDHLhRcORigN84ftPfuOt2Q2IKTmRfJP5RRhRCfJJ2wJ4vlMK70fWFeIT5QBE"; //128 char
+    @Value("${jwt.secret}")
+    private String secret;
 
     // Retrieve Users Object from JWT token
 // Retrieve Users Object from JWT token
@@ -102,22 +117,27 @@ private static final  String secret = "1KCrT4BFo9EMUNJjQ0y8VswrKFSJmIHp1jZJVP1IU
 
     // Generate access token for user with additional details
     public String generateAccessToken(User user) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
-        claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
-        claims.put("userId", user.getUserId());
+        Map<String, Object> claims = userClaims(user);
+        claims.put("tokenType", "access");
 
-        return doGenerateToken(claims, user.getUsername(), JWT_TOKEN_VALIDITY);
+        return doGenerateToken(claims, user.getUsername(), jwtTokenValidity);
     }
 
     // Generate refresh token for user
     public String generateRefreshToken(User user) {
+        Map<String, Object> claims = userClaims(user);
+        claims.put("tokenType", "refresh");
+
+        return doGenerateToken(claims, user.getUsername(), refreshTokenValidity);
+    }
+
+    private Map<String, Object> userClaims(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
         claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
         claims.put("userId", user.getUserId());
-
-        return doGenerateToken(claims, user.getUsername(), REFRESH_TOKEN_VALIDITY);
+        claims.put("name", user.getFullName());
+        return claims;
     }
 
 
@@ -175,68 +195,110 @@ private static final  String secret = "1KCrT4BFo9EMUNJjQ0y8VswrKFSJmIHp1jZJVP1IU
     }
 
     public TokenWithExpiry generateAccessTokenWithExpiry(User user, Long departmentId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
-        claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
-        claims.put("userId", user.getUserId());
+        Map<String, Object> claims = userClaims(user);
         claims.put("departmentId", departmentId);
+        claims.put("tokenType", "access");
 
         long currentTimeMillis = System.currentTimeMillis();
         String token = Jwts.builder()
                 .setClaims(claims)
                 .setSubject(user.getUsername())
                 .setIssuedAt(new Date(currentTimeMillis))
-                .setExpiration(new Date(currentTimeMillis + JWT_TOKEN_VALIDITY * 1000))
+                .setExpiration(new Date(currentTimeMillis + jwtTokenValidity * 1000))
                 .signWith(SignatureAlgorithm.HS512, secret)
                 .compact();
 
-        return new TokenWithExpiry(token, currentTimeMillis + JWT_TOKEN_VALIDITY * 1000);
+        return new TokenWithExpiry(token, currentTimeMillis + jwtTokenValidity * 1000);
     }
 
 
     public TokenWithExpiry generateRefreshTokenWithExpiry(User user, Long departmentId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("hospitalId", user.getHospital() != null ? user.getHospital().getId() : null);
-        claims.put("employeeId", user.getEmployee() != null ? user.getEmployee().getEmployeeId() : null);
-        claims.put("userId", user.getUserId());
+        Map<String, Object> claims = userClaims(user);
         claims.put("departmentId", departmentId);
+        claims.put("tokenType", "refresh");
 
         long currentTimeMillis = System.currentTimeMillis();
         String token = Jwts.builder()
                 .setClaims(claims)
                 .setSubject(user.getUsername())
                 .setIssuedAt(new Date(currentTimeMillis))
-                .setExpiration(new Date(currentTimeMillis + REFRESH_TOKEN_VALIDITY * 1000))
+                .setExpiration(new Date(currentTimeMillis + refreshTokenValidity * 1000))
                 .signWith(SignatureAlgorithm.HS512, secret)
                 .compact();
 
-        return new TokenWithExpiry(token, currentTimeMillis + REFRESH_TOKEN_VALIDITY * 1000);
+        return new TokenWithExpiry(token, currentTimeMillis + refreshTokenValidity * 1000);
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = getAllClaimsFromToken(token);
+            String tokenType = claims.get("tokenType", String.class);
+            if (tokenType != null) {
+                return "refresh".equalsIgnoreCase(tokenType);
+            }
+
+            String principalType = claims.get("principalType", String.class);
+            Date issuedAt = claims.getIssuedAt();
+            Date expiration = claims.getExpiration();
+            return "PATIENT".equalsIgnoreCase(principalType)
+                    && issuedAt != null
+                    && expiration != null
+                    && (expiration.getTime() - issuedAt.getTime()) / 1000 == patientRefreshTokenValidity;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    public Long getDepartmentIdFromToken(String token) {
+        return getClaimFromToken(token, claims -> claims.get("departmentId", Long.class));
     }
 
 //for mobile scection to generate token.......
     // 🔹 Generate Token for mobile
-public static String mobileGenerateToken(String mobileNo) {
-    Map<String, Object> claims = new HashMap<>();
-    claims.put("mobileNo", mobileNo);
-    return mobiledoGenerateToken(claims, "mobile", JWT_TOKEN_VALIDITY);
-}
-    private static String mobiledoGenerateToken(Map<String, Object> claims, String mobile, long validity) {
+    public String mobileGenerateToken(String mobileNo, Long patientId) {
+        Map<String, Object> claims = mobileClaims(mobileNo, patientId);
+        claims.put("tokenType", "access");
+        return mobileDoGenerateToken(claims, "patient:" + patientId, patientTokenValidity);
+    }
+
+    public String mobileGenerateRefreshToken(String mobileNo, Long patientId) {
+        Map<String, Object> claims = mobileClaims(mobileNo, patientId);
+        claims.put("tokenType", "refresh");
+        return mobileDoGenerateToken(claims, "patient:" + patientId, patientRefreshTokenValidity);
+    }
+
+    public String getPrincipalTypeFromToken(String token) {
+        return getClaimFromToken(token, claims -> claims.get("principalType", String.class));
+    }
+
+    public Long getPatientIdFromToken(String token) {
+        return getClaimFromToken(token, claims -> claims.get("patientId", Long.class));
+    }
+
+    public String getMobileNoFromToken(String token) {
+        return getClaimFromToken(token, claims -> claims.get("mobileNo", String.class));
+    }
+
+    private Map<String, Object> mobileClaims(String mobileNo, Long patientId) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("principalType", "PATIENT");
+        claims.put("mobileNo", mobileNo);
+        claims.put("patientId", patientId);
+        claims.put("name", patientId == null ? null : patientRepository.findById(patientId)
+            .map(Patient::getFullName)
+            .orElse(null));
+        return claims;
+    }
+
+    private String mobileDoGenerateToken(Map<String, Object> claims, String subject, long validity) {
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(mobile)
+                .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + validity * 1000))
                 .signWith(SignatureAlgorithm.HS512, secret)
                 .compact();
     }
-    // Generate refresh token for user
-    public String mobileGenerateRefreshToken(String mobileNo, Long patientId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("mobileNo", mobileNo);
-        claims.put("patientId", patientId);
-        return mobiledoGenerateToken(claims, "mobile", REFRESH_TOKEN_VALIDITY);
-    }
-
 }
 
 

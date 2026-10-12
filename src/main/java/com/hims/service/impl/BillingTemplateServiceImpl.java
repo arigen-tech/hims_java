@@ -12,6 +12,7 @@ import com.hims.request.TemplateRequest;
 import com.hims.request.TemplateUpdateRequest;
 import com.hims.response.*;
 import com.hims.service.BillingTemplateService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -49,17 +50,20 @@ public class BillingTemplateServiceImpl implements BillingTemplateService {
     @Autowired
     private AuthUtil authUtil;
 
+    @Autowired
+    private UserContextService userContextService;
+
     @Transactional
     public ApiResponse<String> saveBillingTemplate(TemplateRequest request) {
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             MasIpdProcedureSurgeryConsumableTemplate template = new MasIpdProcedureSurgeryConsumableTemplate();
             template.setTemplateName(request.getTemplateName());
             template.setTemplateType(request.getTemplateType().toLowerCase());
             template.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            template.setCreatedBy(user.getFullName());
-            template.setLastUpdatedBy(user.getFullName());
+            template.setCreatedBy(userContext.getUserFullName());
+            template.setLastUpdatedBy(userContext.getUserFullName());
             template.setLastUpdateDate(LocalDateTime.now());
 
             // CONDITION
@@ -108,9 +112,9 @@ public class BillingTemplateServiceImpl implements BillingTemplateService {
                         },
                         "Invalid status", HttpStatus.BAD_REQUEST.value());
             }
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             templateRepo.save(entity);
             return ResponseUtils.createSuccessResponse("status change successfully", new TypeReference<>() {
@@ -126,14 +130,14 @@ public class BillingTemplateServiceImpl implements BillingTemplateService {
     @Transactional
     public ApiResponse<String> updateBillingTemplate(Long templateId, TemplateUpdateRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             // FETCH TEMPLATE
             MasIpdProcedureSurgeryConsumableTemplate template = templateRepo.findById(templateId).orElseThrow(() -> new RuntimeException("Template not found"));
 
             // UPDATE TEMPLATE
             template.setTemplateName(request.getTemplateName());
             template.setTemplateType(request.getTemplateType().toLowerCase());
-            template.setLastUpdatedBy(user.getFullName());
+            template.setLastUpdatedBy(userContext.getUserFullName());
             template.setLastUpdateDate(LocalDateTime.now());
 
             if (AppConstants.PROCEDURE.equalsIgnoreCase(request.getTemplateType())) {

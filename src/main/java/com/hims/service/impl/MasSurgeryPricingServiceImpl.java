@@ -11,7 +11,9 @@ import com.hims.projection.MasSurgeryPricingProjection;
 import com.hims.request.MasSurgeryPricingRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasSurgeryPricingResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasSurgeryPricingService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -41,11 +43,14 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
     @Autowired
     private AuthUtil authUtil;
 
+    @Autowired
+    private UserContextService userContextService;
+
 
     @Override
     public ApiResponse<String> addMasSurgeryPricing(MasSurgeryPricingRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasSurgeryPricing entity = new MasSurgeryPricing();
             entity.setSurgery(surgeryRepository.findById(request.getSurgeryId()).orElseThrow());
@@ -55,7 +60,7 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
             entity.setEffectiveTo(request.getEffectiveTo());
             entity.setRemarks(request.getRemarks());
             entity.setStatus(AppConstants.STATUS_Y);
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -73,7 +78,7 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
     @Override
     public ApiResponse<String> updateMasSurgeryPricing(Long id, MasSurgeryPricingRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasSurgeryPricing entity = repository.findById(id).orElse(null);
             if (entity == null) {
@@ -86,7 +91,7 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
             entity.setEffectiveFrom(request.getEffectiveFrom());
             entity.setEffectiveTo(request.getEffectiveTo());
             entity.setRemarks(request.getRemarks());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -104,13 +109,13 @@ public class MasSurgeryPricingServiceImpl implements MasSurgeryPricingService {
     @Override
     public ApiResponse<String> changeStatusMasSurgeryPricing(Long id, String status) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasSurgeryPricing entity = repository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Invalid Id"));
 
             entity.setStatus(status.toUpperCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
 
             repository.save(entity);

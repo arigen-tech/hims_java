@@ -14,6 +14,7 @@ import com.hims.projection.MasStoreItemProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.InventoryService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.InventoryUtils;
 import com.hims.utils.RandomNumGenerator;
@@ -56,6 +57,7 @@ public class InventoryServiceImpl implements InventoryService {
     private final StoreItemBatchStockRepository storeItemBatchStockRepository;
     private final StoreStockLedgerRepository storeStockLedgerRepository;
     private final AuthUtil authUtil;
+    private final UserContextService userContextService;
     private final MasCommonStatusRepository masCommonStatusRepository;
 
     private final  MasStoreItemRepository masStoreItemRepository;
@@ -117,6 +119,10 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Value( "${drug.expiry.inventory}")
     private int drugExpDay;
+
+    @Value( "${drugSectionId}")
+    private Long drugSectionId;
+
 
     @Value(("${drugSectionCode}"))
     private String drugSectionCode;
@@ -311,14 +317,21 @@ public class InventoryServiceImpl implements InventoryService {
                     Sort.by(Sort.Direction.ASC,"nomenclature")
             );
             Page<ItemStockLedgerWithBatchResponse> responses ;
-            if(sectionCode==null || sectionCode.trim().isEmpty()){
+            if(sectionCode==null || sectionCode.trim().isEmpty() || AppConstants.SECTION_CODE_NON_DRUG.equals(sectionCode)){
                 List<String> medicalConsumablesAndNonConsumables = List.of(medicalNonConsumableItemTypeCode, medicalConsumableItemTypeCode);
                 responses=storeItemRepository.searchNonDrugItems(drugSectionCode, keyword,medicalConsumablesAndNonConsumables, pageable);
-            }else{
+            }else if (AppConstants.SECTION_CODE_DRUG.equalsIgnoreCase(sectionCode)){
                 responses=storeItemRepository.searchItems(sectionCode, keyword, pageable);
+            }else{
+                throw  new SDDException("Section Code",
+                       HttpStatus.BAD_REQUEST.value(),
+                        "Invalid section code. Please provide Drug or NonDrug as type"
+                );
             }
             log.info("getStoreItems with item contains name {} ,method ended...",keyword);
             return  ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
+        }catch (SDDException e){
+            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},e.getMessage(),e.getStatus());
         }catch (Exception e) {
             log.error("getStoreItems method error :: ",e);
             return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},AppConstants.INTERNAL_SERVER_ERR_MSG,HttpStatus.INTERNAL_SERVER_ERROR.value());
@@ -628,7 +641,7 @@ public class InventoryServiceImpl implements InventoryService {
                 throw new RuntimeException(AppConstants.INDENT_APPROVED_WARNING_MSG);
             }
 
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
 
             // Validate action
@@ -745,7 +758,7 @@ public class InventoryServiceImpl implements InventoryService {
             }
 
             // 3. Current user
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
 
             String action = request.getAction() != null ? request.getAction().trim().toLowerCase() : "";
@@ -1047,10 +1060,10 @@ public class InventoryServiceImpl implements InventoryService {
             String issueNo = generateIssueNumber();
 
             // === Current User ===
-            String userName = authUtil.getCurrentUser().getFirstName();
+            String userName = userContextService.getCurrentUserContext().getUserName();
 
             Long departmentId = authUtil.getCurrentDepartmentId();
-            Long hospitalId = authUtil.getCurrentUser().getHospital().getId();
+            Long hospitalId = userContextService.getCurrentUserContext().getHospitalId();
 
             String issuedStatusM = masCommonStatusRepository
                     .findByEntityNameAndColumnNameAndStatusCode(
@@ -1317,8 +1330,8 @@ public class InventoryServiceImpl implements InventoryService {
             }
 
             // Get current user
-            User currentUser = authUtil.getCurrentUser();
-            String currentUserName = currentUser != null ? currentUser.getFullName() : "";
+            User currentUser = userContextService.getCurrentUser();
+            String currentUserName = currentUser != null ? userContextService.getCurrentUserContext().getUserFullName() : "";
 
             // Get current department (receiving department)
             Long receivingDeptId = authUtil.getCurrentDepartmentId();
@@ -1588,7 +1601,7 @@ public class InventoryServiceImpl implements InventoryService {
         // Save HD record
         StoreBalanceHd hd = new StoreBalanceHd();
         MasDepartment depObj = masDepartmentRepository.findById(openingBalanceEntryRequest.getDepartmentId()).orElseThrow(()-> new RuntimeException("Department not found"));
-        hd.setHospitalId(authUtil.getCurrentUser().getHospital());
+        hd.setHospitalId(userContextService.getCurrentUser().getHospital());
         hd.setDepartmentId(depObj);
         hd.setEnteredBy(openingBalanceEntryRequest.getEnteredBy());
         String orderNum = createInvoice();
@@ -1812,7 +1825,7 @@ public class InventoryServiceImpl implements InventoryService {
     public ApiResponse<String> createOpeningBalanceEntryAndUpdateStatus(OpeningBalanceEntryRequest request) {
         StoreBalanceHd hd = new StoreBalanceHd();
         MasDepartment depObj = masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow(()-> new RuntimeException("Department not found"));
-        hd.setHospitalId(authUtil.getCurrentUser().getHospital());
+        hd.setHospitalId(userContextService.getCurrentUser().getHospital());
         hd.setDepartmentId(depObj);
         hd.setEnteredBy(request.getEnteredBy());
         String orderNum = createInvoice();
@@ -1954,7 +1967,7 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional
     @Override
     public ApiResponse<String> approveOpeningBalance(Long id, OpeningBalanceRequestForApprove request) {
-        User currentUser = authUtil.getCurrentUser();
+        User currentUser = userContextService.getCurrentUser();
         Long currentDepartmentId = authUtil.getCurrentDepartmentId();
         Long hospitalId = currentUser.getHospital().getId();
 
@@ -2110,8 +2123,8 @@ public class InventoryServiceImpl implements InventoryService {
         StoreItemBatchStock stock = stockOpt.get();
         StoreStockLedger ledger = new StoreStockLedger();
         ledger.setCreatedDt(LocalDateTime.now());
-        User currentUser = authUtil.getCurrentUser();
-        String fName= currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
+        User currentUser = userContextService.getCurrentUser();
+        String fName= userContextService.getCurrentUserContext().getUserFullName();
 
 
             ledger.setCreatedBy(fName);
@@ -2122,7 +2135,7 @@ public class InventoryServiceImpl implements InventoryService {
         ledger.setQtyBefore(BigDecimal.valueOf(qtyBefore));
         ledger.setQtyAfter(BigDecimal.valueOf(qtyBefore+qty));
         ledger.setReferenceNum(referenceNum);
-        ledger.setHospital(authUtil.getCurrentUser().getHospital());
+        ledger.setHospital(userContextService.getCurrentUser().getHospital());
         ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Department Not Found")));
         ledger.setTxnSource(opTxnType);
         ledger.setTxnType(opTxnType);
@@ -2136,29 +2149,77 @@ public class InventoryServiceImpl implements InventoryService {
             String type,
             Long hospitalId,
             Long departmentId,
+            String itemTypeCode,
             Long sectionId,
             Long classId,
             Long itemId
     ) {
 
         try {
-            if ("summary".equalsIgnoreCase(type)) {
 
-                List<OpeningBalanceStockResponse> dtos =
-                        storeItemBatchStockRepository.getStockSummary(
-                                hospitalId, departmentId, sectionId, classId, itemId
-                        );
 
-                return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
 
-            } else if ("details".equalsIgnoreCase(type)) {
+            if(itemTypeCode!=null && AppConstants.SECTION_CODE_DRUG.equalsIgnoreCase(itemTypeCode)){
 
-                List<OpeningBalanceStockResponseDto> dtos =
-                        storeItemBatchStockRepository.getStockDetails(
-                                hospitalId, departmentId, sectionId, classId, itemId
-                        );
+                sectionId=drugSectionId;
+                if ("summary".equalsIgnoreCase(type)) {
 
-                return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+                    List<OpeningBalanceStockResponse> dtos =
+                            storeItemBatchStockRepository.getStockSummaryForDrugs(
+                                    hospitalId, departmentId, sectionId, classId, itemId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+
+                } else if ("details".equalsIgnoreCase(type)) {
+
+                    List<OpeningBalanceStockResponseDto> dtos =
+                            storeItemBatchStockRepository.getStockDetailsForDrugs(
+                                    hospitalId, departmentId, sectionId, classId, itemId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+                }
+
+            }else if(itemTypeCode!=null && AppConstants.SECTION_CODE_NON_DRUG.equalsIgnoreCase(itemTypeCode)){
+
+                if ("summary".equalsIgnoreCase(type)) {
+
+                    List<OpeningBalanceStockResponse> dtos =
+                            storeItemBatchStockRepository.getStockSummaryForNonDrugs(
+                                    hospitalId, departmentId, sectionId, classId, itemId,drugSectionId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+
+                } else if ("details".equalsIgnoreCase(type)) {
+
+                    List<OpeningBalanceStockResponseDto> dtos =
+                            storeItemBatchStockRepository.getStockDetailsForNonDrugs(
+                                    hospitalId, departmentId, sectionId, classId, itemId,drugSectionId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+                }
+            }else{
+                if ("summary".equalsIgnoreCase(type)) {
+
+                    List<OpeningBalanceStockResponse> dtos =
+                            storeItemBatchStockRepository.getStockSummaryForAll(
+                                    hospitalId, departmentId, sectionId, classId, itemId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+
+                } else if ("details".equalsIgnoreCase(type)) {
+
+                    List<OpeningBalanceStockResponseDto> dtos =
+                            storeItemBatchStockRepository.getStockDetailsForAll(
+                                    hospitalId, departmentId, sectionId, classId, itemId,LocalDate.now().plusDays(drugExpDay)
+                            );
+
+                    return ResponseUtils.createSuccessResponse(dtos, new TypeReference<>() {});
+              }
             }
             return ResponseUtils.createFailureResponse(
                     null,
@@ -2300,11 +2361,11 @@ public class InventoryServiceImpl implements InventoryService {
                 }
                 StoreItemBatchStock storeItemBatchStock = stockOpt.get();
                 storeReturnT.setIsVerified(AppConstants.STATUS_Y.toLowerCase());
-                storeReturnT.setLastUpdatedBy(authUtil.getCurrentUserFullName());
+                storeReturnT.setLastUpdatedBy(userContextService.getCurrentUserContext().getUserFullName());
                 StoreReturnT savesReturnDetails = storeReturnTRepository.save(storeReturnT);
 
 //                storeItemBatchStock.setClosingStock(storeItemBatchStock.getClosingStock()-detailRequest.getDamagedQty().longValue());
-                storeItemBatchStock.setLastChgBy(authUtil.getCurrentUser().getFullName());
+                storeItemBatchStock.setLastChgBy(userContextService.getCurrentUserContext().getUserFullName());
                 storeItemBatchStock.setReturnQty(storeItemBatchStock.getReturnQty()!=null?
                         storeItemBatchStock.getReturnQty().add(detailRequest.getDamagedQty()):
                         detailRequest.getDamagedQty());
@@ -2388,13 +2449,13 @@ public class InventoryServiceImpl implements InventoryService {
                                     StoreItemBatchStock storeItemBatchStock) {
         StoreItemDamagedStock damagedStock= new StoreItemDamagedStock();
         damagedStock.setStoreItemBatchStock(storeItemBatchStock);
-        damagedStock.setApprovedBy(authUtil.getCurrentUser().getFullName());
+        damagedStock.setApprovedBy(userContextService.getCurrentUserContext().getUserFullName());
         damagedStock.setApprovedDate(LocalDateTime.now());
         damagedStock.setBrandName(storeItemBatchStock.getBrandId().getBrandName());
-        damagedStock.setCreatedBy(authUtil.getCurrentUser().getFullName());
+        damagedStock.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
         damagedStock.setDamagedQty(detailRequest.getDamagedQty());
         damagedStock.setLastUpdateDate(LocalDateTime.now());
-        damagedStock.setLastUpdatedBy(authUtil.getCurrentUser().getFullName());
+        damagedStock.setLastUpdatedBy(userContextService.getCurrentUserContext().getUserFullName());
         damagedStock.setManufacturerName(storeItemBatchStock.getManufacturerId().getManufacturerName());
         damagedStock.setMasStoreItem(storeItemBatchStock.getItemId());
         damagedStock.setReason(detailRequest.getReason());
@@ -2576,7 +2637,7 @@ public class InventoryServiceImpl implements InventoryService {
         ledger.setTxnReferenceId(indentT.getIndentTId());
         ledger.setTxnSource(AppConstants.TRANSACTION_TYPE_AND_SOURCE_RECEIVE);
         ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Invalid Department ID")));
-        ledger.setHospital(authUtil.getCurrentUser().getHospital());
+        ledger.setHospital(userContextService.getCurrentUser().getHospital());
         ledger.setQtyBefore(batchStock.getClosingStock()>0?BigDecimal.valueOf(batchStock.getClosingStock()).subtract(qty):BigDecimal.ZERO);
         ledger.setQtyAfter(BigDecimal.valueOf(batchStock.getClosingStock()));
         ledger.setReferenceNum(indentT.getIndentM().getIssueNo());
@@ -2784,10 +2845,8 @@ public class InventoryServiceImpl implements InventoryService {
         StoreStockLedger ledger = new StoreStockLedger();
         ledger.setCreatedDt(LocalDateTime.now());
 
-        User currentUser = authUtil.getCurrentUser();
-        String fName = currentUser.getFirstName()
-                + (currentUser.getMiddleName() != null ? " " + currentUser.getMiddleName() : "")
-                + (currentUser.getLastName() != null ? " " + currentUser.getLastName() : "");
+        User currentUser = userContextService.getCurrentUser();
+        String fName = userContextService.getCurrentUserContext().getUserFullName();
 
         ledger.setCreatedBy(fName.trim());
         ledger.setTxnDate(LocalDate.now());
@@ -2833,10 +2892,8 @@ public class InventoryServiceImpl implements InventoryService {
         StoreStockLedger ledger = new StoreStockLedger();
         ledger.setCreatedDt(LocalDateTime.now());
 
-        User currentUser = authUtil.getCurrentUser();
-        String fName = currentUser.getFirstName()
-                + (currentUser.getMiddleName() != null ? " " + currentUser.getMiddleName() : "")
-                + (currentUser.getLastName() != null ? " " + currentUser.getLastName() : "");
+        User currentUser = userContextService.getCurrentUser();
+        String fName = userContextService.getCurrentUserContext().getUserFullName();
 
         ledger.setCreatedBy(fName.trim());
         ledger.setTxnDate(LocalDate.now());
@@ -3017,7 +3074,7 @@ public class InventoryServiceImpl implements InventoryService {
         StoreInternalIndentM indentM;
         boolean isNew = (request.getIndentMId() == null);
 
-        User currentUser = authUtil.getCurrentUser();
+        User currentUser = userContextService.getCurrentUser();
         String currentUserName = currentUser != null ? currentUser.getFirstName() : "";
         String indentType;
        if( request.getIndentType().equalsIgnoreCase(drugSectionCode)){

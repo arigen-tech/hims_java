@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Appointment_summary_report" pageWidth="595" pageHeight="842" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="096df346-e64c-4067-85da-0437ec5f074d">
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db_uat"/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
 	<parameter name="path" class="java.lang.String">
 		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
@@ -31,7 +31,8 @@ where v.visit_type in ('F', 'N')
 and v.hospital_id = $P{hospital_id}
 and (v.department_id = $P{department_id} or $P{department_id} = 0)
 and (v.doctor_id = $P{doctor_id} or $P{doctor_id} = 0)
-and v.visit_date between $P{from_date} and $P{to_date}
+AND (CAST($P{from_date} AS DATE) IS NULL OR CAST(v.visit_date AS DATE) >= CAST($P{from_date} AS DATE))
+ AND (CAST($P{to_date} AS DATE) IS NULL OR CAST(v.visit_date AS DATE) <= CAST($P{to_date} AS DATE))
 group by h.hospital_name,v.doctor_name
 order by v.doctor_name]]>
 	</queryString>

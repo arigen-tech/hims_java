@@ -7,7 +7,9 @@ import com.hims.entity.repository.MasDietScheduleStatusRepository;
 import com.hims.request.MasDietScheduleStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDietScheduleStatusResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasDietScheduleStatusService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,9 @@ public class MasDietScheduleStatusServiceImpl implements MasDietScheduleStatusSe
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasDietScheduleStatusResponse>> getAll(int flag) {
@@ -60,14 +65,14 @@ public class MasDietScheduleStatusServiceImpl implements MasDietScheduleStatusSe
     @Override
     public ApiResponse<MasDietScheduleStatusResponse> create(MasDietScheduleStatusRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasDietScheduleStatus data = MasDietScheduleStatus.builder()
                     .statusName(request.getStatusName())
                     .description(request.getDescription())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -88,11 +93,11 @@ public class MasDietScheduleStatusServiceImpl implements MasDietScheduleStatusSe
             if (data == null)
                 return ResponseUtils.createNotFoundResponse("ID Not Found!", 404);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             data.setStatusName(request.getStatusName());
             data.setDescription(request.getDescription());
-            data.setLastUpdatedBy(user.getFirstName());
+            data.setLastUpdatedBy(userContext.getUserFullName());
             data.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(data);
@@ -116,10 +121,10 @@ public class MasDietScheduleStatusServiceImpl implements MasDietScheduleStatusSe
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid Status!", 400);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             data.setStatus(status);
-            data.setLastUpdatedBy(user.getFirstName());
+            data.setLastUpdatedBy(userContext.getUserFullName());
             data.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(data);

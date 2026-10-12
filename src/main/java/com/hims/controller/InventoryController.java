@@ -1,9 +1,11 @@
 package com.hims.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.entity.MasStoreSection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.InventoryService;
+import com.hims.service.MasStoreSectionService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,8 @@ import java.util.List;
 public class InventoryController {
 
     private final InventoryService inventoryService;
+
+    private final MasStoreSectionService masStoreSectionService;
 
     /**
      * Retrieves a paginated list of all indent tracking records for the current department.
@@ -688,10 +692,11 @@ public class InventoryController {
     public ResponseEntity<ApiResponse<List<?>>>  getAllStocks(@RequestParam String type,
                                                             @RequestParam Long hospitalId,
                                                             @RequestParam Long departmentId,
-                                                            @RequestParam(required = false) Long sectionId,
+                                                              @RequestParam(required = false) String itemTypeCode,
+                                                              @RequestParam(required = false) Long sectionId,
                                                             @RequestParam(required = false) Long classId,
                                                             @RequestParam(required = false) Long itemId) {
-        return ResponseEntity.ok(inventoryService.getAllStock(type, hospitalId, departmentId, sectionId, classId, itemId));
+        return ResponseEntity.ok(inventoryService.getAllStock(type, hospitalId, departmentId,itemTypeCode, sectionId, classId, itemId));
 
     }
 
@@ -734,6 +739,11 @@ public class InventoryController {
     @PutMapping ("/verifyReturnIndent")
     public  ResponseEntity<?> verifyReturnedIndentAtIssueDept(@RequestBody VerifyReturnIndentHeaderRequest request){
         return  ResponseEntity.status(HttpStatus.CREATED).body(inventoryService.verifyReturnedIndentAtIssueDept(request));
+    }
+
+    @GetMapping("/itemSections/{itemTypeCode}")
+    public ResponseEntity<?> getItemSectionsWrtItemType(@PathVariable String itemTypeCode){
+        return  ResponseEntity.ok(masStoreSectionService.getSectionByItemTypeCode(itemTypeCode));
     }
 
 }

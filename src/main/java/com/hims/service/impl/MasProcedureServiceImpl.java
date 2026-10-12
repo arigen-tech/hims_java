@@ -2,10 +2,8 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
-import com.hims.entity.MasDepartment;
 import com.hims.entity.MasProcedure;
 import com.hims.entity.MasProcedureType;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasProcedureRepository;
 import com.hims.entity.repository.MasProcedureTypeRepository;
@@ -13,7 +11,9 @@ import com.hims.projection.MasProcedureProjection;
 import com.hims.request.MasProcedureRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasProcedureResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasProcedureService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.Builder;
@@ -26,7 +26,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +47,9 @@ public class MasProcedureServiceImpl implements MasProcedureService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasProcedureResponse>> getAllMasProcedure(int flag) {
@@ -71,45 +73,103 @@ public class MasProcedureServiceImpl implements MasProcedureService {
 
     @Override
     public ApiResponse<Page<MasProcedureResponse>> getAllProceduresWIthFilter(
-            int flag, int page, int size,String status, String search) {
+            int flag,
+            int page,
+            int size,
+            String nursingStatus,
+            String opdStatus,
+            String ipdStatus,
+            String search) {
+
         try {
 
-        Pageable pageable = PageRequest.of(page, size);Page<MasProcedure> procedurePage;
-        boolean hasSearch = (search != null && !search.trim().isEmpty());
-            String searchPattern = hasSearch
-                    ? "%" + search.trim().toLowerCase() + "%"
-                    : "%";
+            Pageable pageable = PageRequest.of(page, size);
 
-        if (hasSearch) {
-            //  If flag = 1 → Only status = 'Y'
-            if (flag == 1) {
-                procedurePage = repository.searchProcedure(
-                        AppConstants.STATUS_Y.toLowerCase(),status, searchPattern, pageable
-                );
+            boolean hasSearch = search != null && !search.trim().isEmpty();
+
+            String searchPattern = hasSearch ? "%" + search.trim().toLowerCase() + "%" : "%";
+
+            nursingStatus = normalizeStatus(nursingStatus);
+            opdStatus = normalizeStatus(opdStatus);
+            ipdStatus = normalizeStatus(ipdStatus);
+
+            Optional<MasProcedureType> masProcedure= procedureTypeRepository.findByProcedureTypeCode(AppConstants.DENTAL_TYPE);
+            Long typeId = 0L;
+            if(masProcedure.isPresent()) {
+                typeId = masProcedure.get().getProcedureTypeId();
             }
-            //  Flag != 1 → status IN (Y, N)
-            else {
-                procedurePage = repository.searchProcedureIn(
-                        List.of(AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_N.toLowerCase()), searchPattern, pageable
-                );
+            Page<MasProcedure> procedurePage;
+            if (hasSearch) {
+
+                if (flag == 1) {
+                    procedurePage = repository.searchProcedure(AppConstants.STATUS_Y,nursingStatus,opdStatus,ipdStatus,searchPattern,pageable);
+                } else {
+                    procedurePage = repository.searchProcedureIn(List.of(
+                                    AppConstants.STATUS_Y,
+                                    AppConstants.STATUS_N
+                            ),
+                            nursingStatus,
+                            opdStatus,
+                            ipdStatus,
+                            searchPattern,
+                            pageable
+                    );
+                }
+            } else {
+                if (flag == 1) {
+                    procedurePage = repository.findByStatusWithFilters(
+                            AppConstants.STATUS_Y,
+                            nursingStatus,
+                            opdStatus,
+                            ipdStatus,
+                            typeId,
+                            pageable
+                    );
+                } else {
+                    procedurePage = repository.findByStatusInWithFilters(
+                            List.of(
+                                    AppConstants.STATUS_Y,
+                                    AppConstants.STATUS_N
+                            ),
+                            nursingStatus,
+                            opdStatus,
+                            ipdStatus,
+                            pageable
+                    );
+                }
             }
-        }
-        else if (flag == 1) {
-            procedurePage = repository.findByStatusIgnoreCase(AppConstants.STATUS_Y.toLowerCase(), pageable);
-        } else {
-            procedurePage = repository.findByStatusInIgnoreCase(List.of(AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_N.toLowerCase()), pageable);
-        }
 
-        Page<MasProcedureResponse> responsePage = procedurePage.map(this::toResponse);
-
-        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+            Page<MasProcedureResponse> responsePage = procedurePage.map(this::toResponse);
+            return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
         } catch (Exception ex) {
-            log.error("Error while fetching procedures. flag={}, page={}, size={}, search={}", flag, page, size, search, ex);
-
-            return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, AppConstants.INTERNAL_SERVER_ERR_MSG,HttpStatus.INTERNAL_SERVER_ERROR.value());
+            log.error(
+                    "Error while fetching procedures. flag={}, page={}, size={}, " +
+                            "nursingStatus={}, opdStatus={}, ipdStatus={}, search={}",
+                    flag,
+                    page,
+                    size,
+                    nursingStatus,
+                    opdStatus,
+                    ipdStatus,
+                    search,
+                    ex
+            );
+            return ResponseUtils.createFailureResponse(  null,
+                    new TypeReference<>() {},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
         }
     }
 
+
+    private String normalizeStatus(String status) {
+
+        if (status == null || status.trim().isEmpty()) {
+            return null;
+        }
+        return status.trim().toUpperCase();
+    }
 
 
     @Override
@@ -128,13 +188,13 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         log.info("MasProcedure: Create request={}", req);
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         MasProcedure p = new MasProcedure();
         p.setProcedureCode(req.getProcedureCode());
         p.setProcedureName(req.getProcedureName());
 
-        p.setLastChgBy(user.getFullName());
+        p.setLastChgBy(userContext.getUserFullName());
         p.setIpdAllowed(req.getIpdAllowed().toUpperCase());
         p.setStatus(AppConstants.STATUS_Y.toLowerCase());
         p.setLastChgDate(LocalDateTime.now());
@@ -150,7 +210,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
     public ApiResponse<MasProcedureResponse> updateMasProcedure(Long id, MasProcedureRequest req) {
         log.info("MasProcedure: Update Start | id={} | data={}", id, req);
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         MasProcedure procedure = repository.findById(id).orElse(null);
         if (procedure == null) {
             log.warn("Update failed, id not found={}", id);
@@ -159,7 +219,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         procedure.setProcedureCode(req.getProcedureCode());
         procedure.setProcedureName(req.getProcedureName());
 
-        procedure.setLastChgBy(user.getFullName());
+        procedure.setLastChgBy(userContext.getUserFullName());
         procedure.setIpdAllowed(req.getIpdAllowed().toUpperCase());
         procedure.setStatus(AppConstants.STATUS_Y.toLowerCase());
         procedure.setLastChgDate(LocalDateTime.now());
@@ -173,7 +233,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
     public ApiResponse<MasProcedureResponse>changeStatus(Long id, String status) {
         log.info("MasProcedure: Change Status | id={} | status={}", id, status);
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         MasProcedure procedure = repository.findById(id).orElse(null);
         if (procedure == null) {
             log.warn("Status change failed: id not found");
@@ -187,7 +247,7 @@ public class MasProcedureServiceImpl implements MasProcedureService {
 
         procedure.setStatus(status);
         procedure.setLastChgDate(LocalDateTime.now());
-        procedure.setLastChgBy(user.getFullName());
+        procedure.setLastChgBy(userContext.getUserFullName());
         MasProcedure saved = repository.save(procedure);
 
         log.info("MasProcedure: Status changed | id={} | newStatus={}", id, status);

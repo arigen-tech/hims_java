@@ -3,7 +3,7 @@ package com.hims.response;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 public class AppointmentBlock {
@@ -14,7 +14,7 @@ public class AppointmentBlock {
     private String department;
     private String consultedDoctor;
     private String sessionName;
-    private Instant visitDate;
+    private LocalDateTime visitDate;
     private Long billingPolicyId;
     private BigDecimal tariff;
     private BigDecimal discount;

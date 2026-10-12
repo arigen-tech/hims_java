@@ -3,12 +3,13 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasTpa;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasTpaRepository;
 import com.hims.request.MasTpaRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasTpaResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasTpaService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,10 @@ public class MasTpaServiceImpl implements MasTpaService {
     private MasTpaRepository repository;
     @Autowired
     private AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
+
+
     @Override
     public ApiResponse<List<MasTpaResponse>> getAllMasTpa(int flag) {
 
@@ -88,9 +93,9 @@ public class MasTpaServiceImpl implements MasTpaService {
 
         try {
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -109,7 +114,7 @@ public class MasTpaServiceImpl implements MasTpaService {
             entity.setAddress(request.getAddress());
 
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setLastChgBy(user.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -138,6 +143,7 @@ public class MasTpaServiceImpl implements MasTpaService {
         log.info("Updating TPA id={}", id);
 
         try {
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasTpa entity = repository.findById(id).orElse(null);
 
@@ -148,9 +154,8 @@ public class MasTpaServiceImpl implements MasTpaService {
                 );
             }
 
-            User user = authUtil.getCurrentUser();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -166,7 +171,7 @@ public class MasTpaServiceImpl implements MasTpaService {
             entity.setEmailId(request.getEmailId());
             entity.setAddress(request.getAddress());
 
-            entity.setLastChgBy(user.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -216,9 +221,9 @@ public class MasTpaServiceImpl implements MasTpaService {
                 );
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -228,7 +233,7 @@ public class MasTpaServiceImpl implements MasTpaService {
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastChgBy(user.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             repository.save(entity);

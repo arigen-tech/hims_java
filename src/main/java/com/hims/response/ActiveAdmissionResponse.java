@@ -2,8 +2,6 @@ package com.hims.response;
 
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
 public class ActiveAdmissionResponse {
     private Long inpatientId;
@@ -21,12 +19,13 @@ public class ActiveAdmissionResponse {
     private String room;
     private Long bedId;
     private String bed;
-    private LocalDateTime admissionDateTime;
-    private LocalDateTime dischargeDate;
+    private String admissionDateTime;
+    private String dischargeDate;
     private Long categoryId;
     private String categoryName;
     private String doctorName;
     private String los;
+    private Long billingHeaderId;
     private String status;
     private String billingType;
 

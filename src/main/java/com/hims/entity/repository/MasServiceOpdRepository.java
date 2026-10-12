@@ -120,5 +120,27 @@ public interface MasServiceOpdRepository extends JpaRepository<MasServiceOpd, Lo
             @Param("doctorName") String doctorName,
             Pageable pageable
     );
+
+    @Query("""
+        SELECT COUNT(o) > 0
+        FROM MasServiceOpd o
+        WHERE o.serviceCategory.id = :serviceCategoryId
+          AND o.hospitalId.id = :hospitalId
+          AND o.departmentId.id = :departmentId
+          AND o.doctorId.userId = :doctorId
+          AND o.fromDt <= :toDate
+          AND o.toDt >= :fromDate
+          AND LOWER(o.status) = :status
+    """)
+    boolean existsOverlappingTariff(
+            @Param("serviceCategoryId") Long serviceCategoryId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
+            @Param("doctorId") Long doctorId,
+            @Param("fromDate") Instant fromDate,
+            @Param("toDate") Instant toDate,
+            @Param("status") String status
+    );
+
 }
 

@@ -2,6 +2,8 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.NotificationType;
+import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
@@ -12,11 +14,13 @@ import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.RadiologyService;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -40,6 +45,8 @@ public class RadiologyServiceImpl implements RadiologyService {
     private static final Logger log = LoggerFactory.getLogger(LabRegistrationServicesImpl.class);
     @Autowired
     AuthUtil authUtil;
+    @Autowired
+    UserContextService userContextService;
     @Autowired
     PatientServiceImpl patientService;
     @Autowired
@@ -92,13 +99,19 @@ public class RadiologyServiceImpl implements RadiologyService {
     @Autowired
     private HelperUtils helperUtils;
 
+    @Autowired
+    private  SMSUtility smsUtility;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ApiResponse<LabRadiologyRegistrationResponse> registerPatientWithInv(PatientRequest patient, List<LabInvestigationReq> radInvestigationReq) {
         log.info("Starting lab registration process");
         LabRadiologyRegistrationResponse response=new LabRadiologyRegistrationResponse();
-        User currentUser = authUtil.getCurrentUser();
+        User currentUser = userContextService.getCurrentUser();
         Optional<Patient> existingPatient = patientRepository.findByUniqueCombination(
                 patient.getPatientFn(),
                 patient.getPatientLn(),
@@ -135,9 +148,8 @@ public class RadiologyServiceImpl implements RadiologyService {
             visit.setBillingStatus("n");
             visit.setHospital(masHospital);
             visit.setTokenNo(existingTokens + 1);
-             Instant visitDate = Instant.now();
-            visit.setVisitDate(visitDate);
-            visit.setLastChgDate(visitDate);
+            visit.setVisitDate(HMISUtil.getCurrentLocalDateTime());
+            visit.setLastChgDate(HMISUtil.getCurrentLocalDateTime());
             visit.setDepartment(department);
             visit.setDisplayPatientStatus("wp");
             Visit savedVisit = visitRepository.save(visit);
@@ -318,7 +330,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         billingHeader.setHospitalGstin(vId.getHospital().getGstnNo());  //column is not exist in Patient table
         billingHeader.setServiceCategory(masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad));  ///for which table
         billingHeader.setReferredBy(vId.getDoctorName());//few doute
-        billingHeader.setBillingDate(Instant.now());
+        billingHeader.setBillingDate(HMISUtil.getCurrentLocalDateTime());
         billingHeader.setPaymentStatus("n");
         billingHeader.setVisit(vId);
         billingHeader.setRadOrderHd(hdId);
@@ -329,10 +341,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         //billingHeader.setDiscount();//id is Pass
         //billingHeader.setDiscountAmount(BigDecimal.valueOf(labReq.getDiscountAmount()));
         billingHeader.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
-        billingHeader.setCreatedDt(Instant.now());
-        billingHeader.setUpdatedDt(Instant.now());
-        billingHeader.setBillDate(OffsetDateTime.now());
-        billingHeader.setUpdatedAt(OffsetDateTime.now());
+        billingHeader.setBillDate(HMISUtil.getCurrentLocalDateTime());
+        billingHeader.setUpdatedAt(HMISUtil.getCurrentLocalDateTime());
         return  billingHeaderRepository.save(billingHeader);
     }
 
@@ -447,8 +457,9 @@ public class RadiologyServiceImpl implements RadiologyService {
             throw new IllegalArgumentException("Invalid service category");
         }
 
-        User currentUser = authUtil.getCurrentUser();
-        String userName = currentUser.getFirstName() + " " + currentUser.getLastName();
+//        UserContext userContext = userContextService.getCurrentUserContext();
+        UserContext userContext = userContextService.getCurrentUserContext();
+        String userName = userContext.getUserFullName();
 
         List<Long> investigationIds = new ArrayList<>();
         List<Long> packageIds = new ArrayList<>();
@@ -522,7 +533,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                 }
 
                 BillingHeader billing = billingService.saveBillingHeaderIfEnabled(
-                        radBillingEnabled, orderHd, visit, currentUser,
+                        radBillingEnabled, orderHd, visit, userContext,
                         amount.getTotal(), amount.getTax(), amount.getDiscount(),
                         serviceCategoryRad, true
                 );
@@ -577,8 +588,12 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
 
     public Visit createVisitForLabRadio(Patient patient,Long department) {
-        User user = authUtil.getCurrentUser();
+        User user = userContextService.getCurrentUser();
         MasHospital hospital = masHospitalRepository.findById(user.getHospital().getId()).orElseThrow(() -> new RuntimeException("Invalid hospital"));
+        return createVisitForLabRadio(patient, department, hospital);
+    }
+
+    private Visit createVisitForLabRadio(Patient patient, Long department, MasHospital hospital) {
         MasDepartment dept = masDepartmentRepository.findById(department).orElseThrow(() -> new RuntimeException("Invalid department"));
         Long token = visitRepository.countTokensForToday(hospital.getId(), dept.getId());
         Visit visit = new Visit();
@@ -588,8 +603,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         visit.setHospital(hospital);
         visit.setTokenNo(token + 1);
         visit.setDepartment(dept);
-        visit.setVisitDate(Instant.now());
-        visit.setLastChgDate(Instant.now());
+        visit.setVisitDate(HMISUtil.getCurrentLocalDateTime());
+        visit.setLastChgDate(HMISUtil.getCurrentLocalDateTime());
         visit.setDisplayPatientStatus("wp");
 
         String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
@@ -753,8 +768,8 @@ public class RadiologyServiceImpl implements RadiologyService {
      * Gets current user full name
      */
     private String getCurrentUserName() {
-        User user = authUtil.getCurrentUser();
-        return user.getFirstName() + " " + user.getLastName();
+        UserContext userContext = userContextService.getCurrentUserContext();
+        return userContext.getUserName() + " " + userContext.getUserName();
     }
 
     
@@ -781,13 +796,18 @@ public class RadiologyServiceImpl implements RadiologyService {
     @Override
     public LabRadioUpdateResponse updatePatientDetailsAndBooking(LabRadioUpdateRequest request) {
 
-        if (request == null || request.getPatient() == null) {
+        if (request == null || (request.getPatient() == null && request.getPatientId() == null)) {
             throw new SDDException("patient", 400, "Patient data is required");
         }
 
-        log.info("Starting patient update and radiology booking for patient ID: {}", request.getPatient().getId());
+        log.info("Starting patient update and radiology booking for patient ID: {}",
+            request.getPatientId() != null ? request.getPatientId() : request.getPatient().getId());
 
-        Patient patient = patientService.updatePatientDetails(request.getPatient(), true);
+        Patient patient = request.getPatientId() != null
+            ? patientRepository.findById(request.getPatientId())
+            .orElseThrow(() -> new SDDException("patient", 404,
+                "Patient not found with id: " + request.getPatientId()))
+            : patientService.updatePatientDetails(request.getPatient(), true);
 
         if (patient == null) {
             throw new SDDException("patient", 500, "Failed to update patient");
@@ -799,20 +819,31 @@ public class RadiologyServiceImpl implements RadiologyService {
             return new LabRadioUpdateResponse(null, null, "Patient updated successfully");
         }
 
-        boolean radBillingEnabled =
-                patient.getPatientHospital() != null
-                        && AppConstants.STATUS_Y.equalsIgnoreCase(patient.getPatientHospital().getRadioBilling());
+        Long hospitalId = request.getPatient() != null ? request.getPatient().getPatientHospitalId() : null;
+        if (hospitalId == null && patient.getPatientHospital() != null) {
+            hospitalId = patient.getPatientHospital().getId();
+        }
+        if (hospitalId == null) {
+            throw new SDDException("hospital", 400, "Hospital ID is required");
+        }
 
-        Visit visit = createVisitForLabRadio(patient, radiologyDepartment);
+        final Long resolvedHospitalId = hospitalId;
+        MasHospital hospital = masHospitalRepository.findById(resolvedHospitalId)
+                .orElseThrow(() -> new SDDException("hospital", 400, "Invalid hospital ID: " + resolvedHospitalId));
+        boolean radBillingEnabled = AppConstants.STATUS_Y.equalsIgnoreCase(hospital.getRadioBilling());
+        String userName = userContextService.getCurrentUserFullNameFromToken();
+        if (userName == null || userName.isBlank()) {
+            throw new SDDException("user", 401, "Current user not found");
+        }
+        UserContext bookingContext = new UserContext(null, null, null, resolvedHospitalId, null, userName);
+
+        Visit visit = createVisitForLabRadio(patient, radiologyDepartment, hospital);
 
         MasServiceCategory serviceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
 
         if (serviceCategory == null) {
             throw new SDDException("serviceCategory", 400, "Invalid service category");
         }
-
-        User currentUser = authUtil.getCurrentUser();
-        String userName = getCurrentUserName();
 
         List<Long> investigationIds = new ArrayList<>();
         List<Long> packageIds = new ArrayList<>();
@@ -873,7 +904,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                 }
 
                 BillingHeader billing = billingService.saveBillingHeaderIfEnabled(
-                        radBillingEnabled, orderHd, visit, currentUser,
+                    radBillingEnabled, orderHd, visit, bookingContext,
                         amount.getTotal(), amount.getTax(), amount.getDiscount(),
                         serviceCategoryRad, true
                 );
@@ -893,7 +924,7 @@ public class RadiologyServiceImpl implements RadiologyService {
                             continue;
                         }
 
-                       saveRadOrderDetail(orderHd, billing, inv, entity, serviceCategoryRad);
+                       saveRadOrderDetail(orderHd, billing, inv, entity, serviceCategoryRad, userName);
 
                     } else if (AppConstants.PACKAGE.toLowerCase().equalsIgnoreCase(inv.getType())) {
 
@@ -907,14 +938,15 @@ public class RadiologyServiceImpl implements RadiologyService {
                                 packageMappingsMap.getOrDefault(inv.getId(), new ArrayList<>());
 
                         for (PackageInvestigationMapping map : mappings) {
-                            saveRadOrderDetailForPackage(
-                                    orderHd, billing, inv, map.getInvestId(), pkg, serviceCategoryRad
+                                saveRadOrderDetailForPackage(
+                                    orderHd, billing, inv, map.getInvestId(), pkg, serviceCategoryRad, userName
                             );
                         }
                     }
                 }
-            }
 
+
+                }
         } catch (SDDException e) {
             log.error("Business error: {}", e.getMessage());
             throw e;
@@ -935,18 +967,18 @@ public class RadiologyServiceImpl implements RadiologyService {
         PaymentResponse res = new PaymentResponse();
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
-        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         try{
 
             //Payment table data inserted
-            // User currentUser = authUtil.getCurrentUser();
+            // UserContext userContext = userContextService.getCurrentUserContext();
             PaymentDetail paymentDetail = new PaymentDetail();
             paymentDetail.setPaymentMode(request.getMode());
             paymentDetail.setPaymentStatus("y");
             paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
             paymentDetail.setPaymentDate(Instant.now());
             paymentDetail.setAmount(request.getAmount());
-            paymentDetail.setCreatedBy(authUtil.getCurrentUser().getFirstName());
+            paymentDetail.setCreatedBy(userContextService.getCurrentUserContext().getUserName());
             paymentDetail.setCreatedAt(Instant.now());
             paymentDetail.setUpdatedAt(Instant.now());
             paymentDetail.setBillingHd(billingHeaderRepository.findById(request.getBillHeaderId()).get());
@@ -960,8 +992,8 @@ public class RadiologyServiceImpl implements RadiologyService {
                     int billHdId = request.getBillHeaderId();
                     log.debug("Updating payment status for InvestigationId={}, BillHdId={}",
                             investigationId, billHdId);
-                    billingDetailRepository.updatePaymentStatusInvestigation("y",currentUser, investigationId, billHdId);
-                    radOrderDtRepository.updatePaymentStatusInvestigationDt("y", investigationId, billHdId);
+                    billingDetailRepository.updatePaymentStatusInvestigation(AppConstants.STATUS_Y,userContext.getUserFullName(), investigationId, billHdId);
+                    radOrderDtRepository.updatePaymentStatusInvestigationDt(AppConstants.STATUS_Y, investigationId, billHdId);
                 } else {
                     int pkgId = invpkg.getId();
                     int billHdId = request.getBillHeaderId();
@@ -969,8 +1001,8 @@ public class RadiologyServiceImpl implements RadiologyService {
                             pkgId, billHdId);
 
                     //for package
-                    billingDetailRepository.updatePaymentStatusPackage("y",currentUser, pkgId, billHdId);
-                    radOrderDtRepository.updatePaymentStatusPackegDt("y",(long) pkgId,(long) billHdId);
+                    billingDetailRepository.updatePaymentStatusPackage(AppConstants.STATUS_Y,userContext.getUserFullName(), pkgId, billHdId);
+                    radOrderDtRepository.updatePaymentStatusPackegDt(AppConstants.STATUS_Y,(long) pkgId,(long) billHdId);
                 }
             }
             boolean fullyPaid = true;
@@ -994,20 +1026,20 @@ public class RadiologyServiceImpl implements RadiologyService {
                     fullyPaid, partialPaid);
 
             if (fullyPaid) {
-                hdorderObj.setPaymentStatus("y");
-                visit.setBillingStatus("y");
-                billingHeader.setPaymentStatus("y");
-                res.setPaymentStatus("y");
+                hdorderObj.setPaymentStatus(AppConstants.STATUS_Y.toLowerCase());
+                visit.setBillingStatus(AppConstants.STATUS_Y.toLowerCase());
+                billingHeader.setPaymentStatus(AppConstants.STATUS_Y.toLowerCase());
+                res.setPaymentStatus(AppConstants.STATUS_Y.toLowerCase());
                 BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
                 BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
                 billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
                 log.info("Fully paid. TotalPaid updated={}",
                         billingHeader.getTotalPaid());
             } else if (partialPaid) {
-                hdorderObj.setPaymentStatus("p");
-                visit.setBillingStatus("p");
-                billingHeader.setPaymentStatus("p");
-                res.setPaymentStatus("p");
+                hdorderObj.setPaymentStatus(AppConstants.STATUS_P.toLowerCase());
+                visit.setBillingStatus(AppConstants.STATUS_P.toLowerCase());
+                billingHeader.setPaymentStatus(AppConstants.STATUS_P.toLowerCase());
+                res.setPaymentStatus(AppConstants.STATUS_P.toLowerCase());
                 BigDecimal totalPaidDB = (billingHeader.getTotalPaid() != null) ? billingHeader.getTotalPaid() : BigDecimal.ZERO;
                 BigDecimal totalPaidUi = (request.getAmount() != null) ? request.getAmount() : BigDecimal.ZERO;
                 billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
@@ -1037,14 +1069,21 @@ public class RadiologyServiceImpl implements RadiologyService {
     @Override
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingRadiology(Long modalityId, String patientName, String phoneNumber, int page, int size) {
         try {
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdOn"));
-            Page<RadOrderDt> paged = radOrderDtRepository.findPendingRadiology(masHospital.getId(), "y", "n", modalityId, patientLike, phoneLike, pageable
+            Page<RadOrderDt> paged = radOrderDtRepository.findPendingRadiology(masHospital.getId(),
+                    AppConstants.STATUS_Y.toLowerCase(),
+                    AppConstants.STATUS_N.toLowerCase(),
+                    AppConstants.STATUS_Y.toLowerCase(),
+                    modalityId,
+                    patientLike,
+                    phoneLike,
+                    pageable
             );
 
             Page<RadiologyRequisitionResponse> response= paged.map(this::mapToRadiologyDto);
@@ -1107,7 +1146,7 @@ public class RadiologyServiceImpl implements RadiologyService {
     public ApiResponse<Page<RadiologyRequisitionResponse>> getPendingListForRadiologyReport(
             Long modality, String patientName, String phoneNumber, int page, int size) {
         try {
-            User currentUser = authUtil.getCurrentUser();
+            User currentUser = userContextService.getCurrentUser();
             MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
@@ -1132,8 +1171,8 @@ public class RadiologyServiceImpl implements RadiologyService {
     @Override
     public ApiResponse<String> saveDetailsReportForRadiology(RadiologyReportRequest request,String status) {
         try {
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("current user not found", 404
                 );
             }
@@ -1150,16 +1189,16 @@ public class RadiologyServiceImpl implements RadiologyService {
             radStudyReport.setRadOrderDt(orderDt);
             radStudyReport.setReportDesc(request.getReportDesc());
             radStudyReport.setReportStatus(status.toLowerCase().trim());
-            radStudyReport.setLastChgBy(currentUser.getFullName());
+            radStudyReport.setLastChgBy(userContext.getUserFullName());
             radStudyReport.setLastChgDate(LocalDateTime.now());
             if (radStudyReport.getRadStudyReportId() == null) {
-                radStudyReport.setCreatedBy(currentUser.getUserId());
+                radStudyReport.setCreatedBy(userContext.getUserId());
                 radStudyReport.setCreatedOn(LocalDateTime.now());
             }
             // radStudyReport.setReportImagePath();
             radStudyReportRepository.save(radStudyReport);
             orderDt.setReportStatus(status.toLowerCase().trim());
-            orderDt.setLastChgBy(currentUser.getFullName());
+            orderDt.setLastChgBy(userContext.getUserFullName());
             orderDt.setReportDate(LocalDate.now());
             return ResponseUtils.createSuccessResponse(
                     "Radiology result saved successfully", new TypeReference<>() {});
@@ -1205,16 +1244,15 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
 
     @Override
-    public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, String patientName, String phoneNumber, int page, int size) {
+    public ApiResponse<Page<RadiologyRequisitionResponse>> getPACSStudyList(Long modality, Long patientId, String patientName, String phoneNumber, String status, int page, int size) {
         try {
-            User currentUser = authUtil.getCurrentUser();
-            MasHospital masHospital = masHospitalRepository.findById(currentUser.getHospital().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID"));
+            Long hospitalId = getCurrentHospitalIdForPacs();
             String patientLike = patientName == null ? null : "%" + patientName.toLowerCase() + "%";
             String phoneLike   = phoneNumber == null ? null : "%" + phoneNumber + "%";
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdOn"));
-            Page<RadiologyProjection> paged = radOrderDtRepository.getRadiologyPACSStudyList(masHospital.getId(),AppConstants.STATUS_Y, modality, patientLike, phoneLike, pageable);
+            String reportStatus = status == null ? null : status.toLowerCase();
+            Page<RadiologyProjection> paged = radOrderDtRepository.getRadiologyPACSStudyList(hospitalId, AppConstants.STATUS_Y, reportStatus, modality, patientId, patientLike, phoneLike, pageable);
             Page<RadiologyRequisitionResponse> response = paged.map(this::toResponse);
             return ResponseUtils.createSuccessResponse(
                     response, new TypeReference<Page<RadiologyRequisitionResponse>>() {}
@@ -1228,6 +1266,40 @@ public class RadiologyServiceImpl implements RadiologyService {
         }
     }
 
+    @Override
+    public ApiResponse<List<RadiologyModalityResponse>> getPACSModalityList(Long patientId) {
+        try {
+            List<RadiologyModalityResponse> modalities = radOrderDtRepository.findPacsModalitiesByPatient(
+                            getCurrentHospitalIdForPacs(), AppConstants.STATUS_Y, patientId)
+                    .stream()
+                    .map(projection -> new RadiologyModalityResponse(
+                            projection.getModalityId(), projection.getModalityName()))
+                    .toList();
+
+            return ResponseUtils.createSuccessResponse(modalities, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Error while fetching PACS modalities for patientId={}", patientId, e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Internal Server Error", 500
+            );
+        }
+    }
+
+    private Long getCurrentHospitalIdForPacs() {
+        try {
+            User currentUser = userContextService.getCurrentUser();
+            if (currentUser != null && currentUser.getHospital() != null
+                    && currentUser.getHospital().getId() != null) {
+                return masHospitalRepository.findById(currentUser.getHospital().getId())
+                        .map(MasHospital::getId)
+                        .orElse(null);
+            }
+        } catch (Exception e) {
+            log.warn("Unable to resolve current user for PACS study list; skipping hospital filter", e);
+        }
+        return null;
+    }
+
     private RadiologyRequisitionResponse toResponse(RadiologyProjection p) {
         RadiologyRequisitionResponse r = new RadiologyRequisitionResponse();
         r.setAccessionNo(p.getOrderAccessionNo());
@@ -1239,14 +1311,17 @@ public class RadiologyServiceImpl implements RadiologyService {
         r.setModality(p.getModalityName());
         r.setModalityId(p.getModalityId());
         r.setInvestigationName(p.getInvestigationName());
-        r.setOrderDate(p.getOrderDate());
-        r.setOrderTime(p.getOrderTime());
+        r.setOrderDate(DateTimeUtil.formatDate(p.getOrderDate()));
+        r.setOrderTime(DateTimeUtil.formatDateTime(p.getOrderTime()));
         r.setDepartment(p.getDepartment());
         r.setRadOrderDtId(p.getRadOrderdtId());
         r.setReportStatus(p.getReportStatus());
         r.setStudyStatus(p.getStudyStatus());
-        r.setStudyDate(p.getStudyDatetime() != null ? p.getStudyDatetime().toLocalDate() : null);
-        r.setStudyTime(p.getStudyDatetime());
+        r.setStudyDate(p.getStudyDatetime() != null
+                ? DateTimeUtil.formatDate(p.getStudyDatetime().toLocalDate())
+                : null);
+        r.setStudyTime(DateTimeUtil.formatDateTime(p.getStudyDatetime()));
+        r.setHospitalId(p.getHospitalId());
         return r;
     }
 
@@ -1264,8 +1339,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         MasSubChargeCode sc = dt.getSubChargecode();
         dto.setModality(sc.getSubName());
         dto.setInvestigationName(dt.getInvestigation() != null ? dt.getInvestigation().getInvestigationName() : null);
-        dto.setOrderDate(hd.getOrderDate());
-        dto.setOrderTime(hd.getOrderTime());
+        dto.setOrderDate(DateTimeUtil.formatDate(hd.getOrderDate()));
+        dto.setOrderTime(DateTimeUtil.formatDateTime(hd.getOrderTime()));
         dto.setDepartment(hd.getDepartment() != null ? hd.getDepartment().getDepartmentName() : null);
 
         return dto;
@@ -1294,9 +1369,35 @@ public class RadiologyServiceImpl implements RadiologyService {
         hd.setVisit(visit);
         hd.setDepartment(visit.getDepartment());
         hd.setHospital(visit.getHospital());
-        hd.setCreatedBy(authUtil.getCurrentUserFullName());
-        hd.setLastChgBy(authUtil.getCurrentUserFullName());
-        return radOrderHdRepository.save(hd);
+        // UserContext userContext = userContextService.getCurrentUserContext();
+        hd.setCreatedBy(userName);
+        hd.setLastChgBy(userName);
+        RadOrderHd save = radOrderHdRepository.save(hd);
+        Map<String, String> variables = new HashMap<>();
+
+        variables.put("var1", patient.getFullName());
+        variables.put("var2", "Radiology");
+        String formattedDate =  save!=null?save.getOrderTime()
+                .format(DateTimeFormatter.ofPattern("dd MMM yyyy hh:mm a", Locale.ENGLISH))
+                .toUpperCase():"";
+        variables.put("var4",formattedDate);
+
+        String patientMobileNumber = patient.getPatientMobileNumber();
+
+        eventPublisher.publishEvent(
+                new NotificationEvent(
+                        NotificationType.OTHER_APPOINTMENT_BOOKED,
+                        patientMobileNumber,
+                        variables
+                )
+        );
+
+        log.info(
+                "Rad booking notification event published for patient: {}",
+                patient.getFullName()
+        );
+
+        return save;
     }
 
 
@@ -1304,6 +1405,13 @@ public class RadiologyServiceImpl implements RadiologyService {
     @Override
     public RadOrderDt saveRadOrderDetail(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
                                          DgMasInvestigation entity, String serviceCategoryCode) {
+
+        UserContext userContext = userContextService.getCurrentUserContext();
+        return saveRadOrderDetail(hd, billing, inv, entity, serviceCategoryCode, userContext.getUserFullName());
+    }
+
+    private RadOrderDt saveRadOrderDetail(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                          DgMasInvestigation entity, String serviceCategoryCode, String userName) {
 
         RadOrderDt dt = new RadOrderDt();
         dt.setRadOrderhd(hd);
@@ -1319,8 +1427,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
-        dt.setCreatedby(authUtil.getCurrentUserFullName());
-        dt.setLastChgBy(authUtil.getCurrentUserFullName());
+        dt.setCreatedby(userName);
+        dt.setLastChgBy(userName);
         dt.setInvestigation(entity);
 
         RadOrderDt saved = radOrderDtRepository.save(dt);
@@ -1337,6 +1445,15 @@ public class RadiologyServiceImpl implements RadiologyService {
                                                    DgMasInvestigation investEntity, DgInvestigationPackage pkg,
                                                    String serviceCategoryCode) {
 
+        UserContext userContext = userContextService.getCurrentUserContext();
+        return saveRadOrderDetailForPackage(hd, billing, inv, investEntity, pkg, serviceCategoryCode,
+            userContext.getUserFullName());
+        }
+
+        private RadOrderDt saveRadOrderDetailForPackage(RadOrderHd hd, BillingHeader billing, LabRadioInvestigationRequest inv,
+                                DgMasInvestigation investEntity, DgInvestigationPackage pkg,
+                                String serviceCategoryCode, String userName) {
+
         RadOrderDt dt = new RadOrderDt();
         dt.setRadOrderhd(hd);
         dt.setSubChargecode(investEntity.getSubChargeCodeId());
@@ -1351,8 +1468,8 @@ public class RadiologyServiceImpl implements RadiologyService {
         dt.setReportStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setHl7MwlStatus(AppConstants.STATUS_N.toLowerCase());
         dt.setPacsCompletionStatus(AppConstants.STATUS_N.toLowerCase());
-        dt.setCreatedby(authUtil.getCurrentUserFullName());
-        dt.setLastChgBy(authUtil.getCurrentUserFullName());
+        dt.setCreatedby(userName);
+        dt.setLastChgBy(userName);
         dt.setInvestigation(investEntity);
         dt.setPackageId(pkg);
 

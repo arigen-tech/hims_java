@@ -31,8 +31,17 @@ public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long
 
     @Query("""
     SELECT p FROM MasProcedure p
-    WHERE LOWER(p.status) = :status
-      AND (:isNursing IS NULL OR LOWER(p.isNursing) = :isNursing)
+    WHERE p.status = :status
+
+      AND (:nursingStatus IS NULL
+           OR p.isNursing = :nursingStatus)
+
+      AND (:opdStatus IS NULL
+           OR p.opdAllowed = :opdStatus)
+
+      AND (:ipdStatus IS NULL
+           OR p.ipdAllowed = :ipdStatus)
+
       AND (
           LOWER(p.procedureCode) LIKE :search
           OR LOWER(p.procedureName) LIKE :search
@@ -40,21 +49,79 @@ public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long
 """)
     Page<MasProcedure> searchProcedure(
             @Param("status") String status,
-            @Param("isNursing") String isNursing,
+            @Param("nursingStatus") String nursingStatus,
+            @Param("opdStatus") String opdStatus,
+            @Param("ipdStatus") String ipdStatus,
             @Param("search") String search,
             Pageable pageable
     );
 
     // Search when flag != 1 → include both Y and N
     @Query("""
-        SELECT p FROM MasProcedure p
-         WHERE LOWER(p.status) IN :statusList
-        AND (LOWER(p.procedureCode) LIKE :search
-             OR LOWER(p.procedureName) LIKE :search)
-    """)
+    SELECT p FROM MasProcedure p
+    WHERE p.status IN :statuses
+
+      AND (:nursingStatus IS NULL
+           OR p.isNursing = :nursingStatus)
+
+      AND (:opdStatus IS NULL
+           OR p.opdAllowed = :opdStatus)
+
+      AND (:ipdStatus IS NULL
+           OR p.ipdAllowed = :ipdStatus)
+
+      AND (
+          LOWER(p.procedureCode) LIKE :search
+          OR LOWER(p.procedureName) LIKE :search
+      )
+""")
     Page<MasProcedure> searchProcedureIn(
-            @Param("statusList") List<String> statusList,
+            @Param("statuses") List<String> statuses,
+            @Param("nursingStatus") String nursingStatus,
+            @Param("opdStatus") String opdStatus,
+            @Param("ipdStatus") String ipdStatus,
             @Param("search") String search,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT p FROM MasProcedure p
+    WHERE p.status = :status
+
+      AND (:nursingStatus IS NULL
+           OR p.isNursing = :nursingStatus)
+
+      AND (:opdStatus IS NULL
+           OR p.opdAllowed = :opdStatus)
+
+      AND (:ipdStatus IS NULL
+           OR p.ipdAllowed = :ipdStatus)
+
+      AND (:typeId IS NULL
+           OR p.procedureType.procedureTypeId = :typeId)
+""")
+    Page<MasProcedure> findByStatusWithFilters(
+            @Param("status") String status,
+            @Param("nursingStatus") String nursingStatus,
+            @Param("opdStatus") String opdStatus,
+            @Param("ipdStatus") String ipdStatus,
+            @Param("typeId") Long typeId,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT p FROM MasProcedure p
+    WHERE LOWER(p.status) IN :statuses
+
+      AND (:nursingStatus IS NULL OR p.isNursing = :nursingStatus)
+      AND (:opdStatus IS NULL OR p.opdAllowed = :opdStatus)
+      AND (:ipdStatus IS NULL OR p.ipdAllowed = :ipdStatus)
+""")
+    Page<MasProcedure> findByStatusInWithFilters(
+            @Param("statuses") List<String> statuses,
+            @Param("nursingStatus") String nursingStatus,
+            @Param("opdStatus") String opdStatus,
+            @Param("ipdStatus") String ipdStatus,
             Pageable pageable
     );
 

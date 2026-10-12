@@ -7,7 +7,9 @@ import com.hims.entity.repository.ObMasCervixPositionRepository;
 import com.hims.request.ObMasCervixPositionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.ObMasCervixPositionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.ObMasCervixPositionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,9 @@ public class ObMasCervixPositionServiceImpl
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<ObMasCervixPositionResponse>> getAll(int flag) {
@@ -66,8 +71,8 @@ public class ObMasCervixPositionServiceImpl
 
         log.info("Creating Cervix Position={}", request.getCervixPosition());
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -76,8 +81,8 @@ public class ObMasCervixPositionServiceImpl
             ObMasCervixPosition entity = ObMasCervixPosition.builder()
                     .cervixPosition(request.getCervixPosition())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -105,15 +110,15 @@ public class ObMasCervixPositionServiceImpl
                     "Cervix Position not found", 404);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setCervixPosition(request.getCervixPosition());
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);
@@ -141,15 +146,15 @@ public class ObMasCervixPositionServiceImpl
                     "Invalid status", 400);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setStatus(status);
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);

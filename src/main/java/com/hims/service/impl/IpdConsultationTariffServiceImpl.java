@@ -9,11 +9,14 @@ import com.hims.projection.IpdConsultationTariffProjection;
 import com.hims.request.IpdConsultationTariffRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.IpdConsultationTariffResponse;
+import com.hims.response.UserContext;
 import com.hims.service.IpdConsultationTariffService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +38,8 @@ public class IpdConsultationTariffServiceImpl implements IpdConsultationTariffSe
     private final MasHospitalRepository hospitalRepo;
     private final MasDepartmentRepository departmentRepo;
     private final UserRepo  userRepo;
+    @Autowired
+    private UserContextService userContextService;
 
     private final AuthUtil authUtil;
     @Override
@@ -62,7 +67,7 @@ public class IpdConsultationTariffServiceImpl implements IpdConsultationTariffSe
     @Override
     public ApiResponse<IpdConsultationTariffResponse> createIpdConsultationTariff(IpdConsultationTariffRequest req) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             IpdConsultationTariff entity = new IpdConsultationTariff();
 
@@ -75,7 +80,7 @@ public class IpdConsultationTariffServiceImpl implements IpdConsultationTariffSe
             entity.setFromDate(req.getFromDate());
             entity.setToDate(req.getToDate());
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setLastChangedBy(user.getFullName());
+            entity.setLastChangedBy(userContext.getUserFullName());
             entity.setLastChangedDate(LocalDateTime.now());
             repository.save(entity);
 
@@ -90,7 +95,7 @@ public class IpdConsultationTariffServiceImpl implements IpdConsultationTariffSe
     public ApiResponse<IpdConsultationTariffResponse> updateIpdConsultationTariff(Long id, IpdConsultationTariffRequest req) {
         log.info("Updating IpdConsultationTariff id={}", id);
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             IpdConsultationTariff entity = repository.findById(id).orElse(null);
             if (entity == null) {
                 return ResponseUtils.createNotFoundResponse("IpdConsultationTariff Not found", HttpStatus.NOT_FOUND.value());
@@ -106,7 +111,7 @@ public class IpdConsultationTariffServiceImpl implements IpdConsultationTariffSe
             entity.setFromDate(req.getFromDate());
             entity.setToDate(req.getToDate());
 
-            entity.setLastChangedBy(user.getFullName());
+            entity.setLastChangedBy(userContext.getUserFullName());
             entity.setLastChangedDate(LocalDateTime.now());
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(toResponse(entity),
@@ -125,7 +130,7 @@ public class IpdConsultationTariffServiceImpl implements IpdConsultationTariffSe
         log.info("Changing status for IpdConsultationTariff id={}, status={}", id, status);
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             IpdConsultationTariff entity = repository.findById(id).orElse(null);
             if (entity == null) {return ResponseUtils.createNotFoundResponse("IpdConsultationTariff Not found",
@@ -133,7 +138,7 @@ public class IpdConsultationTariffServiceImpl implements IpdConsultationTariffSe
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastChangedBy(user.getFullName());
+            entity.setLastChangedBy(userContext.getUserFullName());
             entity.setLastChangedDate(LocalDateTime.now());
 
             repository.save(entity);

@@ -12,7 +12,9 @@ import com.hims.entity.repository.OtDayAllocationRepository;
 import com.hims.request.OtDayAllocationRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OtDayAllocationResponse;
+import com.hims.response.UserContext;
 import com.hims.service.OtDayAllocationService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import kong.unirest.HttpStatus;
@@ -43,13 +45,16 @@ public class OtDayAllocationServiceImpl implements OtDayAllocationService {
     private MasDepartmentRepository masDepartmentRepository;
     @Autowired
     private AuthUtil authUtil;
+    
+    @Autowired
+    private UserContextService userContextService;
 
     // CREATE
     @Override
     public ApiResponse<String> saveOtDayAllocation(OtDayAllocationRequest request) {
 
         try {
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             MasOperationTheatre operationTheatre = masOperationTheatreRepository.findById(request.getOtId()).orElse(null);
             if (operationTheatre == null) {
                 return ResponseUtils.createNotFoundResponse("Operation Theatre not found", HttpStatus.NOT_FOUND);
@@ -66,7 +71,7 @@ public class OtDayAllocationServiceImpl implements OtDayAllocationService {
             entity.setStartTime(request.getStartTime());
             entity.setEndTime(request.getEndTime());
             entity.setStatus(AppConstants.STATUS_Y.toUpperCase());
-            entity.setLastChgBy(currentUser.getUserId());
+            entity.setLastChgBy(userContext.getUserId());
             entity.setLastChgDate(LocalDateTime.now());
             otDayAllocationRepository.save(entity);
             return ResponseUtils.createSuccessResponse("OT Day Allocation created successfully", new TypeReference<>() {});
@@ -163,9 +168,9 @@ public class OtDayAllocationServiceImpl implements OtDayAllocationService {
                 }, "Invalid status value and value should be y and n", 400);
             }
 
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             entity.setStatus(status.toUpperCase());
-            entity.setLastChgBy(currentUser.getUserId());
+            entity.setLastChgBy(userContext.getUserId());
             entity.setLastChgDate(LocalDateTime.now());
             otDayAllocationRepository.save(entity);
 
@@ -185,7 +190,7 @@ public class OtDayAllocationServiceImpl implements OtDayAllocationService {
     @Override
     public ApiResponse<String> updateOtDayAllocation(Long id, OtDayAllocationRequest request) {
         try {
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             OtDayAllocation entity = otDayAllocationRepository.findById(id).orElse(null);
             if (entity == null) {
                 return ResponseUtils.createNotFoundResponse("OT Day Allocation not found", HttpStatus.NOT_FOUND);
@@ -204,7 +209,7 @@ public class OtDayAllocationServiceImpl implements OtDayAllocationService {
             entity.setDayOfWeek(request.getDayOfWeek());
             entity.setStartTime(request.getStartTime());
             entity.setEndTime(request.getEndTime());
-            entity.setLastChgBy(currentUser.getUserId());
+            entity.setLastChgBy(userContext.getUserId());
             entity.setLastChgDate(LocalDateTime.now());
 
             otDayAllocationRepository.save(entity);

@@ -9,7 +9,9 @@ import com.hims.request.DgInvestigationPackageRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.DgInvestigationPackageDTO;
 import com.hims.response.DgInvestigationPackageResponse;
+import com.hims.response.UserContext;
 import com.hims.service.DgInvestigationPackageServices;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +39,9 @@ public class DgInvestigationPackageServiceImpl implements DgInvestigationPackage
 
     @Autowired
     UserRepo userRepo;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
     private User getCurrentUser() {
@@ -81,13 +86,13 @@ public class DgInvestigationPackageServiceImpl implements DgInvestigationPackage
             pack.setDiscPer(packReq.getDiscPer());
             pack.setActualCost(packReq.getActualCost());
             pack.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            pack.setCreatedBy(String.valueOf(currentUser.getUserId()));
+            pack.setCreatedBy(String.valueOf(userContext.getUserId()));
             pack.setCreatedDt(LocalDateTime.now());
             pack.setUpdatedBy(null);
             pack.setUpdatedDt(null);
@@ -118,13 +123,13 @@ public class DgInvestigationPackageServiceImpl implements DgInvestigationPackage
                 pack.setDiscPer(packReq.getDiscPer());
                 pack.setActualCost(packReq.getActualCost());
 
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                pack.setUpdatedBy(String.valueOf(currentUser.getUserId()));
+                pack.setUpdatedBy(String.valueOf(userContext.getUserId()));
                 pack.setUpdatedDt(LocalDateTime.now());
                 pack.setFromDt(packReq.getFromDt());
                 pack.setToDt(packReq.getToDt());
@@ -153,13 +158,13 @@ public class DgInvestigationPackageServiceImpl implements DgInvestigationPackage
                 if ("Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status)) {
                     pack.setStatus(status);
 
-                    User currentUser = getCurrentUser();
-                    if (currentUser == null) {
+                    UserContext userContext = userContextService.getCurrentUserContext();
+                    if (userContext == null) {
                         return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                                 },
                                 "Current user not found", HttpStatus.UNAUTHORIZED.value());
                     }
-                    pack.setUpdatedBy(String.valueOf(currentUser.getUserId()));
+                    pack.setUpdatedBy(String.valueOf(userContext.getUserId()));
                     pack.setUpdatedDt(LocalDateTime.now());
 
                     return ResponseUtils.createSuccessResponse(toResponse(packRepo.save(pack)), new TypeReference<>() {

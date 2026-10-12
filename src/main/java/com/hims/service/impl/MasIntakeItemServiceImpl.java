@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasIntakeItem;
 import com.hims.entity.MasIntakeType;
 import com.hims.entity.User;
@@ -9,7 +10,9 @@ import com.hims.entity.repository.MasIntakeTypeRepository;
 import com.hims.request.MasIntakeItemRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasIntakeItemResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasIntakeItemService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.Builder;
@@ -32,6 +35,9 @@ public class MasIntakeItemServiceImpl implements MasIntakeItemService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasIntakeItemResponse>> getAll(int flag) {
@@ -74,7 +80,7 @@ public class MasIntakeItemServiceImpl implements MasIntakeItemService {
     @Override
     public ApiResponse<MasIntakeItemResponse> create(MasIntakeItemRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasIntakeType type = typeRepository.findById(request.getIntakeTypeId())
                     .orElseThrow(() -> new RuntimeException("Invalid intake type"));
@@ -82,9 +88,9 @@ public class MasIntakeItemServiceImpl implements MasIntakeItemService {
             MasIntakeItem item = MasIntakeItem.builder()
                     .intakeType(type)
                     .intakeItemName(request.getIntakeItemName())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -110,11 +116,11 @@ public class MasIntakeItemServiceImpl implements MasIntakeItemService {
             MasIntakeType type = typeRepository.findById(request.getIntakeTypeId())
                     .orElseThrow(() -> new RuntimeException("Invalid intake type"));
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             item.setIntakeType(type);
             item.setIntakeItemName(request.getIntakeItemName());
-            item.setLastUpdatedBy(user.getFirstName());
+            item.setLastUpdatedBy(userContext.getUserFullName());
             item.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(item);
@@ -136,14 +142,14 @@ public class MasIntakeItemServiceImpl implements MasIntakeItemService {
             if (item == null)
                 return ResponseUtils.createNotFoundResponse("Intake Item not found!", 404);
 
-            if (!status.equals("y") && !status.equals("n"))
+            if (!status.equalsIgnoreCase(AppConstants.STATUS_N) && !status.equalsIgnoreCase(AppConstants.STATUS_Y))
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {}, "Invalid status!", 400);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             item.setStatus(status);
-            item.setLastUpdatedBy(user.getFirstName());
+            item.setLastUpdatedBy(userContext.getUserFullName());
             item.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(item);

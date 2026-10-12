@@ -8,7 +8,9 @@ import com.hims.entity.repository.MasPatientConditionRepository;
 import com.hims.request.MasPatientConditionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasPatientConditionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasPatientConditionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,9 @@ public class MasPatientConditionServiceImpl implements MasPatientConditionServic
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasPatientConditionResponse>> getAllMasPatientCondition(int flag) {
@@ -86,9 +91,9 @@ public class MasPatientConditionServiceImpl implements MasPatientConditionServic
         log.info("Creating Patient Condition");
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found",
                         404
                 );
@@ -99,8 +104,8 @@ public class MasPatientConditionServiceImpl implements MasPatientConditionServic
             entity.setPatientConditionName(request.getPatientConditionName());
             entity.setDescription(request.getDescription());
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setCreatedBy(user.getFullName());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -131,9 +136,9 @@ public class MasPatientConditionServiceImpl implements MasPatientConditionServic
                 return ResponseUtils.createNotFoundResponse("Patient Condition not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found",
                         404
                 );
@@ -141,7 +146,7 @@ public class MasPatientConditionServiceImpl implements MasPatientConditionServic
 
             entity.setPatientConditionName(request.getPatientConditionName());
             entity.setDescription(request.getDescription());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -173,16 +178,16 @@ public class MasPatientConditionServiceImpl implements MasPatientConditionServic
                 );
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found",
                         404
                 );
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

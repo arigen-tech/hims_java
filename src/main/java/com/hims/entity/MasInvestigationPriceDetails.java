@@ -39,6 +39,9 @@ public class MasInvestigationPriceDetails {
     @Column(name = "price", precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(name = "last_chg_by", length =12)
+    @Column(name = "ipd_price", precision = 16, scale = 2)
+    private BigDecimal ipdPrice;
+
+    @Column(name = "last_chg_by", length = 12)
     private String lastChgBy;
 }

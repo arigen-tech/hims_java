@@ -4,19 +4,21 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.projection.PendingForOtProjection;
+import com.hims.projection.PendingForOtSurgeryProjection;
 import com.hims.request.OtRequest;
+import com.hims.response.*;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISTransaction;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import com.hims.exception.SDDException;
 import com.hims.projection.ActiveAdmissionOtProjection;
 import com.hims.projection.ActiveAdmissionProjectionResponse;
 import com.hims.request.OtBookingRequestDtDto;
 import com.hims.request.OtBookingRequestHdDto;
-import com.hims.response.ActiveAdmissionOtResponse;
-import com.hims.response.ActiveAdmissionResponse;
-import com.hims.response.ApiResponse;
 import com.hims.service.OtService;
 import com.hims.utils.ResponseUtils;
 import jakarta.transaction.Transactional;
@@ -54,11 +56,16 @@ public class OtServiceImpl implements OtService {
     private final MasOperationTheatreRepository masOperationTheatreRepository;
     private final UserRepo userRepo;
     private  final MasDepartmentRepository masDepartmentRepository;
+    private final OtBookingRepository otBookingRepository;
+    private final OtBookingStatusLogRepository otBookingStatusLogRepository;
     @Value("${ipd.admission.status.admitted}")
     Long ipdAdmissionStatusAdmitted;
 
     @Value("${surgery.booking-status.requested}")
     private Long surgeryBookingStatusRequested;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Transactional
@@ -172,7 +179,7 @@ public class OtServiceImpl implements OtService {
     @Transactional
     public ApiResponse<String> saveOtRequest(OtRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             Inpatient inpatient = inpatientRepository.findById(request.getInpatientId())
                     .orElseThrow(() -> new SDDException(404,"Inpatient not found with ID: " + request.getInpatientId()));
             Patient patient = patientRepository.findById(request.getPatientId())
@@ -196,14 +203,14 @@ public class OtServiceImpl implements OtService {
             header.setAdmissionId(inpatient);
             header.setPreferredOtId(operationTheatre);
             header.setBookingStatusId(bookingStatus);
-            header.setRequestedBy(user.getFullName());
+            header.setRequestedBy(userContext.getUserFullName());
             header.setDepartmentId(masDepartmentRepository.findById(request.getDepartmentId()).orElseThrow());
             header.setPreferredStartTime(request.getPreferredStartTime());
             header.setPreferredEndTime(request.getPreferredEndTime());
             header.setRequestedDate(LocalDateTime.now());
             header.setSpecialInstruction(request.getSpecialInstructions());
             header.setStatus(AppConstants.STATUS_N);
-            header.setLastChgBy(user.getFullName());
+            header.setLastChgBy(userContext.getUserFullName());
             header.setLastChgDate(LocalDateTime.now());
 
             OtBookingRequestHd savedHeader = hdRepository.save(header);
@@ -227,7 +234,7 @@ public class OtServiceImpl implements OtService {
             detail.setSequenceNo(1L);
             detail.setExpectedDurationMin(request.getExpectedDuration());
             detail.setStatus(AppConstants.STATUS_N);
-            detail.setLastChgBy(user.getFullName());
+            detail.setLastChgBy(userContext.getUserFullName());
             detail.setLastChgDate(LocalDateTime.now());
             OtBookingRequestDt savedDetail = dtRepository.save(detail);
             log.info("OT booking request completed successfully | requestId={}, requestNo={}", savedHeader.getOtBookingRequestId(), savedHeader.getRequestNo());
@@ -237,13 +244,134 @@ public class OtServiceImpl implements OtService {
             throw e;
         }
     }
+    @Override
+    @Transactional
+    public ApiResponse<Page<PendingForOtResponse>> pendingForReviewOt(int page, int size, String patientName, String mobileNo, String patientType) {
 
+        log.info("Fetching pending OT review list, page={}, size={}, patientName={}, mobileNo={}, patientType={}", page, size, patientName, mobileNo, patientType);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "otBookingRequestId"));
+
+        Page<PendingForOtProjection> projectionPage = hdRepository.findPendingForOt(surgeryBookingStatusRequested,patientName, mobileNo, patientType, pageable);
+
+        // Get IDs from current page
+        List<Long> requestIds = projectionPage.getContent().stream().map(PendingForOtProjection::getOtBookingRequestId).distinct().toList();
+
+        // Fetch surgeries for current page only
+        List<PendingForOtSurgeryProjection> surgeryProjections = dtRepository.findSurgeriesByRequestIds(requestIds);
+
+        // Group surgeries by OT booking request
+        Map<Long, List<PendingForOtResponse.SurgeryResponse>> surgeryMap = surgeryProjections.stream()
+                        .collect(Collectors.groupingBy(PendingForOtSurgeryProjection::getOtBookingRequestId,
+                                Collectors.mapping(surgery -> {
+                                    PendingForOtResponse.SurgeryResponse response = new PendingForOtResponse.SurgeryResponse();
+                                    response.setOtBookingDtId(surgery.getOtBookingDtId());
+                                    response.setSurgeryId(surgery.getSurgeryId());
+                                    response.setSurgeryName(surgery.getSurgeryName());
+                                    return response;
+                                }, Collectors.toList())));
+
+        Page<PendingForOtResponse> responsePage = projectionPage.map(projection -> {
+                    PendingForOtResponse response = new PendingForOtResponse();
+                    response.setOtBookingRequestId(projection.getOtBookingRequestId());
+                    response.setInpatientId(projection.getInpatientId());
+                    response.setVisitId(projection.getVisitId());
+                    response.setPatientId(projection.getPatientId());
+                    response.setPatientName(projection.getPatientName());
+                    response.setUhid(projection.getUhid());
+                    response.setAge(projection.getAge());
+                    response.setGenderId(projection.getGenderId());
+                    response.setGender(projection.getGender());
+                    response.setMobileNo(projection.getMobileNo());
+                    response.setAdmissionNo(projection.getAdmissionNo());
+                    response.setSurgeonId(projection.getSurgeonId());
+                    response.setSurgeonName(projection.getSurgeonName());
+                    response.setPatientType(projection.getPatientType());
+                    response.setOtId(projection.getOtId());
+                    response.setOtName(projection.getOtName());
+                    response.setRequestedDate(projection.getRequestedDate());
+                    response.setRequestedTime(projection.getRequestedTime());
+                    response.setRequestedBy(projection.getRequestedBy());
+                    response.setPriority(projection.getPriority());
+                    response.setRequestedNo(projection.getRequestedNo());
+                    response.setSurgeryResponses(surgeryMap.getOrDefault(projection.getOtBookingRequestId(), new ArrayList<>()));
+                    return response;});
+
+        log.info("Pending OT review list fetched successfully, totalElements={}", responsePage.getTotalElements());
+        return ResponseUtils.createSuccessResponse( responsePage,new TypeReference<>(){});
+    }
+    @Override
+    @Transactional
+    public ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark) {
+        log.info("Processing OT request, otBookingRequestId={}, flag={}, remark={}", otBookingRequestId, flag, remark);
+        try {
+        UserContext userContext = userContextService.getCurrentUserContext();
+
+        if (!flag.equalsIgnoreCase("A") && !flag.equalsIgnoreCase("R")) {
+            return ResponseUtils.createNotFoundResponse("Invalid flag. Use A for Accept or R for Reject", 400);
+        }
+        OtBookingRequestHd request = hdRepository.findById(otBookingRequestId)
+                        .orElseThrow(() -> new RuntimeException("OT booking request not found: " + otBookingRequestId));
+
+        MasOtBookingStatus fromStatus = request.getBookingStatusId();
+
+        Long statusId;
+        if (flag.equalsIgnoreCase("A")) {
+            statusId = 3L;
+        } else {
+            statusId = 2L;
+        }
+        MasOtBookingStatus toStatus = masOtBookingStatusRepository.findById(statusId)
+                        .orElseThrow(() -> new RuntimeException("OT booking status not found: " + statusId));
+
+        request.setBookingStatusId(toStatus);
+        request.setRejectionRemarks(flag.equalsIgnoreCase("R") ? remark : null);
+        LocalDateTime now = LocalDateTime.now();
+        String currentUser = userContext.getUserFullName();
+
+        OtBooking booking = OtBooking.builder()
+                .bookingNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.OT_BOOKING_NO, userContext.getHospitalId()))
+                .otBookingRequest(request)
+                .operationTheatre(request.getPreferredOtId())
+                .scheduledDate(request.getPreferredDate())
+                .scheduledStartTime(request.getPreferredStartTime())
+                .scheduledEndTime(request.getPreferredEndTime())
+                .bookingStatus(toStatus)
+                .bookedBy(currentUser)
+                .bookedDate(now)
+                .status("Y")
+                .lastChgBy(currentUser)
+                .lastChgDate(now)
+                .isPacRequired("N")
+                .isPacDone("N")
+                .build();
+
+        booking = otBookingRepository.save(booking);
+
+        OtBookingStatusLog statusLog = OtBookingStatusLog.builder()
+                .otBooking(booking)
+                .fromStatus(fromStatus)
+                .toStatus(toStatus)
+                .changedBy(currentUser)
+                .changedDate(now)
+                .status("Y")
+                .lastChgBy(currentUser)
+                .lastChgDate(now)
+                .build();
+        otBookingStatusLogRepository.save(statusLog);
+        hdRepository.save(request);
+        String message = flag.equalsIgnoreCase("A") ? "OT booking request accepted successfully" : "OT booking request rejected successfully";
+        return ResponseUtils.createSuccessResponse(message, new TypeReference<String>() {});
+        } catch (Exception e) {
+
+            throw new RuntimeException("Failed to process OT booking request: " + otBookingRequestId, e);
+        }
+    }
 
     private void saveOrUpdateOtDetails(OtBookingRequestHd hd, List<OtBookingRequestDtDto> requestDetails) {
 
         log.info("Saving OT details for Header ID: {}",hd.getOtBookingRequestId());
 
-        // Frontend ne koi details nahi bheji
         if (requestDetails == null) {
             requestDetails = Collections.emptyList();
         }
@@ -260,7 +388,6 @@ public class OtServiceImpl implements OtService {
                                 Function.identity()
                         ));
 
-        // Frontend se jo existing IDs aaye hain
         Set<Long> requestDetailIds = new HashSet<>();
         List<OtBookingRequestDt> detailsToSave = new ArrayList<>();
         long sequence = 1;
@@ -351,6 +478,7 @@ public class OtServiceImpl implements OtService {
         response.setRoom(projection.getRoom());
         response.setBedId(projection.getBedId());
         response.setBed(projection.getBed());
+        response.setDiagnosis(projection.getDiagnosis());
         response.setAdmissionDateTime(projection.getAdmissionDateTime());
         response.setDoctorName(projection.getDoctorName());
 

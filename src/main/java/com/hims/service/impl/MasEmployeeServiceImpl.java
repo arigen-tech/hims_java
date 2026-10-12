@@ -4,11 +4,14 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.projection.AppointmentHistoryProjection;
+import com.hims.projection.PatientVisitStatusCountProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.MasEmployeeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -32,6 +35,7 @@ import java.nio.file.Paths;
 import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +53,13 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     // Set of allowed image file extensions
     private static final Set<String> ALLOWED_PIC_EXTENSIONS = new HashSet<>(
             Arrays.asList("jpg", "jpeg", "png"));
+
+        private static final Set<String> ALLOWED_VISIT_STATUSES = Set.of(
+            AppConstants.VISIT_STATUS_CANCELLED.toLowerCase(),
+            AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(),
+            AppConstants.VISIT_STATUS_PENDING.toLowerCase(),
+            AppConstants.VISIT_STATUS_CLOSED.toLowerCase()
+        );
 
     @Value("${upload.image.path}")
     private String uploadDir;
@@ -140,6 +151,9 @@ public class MasEmployeeServiceImpl implements MasEmployeeService {
     private   MasEmployeeLanguageMappingRepository masEmployeeLanguageMappingRepository;
     @Autowired
     private MasOpdSessionRepository masOpdSessionRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
 
@@ -1377,9 +1391,10 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         }
 
         //  Get Speciality Department Name
+        String normalizedSearchInput = searchInput.trim();
         List<MasDepartment> departments = masDepartmentRepository
-                            .findByHospitalIdAndDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(
-                                    hospitalId, opdDepartmentTypeId, searchInput.trim());
+            .findByHospitalAndDepartmentTypeAndNameNative(
+                hospitalId, opdDepartmentTypeId, normalizedSearchInput);
 
         List<SpecialitiesResponse> deptResponseList =
                 departments.stream().map(dept -> {
@@ -1390,34 +1405,11 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 }).toList();
 
 
-        //  Get Doctors Name
-
-            List<Long> opdDepartmentIds = masDepartmentRepository.findDepartmentIdsByDepartmentTypeId(opdDepartmentTypeId);
-
-            List<UserDepartment> userDepartments = userDepartmentRepository.findByDepartment_IdIn(opdDepartmentIds);
-
-        List<Long> userIds = userDepartments.stream()
-                .map(UserDepartment::getUser)
-                .filter(Objects::nonNull)
-                .map(User::getUserId)
-                .distinct()
-                .toList();
-
-            List<Long> employeeIds = userDepartments.stream()
-                            .map(UserDepartment::getUser)
-                            .filter(Objects::nonNull)
-                            .map(User::getEmployee)
-                            .filter(Objects::nonNull)
-                            .map(MasEmployee::getEmployeeId)
-                            .distinct()
-                            .toList();
-
-
+        // Get doctors whose first, middle, last, or complete name matches the search.
         List<MasEmployee> doctors =
                 masEmployeeRepository
-                        .findByEmployeeIdInAndRoleIdIdAndStatusIgnoreCaseAndFirstNameContainingIgnoreCaseOrderByFirstNameAsc(
-                                employeeIds, roleId, "A", searchInput
-                        );
+                .findActiveDoctorsByHospitalAndNameNative(
+                    hospitalId, opdDepartmentTypeId, roleId, "A", normalizedSearchInput);
 
         if (doctors.isEmpty()) {
             log.info("No doctors found for search input: {}", searchInput);
@@ -1428,18 +1420,27 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 .map(MasEmployee::getEmployeeId)
                 .toList();
 
-        Map<Long, User> employeeIdToUserMap = userRepo.findUsersByEmployee_EmployeeIdIn(doctorEmployeeIds)
-                .stream()
-                .collect(Collectors.toMap(
-                        u -> u.getEmployee().getEmployeeId(),
-                        u -> u,
-                        (existing, replacement) -> existing
-                ));
+        Map<Long, User> employeeIdToUserMap = doctorEmployeeIds.isEmpty()
+            ? Collections.emptyMap()
+            : userRepo.findUsersByEmployee_EmployeeIdIn(doctorEmployeeIds)
+            .stream()
+            .collect(Collectors.toMap(
+                u -> u.getEmployee().getEmployeeId(),
+                u -> u,
+                (existing, replacement) -> existing
+            ));
+
+            List<Long> userIds = employeeIdToUserMap.values().stream()
+                .map(User::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
 
         //Get Service OPD details for doctors and session details for doctors in batch to avoid N+1 problem
 
-        Map<Long, MasServiceOpd> serviceOpdMap = masServiceOpdRepository
-                .getOPDServiceByUserIds(userIds)
+            Map<Long, MasServiceOpd> serviceOpdMap = userIds.isEmpty()
+                ? Collections.emptyMap()
+                : masServiceOpdRepository.getOPDServiceByUserIds(userIds)
                 .stream()
                 .collect(Collectors.toMap(
                         s -> s.getDoctorId().getUserId(),
@@ -1447,8 +1448,9 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                         (existing, replacement) -> existing
                 ));
 
-        List<Object[]> allSessions = appSetupRepository
-                .findDistinctDoctorSessionNextDayBatch(userIds);
+        List<Object[]> allSessions = userIds.isEmpty()
+            ? Collections.emptyList()
+            : appSetupRepository.findDistinctDoctorSessionNextDayBatch(userIds);
         Map<Long, List<Object[]>> sessionMap = allSessions.stream()
                 .collect(Collectors.groupingBy(r -> ((Number) r[0]).longValue()));
 
@@ -1462,15 +1464,17 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             User user = employeeIdToUserMap.get(emp.getEmployeeId());
             if (user == null) {
                 log.warn("No user found for employee ID: {}", emp.getEmployeeId());
-                return dto;
+                return null;
             }
 
             // Set basic doctor information
             dto.setDoctorId(user.getUserId());
             dto.setYearOfExperience(user.getEmployee().getYearOfExperience() + " years");
-            dto.setDoctorName(emp.getFirstName() +
-                    (emp.getLastName() != null && !emp.getLastName().trim().isEmpty()
-                            ? " " + emp.getLastName() : ""));
+                dto.setDoctorName(Stream.of(emp.getFirstName(), emp.getMiddleName(), emp.getLastName())
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(namePart -> !namePart.isEmpty())
+                    .collect(Collectors.joining(" ")));
 
             // Get consultancy fee from preloaded map created outside of loop
 
@@ -1491,7 +1495,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             dto.setSessionResponseLists(sessionList);
 
             return dto;
-        }).toList();
+        }).filter(Objects::nonNull).toList();
 
         if (deptResponseList.isEmpty() && doctorResponseList.isEmpty()) {
             return ResponseUtils.createFailureResponse(
@@ -1907,10 +1911,11 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
 
     @Override
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>>  appointmentHistoryList(
-            Long hospitalId, Long patientId, String mobileNo,String patientName, String deptTypeCode, Boolean includeHistory) {
+            Long hospitalId, Long patientId, String mobileNo, String patientName, String deptTypeCode, Boolean includeHistory, String payment, String visitStatus) {
 
         String normalizedMobileNo = cleanStringParameter(mobileNo);
         String normalizedPatientName = cleanStringParameter(patientName);
+        String normalizedPayment = cleanStringParameter(payment);
 
         log.info("Fetching appointment history list: hospitalId={}, patientId={}, mobileNo={}, patientName={}, deptTypeCode={}, includeHistory={}",
                  hospitalId, patientId, normalizedMobileNo != null ? "***" : null, normalizedPatientName, deptTypeCode, includeHistory);
@@ -1925,16 +1930,6 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                         HttpStatus.BAD_REQUEST.value()
                 );
             }
-
-//            if ( mobileNo == null || mobileNo.trim().isEmpty()) {
-//                log.warn("Either patientId or mobileNo is required");
-//                return ResponseUtils.createFailureResponse(
-//                        null,
-//                        new TypeReference<>() {},
-//                        "Mobile number is required",
-//                        HttpStatus.BAD_REQUEST.value()
-//                );
-//            }
 
             if (deptTypeCode == null || deptTypeCode.trim().isEmpty()) {
                 log.warn("Department Type Code is required");
@@ -1959,6 +1954,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             // Default to true (all history) if not provided
             boolean includeHistoryFlag = includeHistory != null ? includeHistory : true;
             String normalizedDeptTypeCode = deptTypeCode.trim();
+            List<String> normalizedVisitStatuses = normalizeVisitStatuses(visitStatus);
 
             List<AppointmentBookingHistoryResponseDetails> response;
 
@@ -1980,14 +1976,16 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 log.debug("Fetching appointment history by patient Id and  using native query");
 
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase()
+                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, normalizedVisitStatuses, normalizedPayment
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();
-            } else {
+            }
+            else{
                 log.debug("Fetching upcoming appointments by mobile and department ");
+
                 response = visitRepository.findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
-                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, AppConstants.VISIT_STATUS_PENDING.toLowerCase()
+                        hospitalId, patientId, normalizedMobileNo, normalizedPatientName, departmentIds, includeHistoryFlag, normalizedVisitStatuses, normalizedPayment
                 ).stream()
                         .map(this::mapProjectionToDto)
                         .toList();
@@ -1997,6 +1995,14 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                      response.size(), normalizedDeptTypeCode, includeHistoryFlag);
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
 
+        }catch (SDDException ex) {
+            log.error("SDDException occurred: {}", ex.getMessage(), ex);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    ex.getMessage(),
+                    ex.getStatus()
+            );
         } catch (Exception ex) {
             log.error("Error fetching appointment history list for hospitalId={}, patientId={}, mobileNo={}, deptTypeCode={}",
                       hospitalId, patientId, mobileNo, deptTypeCode, ex);
@@ -2009,18 +2015,40 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         }
     }
 
+    @Override
+    public ApiResponse<PatientVisitStatusCountProjection> getPatientVisitStatusCounts(Long hospitalId, Long patientId) {
+        List<PatientVisitStatusCountProjection> results =
+                visitRepository.getPatientVisitStatusCounts(hospitalId, patientId);
+
+        if (results.isEmpty()) {
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "No visit status counts found for this patient",
+                    HttpStatus.NOT_FOUND.value()
+            );
+        }
+
+        return ResponseUtils.createSuccessResponse(results.get(0), new TypeReference<>() {});
+    }
+
     private List<Long> resolveDepartmentIdsByTypeCodes(String deptTypeCode) {
         if (deptTypeCode == null || deptTypeCode.trim().isEmpty()) {
             return List.of();
         }
 
-        return Arrays.stream(deptTypeCode.split(","))
+        List<String> codes = Arrays.stream(deptTypeCode.split(","))
                 .map(String::trim)
                 .filter(code -> !code.isEmpty())
-                .distinct()
-                .flatMap(code -> masDepartmentRepository.findDepartmentIdsByDepartmentTypeCode(code).stream())
+                .map(String::toLowerCase)
                 .distinct()
                 .toList();
+
+        if (codes.isEmpty()) {
+            return List.of();
+        }
+
+        return masDepartmentRepository.findDepartmentIdsByDepartmentTypeCodes(codes);
     }
 
     private String cleanStringParameter(String param) {
@@ -2028,6 +2056,30 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             return null;
         }
         return param.trim();
+    }
+
+    private List<String> normalizeVisitStatuses(String visitStatus) {
+        String normalizedVisitStatus = cleanStringParameter(visitStatus);
+        if (normalizedVisitStatus == null) {
+            return List.of(AppConstants.VISIT_STATUS_PENDING.toLowerCase());
+        }
+
+        List<String> statuses = Arrays.stream(normalizedVisitStatus.split(","))
+                .map(String::trim)
+                .filter(status -> !status.isEmpty())
+                .map(String::toLowerCase)
+                .distinct()
+                .toList();
+
+        if (statuses.isEmpty() || statuses.stream().anyMatch(status -> !ALLOWED_VISIT_STATUSES.contains(status))) {
+            throw new SDDException(
+                    "visitStatus",
+                    HttpStatus.BAD_REQUEST.value(),
+                    "Invalid visitStatus. Allowed values are c, y, n and x"
+            );
+        }
+
+        return statuses;
     }
 
     @Override
@@ -2038,7 +2090,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             List<Visit> visits = visitRepository.findByVisitStatusIgnoreCase("n");
 
             List<AppointmentBookingHistoryResponseDetails> response = visits.stream()
-                    .filter(v -> v.getVisitDate() != null && !v.getVisitDate().isBefore(startOfToday))
+                    .filter(v -> v.getVisitDate() != null && !v.getVisitDate().isBefore(HelperUtils.instantToLocalDateTime(startOfToday)))
                     .sorted(Comparator.comparing(Visit::getVisitDate))
                     .map(this::mapToDto)
                     .toList();
@@ -2067,9 +2119,9 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setDoctorName(v.getDoctorName());
         dto.setDepartmentId(v.getDepartment().getId());
         dto.setDepartmentName(v.getDepartment() != null ? v.getDepartment().getDepartmentName() : null);
-        dto.setAppointmentDate(HelperUtils.instantTimeToLocalDateTime(v.getVisitDate()));
-        dto.setAppointmentStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
-        dto.setAppointmentEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
+        dto.setAppointmentDate(HelperUtils.convertLocalDateTimeToDDMMYYYYHHmm(v.getVisitDate()));
+        dto.setAppointmentStartTime(HelperUtils.convertLocalDateTimeToDDMMYYYYHHmm(v.getStartTime()));
+        dto.setAppointmentEndTime(HelperUtils.extractTimeWithSecondsFromLocalDateTime(v.getEndTime()));
         dto.setVisitStatus(v.getVisitStatus());
         dto.setReason(v.getReason()!=null? v.getReason().getReasonName():null);
         return dto;
@@ -2100,9 +2152,13 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         dto.setAppointmentEndTime(projection.getAppointmentEndTime() != null ? HelperUtils.extractTimeFromInstant(projection.getAppointmentEndTime()) : null);
         dto.setVisitStatus(projection.getVisitStatus());
         dto.setReason(projection.getReason());
-        dto.setPaymentStatus(projection.getPaymentStatus());
+        dto.setVisitPaymentStatus(projection.getVisitPaymentStatus());
         dto.setBilledAmount(projection.getBilledAmount());
         dto.setBillingHeaderId(projection.getBillingHeaderId());
+        dto.setPaymentId(projection.getPaymentId());
+        dto.setPaymentGatewayMode(projection.getPaymentGatewayMode());
+        dto.setPaymentGatewayModeName(projection.getPaymentGatewayModeName());
+        dto.setPaymentV2PaymentStatusCode(projection.getPaymentV2PaymentStatusCode());
 
         return dto;
     }
@@ -2118,20 +2174,20 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         if (!errors.isEmpty()) {
             throw new RuntimeException(errors.values().iterator().next());
         }
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             throw new RuntimeException("Current user not found");
         }
-        MasEmployee employee = buildEmployeeFromRequest(req, currentUser);
+        MasEmployee employee = buildEmployeeFromRequest(req, userContext);
         MasEmployee savedEmployee = masEmployeeRepository.save(employee);
-        processQualifications(req.getQualification(), savedEmployee, currentUser);
-        processSpecialtyCenter(req.getSpecialtyCenter(), savedEmployee, currentUser);
-        processLanguages(req.getLanguages(), savedEmployee, currentUser);
-        processWorkExperiences(req.getWorkExperiences(), savedEmployee, currentUser);
-        processMemberships(req.getEmployeeMemberships(), savedEmployee, currentUser);
-        processSpecialtyInterest(req.getEmployeeSpecialtyInterests(), savedEmployee, currentUser);
-        processAwards(req.getEmployeeAwards(), savedEmployee, currentUser);
-        processDocuments(req.getDocument(), savedEmployee, currentUser);
+        processQualifications(req.getQualification(), savedEmployee, userContext);
+        processSpecialtyCenter(req.getSpecialtyCenter(), savedEmployee, userContext);
+        processLanguages(req.getLanguages(), savedEmployee, userContext);
+        processWorkExperiences(req.getWorkExperiences(), savedEmployee, userContext);
+        processMemberships(req.getEmployeeMemberships(), savedEmployee, userContext);
+        processSpecialtyInterest(req.getEmployeeSpecialtyInterests(), savedEmployee, userContext);
+        processAwards(req.getEmployeeAwards(), savedEmployee, userContext);
+        processDocuments(req.getDocument(), savedEmployee, userContext);
 
         log.info("Employee created with ID {}", savedEmployee.getEmployeeId());
 
@@ -2203,7 +2259,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         return user;
     }
 
-    private MasEmployee buildEmployeeFromRequest(MasEmployeeRequest request, User currentUser){
+    private MasEmployee buildEmployeeFromRequest(MasEmployeeRequest request, UserContext userContext){
 
         Optional<MasEmployee> existingEmp = masEmployeeRepository.findByMobileNo(request.getMobileNo());
         if (existingEmp.isPresent()) {
@@ -2267,7 +2323,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
         employee.setProfilePicName(profileImagePath);
         employee.setIdDocumentName(documentPath);
         employee.setLastChangedDate(OffsetDateTime.now().toInstant());
-        employee.setLastChangedBy(currentUser.getUsername());
+        employee.setLastChangedBy(userContext.getUserFullName());
         employee.setStatus("S");
         employee.setProfileDescription(request.getProfileDescription());
         employee.setMasDesignationId(masDesignation);
@@ -2338,7 +2394,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             throw new FileProcessingException("Failed to upload profile picture: " + e.getMessage());
         }
     }
-    private void processQualifications(List<EmployeeQualificationReq> qualifications, MasEmployee employee, User currentUser) {
+    private void processQualifications(List<EmployeeQualificationReq> qualifications, MasEmployee employee, UserContext userContext) {
 
         if (qualifications == null || qualifications.isEmpty()) {
             throw new QualificationProcessingException("Qualifications cannot be empty");
@@ -2383,7 +2439,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 eq.setCompletionYear(q.getCompletionYear());
                 eq.setInstitutionName(q.getInstitutionName());
                 eq.setFilePath(filePath.toString().replace("\\", "/"));
-                eq.setLastChangedBy(currentUser.getUserId().toString());
+                eq.setLastChangedBy(userContext.getUserFullName());
                 eq.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
 
                 employeeQualificationRepository.save(eq);
@@ -2393,7 +2449,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processSpecialtyCenter(List<EmployeeSpecialtyCenterRequest> specialtyCenters, MasEmployee savedEmployee, User currentUser){
+    private void processSpecialtyCenter(List<EmployeeSpecialtyCenterRequest> specialtyCenters, MasEmployee savedEmployee, UserContext userContext){
         if (specialtyCenters == null || specialtyCenters.isEmpty()) {
             return;
         }
@@ -2411,7 +2467,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processLanguages(List<EmployeeLanguageRequest> languageRequests,MasEmployee savedEmployee, User currentUser) {
+    private void processLanguages(List<EmployeeLanguageRequest> languageRequests,MasEmployee savedEmployee, UserContext userContext) {
         if (languageRequests == null || languageRequests.isEmpty()) {
             log.debug("No languages provided for employee creation");
             return;
@@ -2426,7 +2482,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 MasEmployeeLanguageMapping mapping = MasEmployeeLanguageMapping.builder()
                         .empId(savedEmployee.getEmployeeId())
                         .languageId(languageReq.getLanguageId())
-                        .lastChgBy(currentUser.getUserId())
+                        .lastChgBy(userContext.getUserId())
                         .build();
 
                 masEmployeeLanguageMappingRepository.save(mapping);
@@ -2438,7 +2494,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 throw new RuntimeException("Failed to process language: " + languageReq.getLanguageId(), e);
             }
         }
-    }    private void processWorkExperiences(List<EmployeeWorkExperienceRequest> workExperiences, MasEmployee savedEmployee, User currentUser){
+    }    private void processWorkExperiences(List<EmployeeWorkExperienceRequest> workExperiences, MasEmployee savedEmployee, UserContext userContext){
         if (workExperiences == null || workExperiences.isEmpty()) {
             return;
         }
@@ -2456,7 +2512,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processMemberships(List<EmployeeMembershipRequest> memberships, MasEmployee savedEmployee, User currentUser){
+    private void processMemberships(List<EmployeeMembershipRequest> memberships, MasEmployee savedEmployee, UserContext userContext){
         if (memberships == null || memberships.isEmpty()) {
             return;
         }
@@ -2474,7 +2530,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processSpecialtyInterest(List<EmployeeSpecialtyInterestRequest> specialtyInterests, MasEmployee savedEmployee, User currentUser){
+    private void processSpecialtyInterest(List<EmployeeSpecialtyInterestRequest> specialtyInterests, MasEmployee savedEmployee, UserContext userContext){
         if (specialtyInterests == null || specialtyInterests.isEmpty()) {
             return;
         }
@@ -2491,7 +2547,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processAwards(List<EmployeeAwardRequest> awards, MasEmployee savedEmployee, User currentUser){
+    private void processAwards(List<EmployeeAwardRequest> awards, MasEmployee savedEmployee, UserContext userContext){
         if (awards == null || awards.isEmpty()) {
             return;
         }
@@ -2508,7 +2564,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
             }
         }
     }
-    private void processDocuments(List<EmployeeDocumentReq> documents, MasEmployee employee, User currentUser) {
+    private void processDocuments(List<EmployeeDocumentReq> documents, MasEmployee employee, UserContext userContext) {
         if (documents == null || documents.isEmpty()) {
             throw new DocumentProcessingException("Documents cannot be empty");
         }
@@ -2547,7 +2603,7 @@ public ApiResponse<List<SpecialitiesAndDoctorResponse>> getDepartmentAndDoctor(S
                 doc.setEmployee(employee);
                 doc.setDocumentName(d.getDocumentName());
                 doc.setFilePath(filePath.toString().replace("\\", "/"));
-                doc.setLastChangedBy(currentUser.getUserId().toString());
+                doc.setLastChangedBy(userContext.getUserFullName());
                 doc.setLastChangedDate(OffsetDateTime.now().toLocalDateTime());
 
                 employeeDocumentRepository.save(doc);

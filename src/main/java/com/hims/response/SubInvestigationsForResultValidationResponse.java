@@ -9,8 +9,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SubInvestigationsForResultValidationResponse {
 
-
-
                 private Long subInvestigationId;
                 private String subInvestigationName;
                 private String normalValue;
@@ -21,7 +19,5 @@ public class SubInvestigationsForResultValidationResponse {
                 private String generatedSampleId;
                 private String result;
                 private String remarks;
-
-
-
+                private Long resultFlagId;
 }

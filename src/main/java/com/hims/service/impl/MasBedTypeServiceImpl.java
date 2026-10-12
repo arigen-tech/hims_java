@@ -2,16 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasBedType;
-import com.hims.entity.MasCareLevel;
-import com.hims.entity.MasWardCategory;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasBedTypeRepository;
 import com.hims.request.MasBedTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasBedTypeResponse;
-import com.hims.response.MasRoomCategoryResponse;
-import com.hims.response.MasWardCategoryResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasBedTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -30,11 +27,13 @@ public class MasBedTypeServiceImpl implements MasBedTypeService {
     private AuthUtil authUtil;
     @Autowired
     private MasBedTypeRepository masBedTypeRepository;
+    @Autowired
+    private UserContextService userContextService;
     @Override
     public ApiResponse<?> masBedTypeCreate(MasBedTypeRequest request) {
         try {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found",400);
         }
@@ -42,9 +41,9 @@ public class MasBedTypeServiceImpl implements MasBedTypeService {
         masBedType.setBedTypeName(request.getBedTypeName());
         masBedType.setDescription(request.getDescription());
         masBedType.setStatus("y");
-        masBedType.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+        masBedType.setCreatedBy(userContext.getUserFullName());
         masBedType.setLastUpdateDate(LocalDate.now());
-        masBedType.setLastUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+        masBedType.setLastUpdatedBy(userContext.getUserFullName());
         MasBedType mas=masBedTypeRepository.save(masBedType);
         return ResponseUtils.createSuccessResponse(  mapToConverted(mas),new TypeReference<>(){});
         } catch (Exception e) {
@@ -59,15 +58,15 @@ public class MasBedTypeServiceImpl implements MasBedTypeService {
 
             log.info("updateMasBed() method Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.NOT_FOUND.value());
             }
 
             MasBedType masBedType= masBedTypeRepository.findById(id).orElseThrow(()-> new RuntimeException("Invalid MasBed Id"));
             masBedType.setBedTypeName(request.getBedTypeName());
             masBedType.setDescription(request.getDescription());
-            masBedType.setLastUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+            masBedType.setLastUpdatedBy(userContext.getUserFullName());
             MasBedType save = masBedTypeRepository.save(masBedType);
             log.info("updateCareLevel() method Ended...");
 
@@ -86,13 +85,13 @@ public class MasBedTypeServiceImpl implements MasBedTypeService {
 
             log.info("changeActiveStatus() method Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.NOT_FOUND.value());
             }
             MasBedType masBedType= masBedTypeRepository.findById(id).orElseThrow(()-> new RuntimeException("Invalid MasBed Id"));
             masBedType.setStatus(status);
-            masBedType.setLastUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+            masBedType.setLastUpdatedBy(userContext.getUserFullName());
             MasBedType save = masBedTypeRepository.save(masBedType);
             log.info("changeActiveStatus() method Ended...");
 

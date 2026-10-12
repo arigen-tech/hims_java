@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.ObMasTrimester;
 import com.hims.entity.User;
 import com.hims.entity.repository.ObMasTrimesterRepository;
 import com.hims.request.ObMasTrimesterRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.ObMasTrimesterResponse;
+import com.hims.response.UserContext;
 import com.hims.service.ObMasTrimesterService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,8 @@ public class ObMasTrimesterServiceImpl
 
     @Autowired
     private AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<ObMasTrimesterResponse>> getAll(int flag) {
@@ -68,8 +73,8 @@ public class ObMasTrimesterServiceImpl
 
         log.info("Creating Trimester={}", request.getTrimesterValue());
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404
@@ -79,9 +84,9 @@ public class ObMasTrimesterServiceImpl
 
             ObMasTrimester entity = ObMasTrimester.builder()
                     .trimesterValue(request.getTrimesterValue())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -110,8 +115,8 @@ public class ObMasTrimesterServiceImpl
                     "Trimester not found", 404);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404
@@ -119,7 +124,7 @@ public class ObMasTrimesterServiceImpl
         }
 
         entity.setTrimesterValue(request.getTrimesterValue());
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);
@@ -148,8 +153,8 @@ public class ObMasTrimesterServiceImpl
                     "Invalid status", 400);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404
@@ -157,7 +162,7 @@ public class ObMasTrimesterServiceImpl
         }
 
         entity.setStatus(status);
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);

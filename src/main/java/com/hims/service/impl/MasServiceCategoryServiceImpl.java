@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasServiceCategory;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasServiceCategoryRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.response.ApiResponse;
 import com.hims.response.GstConfigResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasServiceCategoryService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +38,9 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
     @Value("${serviceCategoryOPD}")
     private String serviceCategoryOpdCode;
 
+    @Autowired
+    private UserContextService userContextService;
+
     public MasServiceCategoryServiceImpl(MasServiceCategoryRepository masServiceCategoryRepository) {
         this.masServiceCategoryRepository = masServiceCategoryRepository;
     }
@@ -55,17 +61,17 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
     @Override
     public ApiResponse<MasServiceCategory> save(MasServiceCategory req) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
 
             if (req.getStatus() == null || req.getStatus().isBlank()) {
-                req.setStatus("y");
+                req.setStatus(AppConstants.STATUS_Y.toLowerCase());
             }
 
-            req.setLastChgBy(currentUser.getUsername());
+            req.setLastChgBy(userContext.getUserFullName());
             req.setLastChgDt(Instant.now());
 
             if (req.getServiceCateCode() == null || req.getServiceCateCode().isBlank()) {
@@ -98,8 +104,8 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
                         "Service category not found with ID: " + id, HttpStatus.NOT_FOUND.value());
             }
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -112,7 +118,7 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
             existing.setGstApplicable(req.getGstApplicable());
             existing.setStatus(req.getStatus() != null ? req.getStatus() : existing.getStatus());
             existing.setGstPercent(req.getGstPercent());
-            existing.setLastChgBy(currentUser.getUsername());
+            existing.setLastChgBy(userContext.getUserFullName());
             existing.setLastChgDt(Instant.now());
             existing.setRegistrationCost(req.getRegistrationCost());
 
@@ -134,15 +140,15 @@ public class MasServiceCategoryServiceImpl implements MasServiceCategoryService 
                         "Service category not found with ID: " + id, HttpStatus.NOT_FOUND.value());
             }
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
 
             MasServiceCategory entity = optional.get();
             entity.setStatus(status);
-            entity.setLastChgBy(currentUser.getUsername());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDt(Instant.now());
 
             MasServiceCategory updated = masServiceCategoryRepository.save(entity);

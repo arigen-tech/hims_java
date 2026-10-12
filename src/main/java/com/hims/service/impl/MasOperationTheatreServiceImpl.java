@@ -3,12 +3,13 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasOperationTheatre;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasOperationTheatreRepository;
 import com.hims.request.OperationTheatreRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OperationTheatreResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasOperationTheatreService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import jakarta.transaction.Transactional;
@@ -30,13 +31,16 @@ public class MasOperationTheatreServiceImpl implements MasOperationTheatreServic
     @Autowired
     private AuthUtil authUtil;
 
+    @Autowired
+    private UserContextService userContextService;
+
 
     @Override
     public ApiResponse<String> saveOperationTheatre(OperationTheatreRequest request) {
 
         try {
 
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasOperationTheatre entity = new MasOperationTheatre();
 
@@ -45,7 +49,7 @@ public class MasOperationTheatreServiceImpl implements MasOperationTheatreServic
             entity.setOtType(request.getOtType());
             entity.setLocation(request.getLocation());
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setLastChgBy(currentUser.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             masOperationTheatreRepository.save(entity);
@@ -152,9 +156,9 @@ public class MasOperationTheatreServiceImpl implements MasOperationTheatreServic
                         "Invalid status value and value should bi y and n",
                         400
                 );
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             entity.setStatus(status.toLowerCase());
-            entity.setLastChgBy(currentUser.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             masOperationTheatreRepository.save(entity);
@@ -184,7 +188,7 @@ public class MasOperationTheatreServiceImpl implements MasOperationTheatreServic
 
         try {
 
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             MasOperationTheatre entity = masOperationTheatreRepository.findById(id).orElse(null);
 
             if (entity == null) {
@@ -198,7 +202,7 @@ public class MasOperationTheatreServiceImpl implements MasOperationTheatreServic
             entity.setOtType(request.getOtType());
             entity.setLocation(request.getLocation());
 
-            entity.setLastChgBy(currentUser.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             masOperationTheatreRepository.save(entity);

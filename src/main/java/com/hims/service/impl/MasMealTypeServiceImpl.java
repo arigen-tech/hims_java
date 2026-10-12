@@ -7,7 +7,9 @@ import com.hims.entity.repository.MasMealTypeRepository;
 import com.hims.request.MasMealTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasMealTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasMealTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,9 @@ public class MasMealTypeServiceImpl implements MasMealTypeService {
 
     @Autowired
     private MasMealTypeRepository repository;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasMealTypeResponse>> getAllMealType(int flag) {
@@ -75,8 +80,8 @@ public class MasMealTypeServiceImpl implements MasMealTypeService {
     @Override
     public ApiResponse<MasMealTypeResponse> addMealType(MasMealTypeRequest request) {
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", 400);
         }
@@ -85,8 +90,8 @@ public class MasMealTypeServiceImpl implements MasMealTypeService {
                 .mealTypeName(request.getMealTypeName())
                 .sequenceNo(request.getSequenceNo())
                 .status("y")
-                .createdBy(user.getFirstName() + " " + user.getFirstName())
-                .lastUpdatedBy(user.getFirstName() + " " + user.getFirstName())
+                .createdBy(userContext.getUserFullName())
+                .lastUpdatedBy(userContext.getUserFullName())
                 .lastUpdateDate(LocalDateTime.now())
                 .build();
 
@@ -98,7 +103,7 @@ public class MasMealTypeServiceImpl implements MasMealTypeService {
     @Override
     public ApiResponse<MasMealTypeResponse> update(Long id, MasMealTypeRequest request) {
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         Optional<MasMealType> mealOpt = repository.findById(id);
         if (mealOpt.isEmpty()) {
@@ -108,7 +113,7 @@ public class MasMealTypeServiceImpl implements MasMealTypeService {
         MasMealType meal = mealOpt.get();
         meal.setMealTypeName(request.getMealTypeName());
         meal.setSequenceNo(request.getSequenceNo());
-        meal.setLastUpdatedBy(user.getFirstName() + " " + user.getLastName());
+        meal.setLastUpdatedBy(userContext.getUserFullName());
         meal.setLastUpdateDate(LocalDateTime.now());
 
         MasMealType saved = repository.save(meal);
@@ -119,7 +124,7 @@ public class MasMealTypeServiceImpl implements MasMealTypeService {
     @Override
     public ApiResponse<MasMealTypeResponse> changeStatus(Long id, String status) {
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
         Optional<MasMealType> mealOpt = repository.findById(id);
         if (mealOpt.isEmpty()) {
@@ -133,7 +138,7 @@ public class MasMealTypeServiceImpl implements MasMealTypeService {
 
         MasMealType meal = mealOpt.get();
         meal.setStatus(status);
-        meal.setLastUpdatedBy(user.getFirstName() + " " + user.getLastName());
+        meal.setLastUpdatedBy(userContext.getUserFullName());
         meal.setLastUpdateDate(LocalDateTime.now());
 
         MasMealType saved = repository.save(meal);

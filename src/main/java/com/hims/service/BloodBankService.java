@@ -36,5 +36,38 @@ public interface BloodBankService {
 
    ApiResponse<String> mandatoryTestingTestEntry(MandatoryTestingSaveRequest mandatoryTestingSaveRequest, List<MultipartFile> files);
 
-   ApiResponse<?> getBloodStock(BloodStockFilterRequest request);
+   ApiResponse<?> getBloodStock(BloodStockFilterRequest request, Pageable pageable);
+
+   ApiResponse<String> createBloodRequest(BloodRequestRequest request);
+
+   ApiResponse<Page<BloodTrackingResponse>> getBloodRequestTrackingList(int page, int size,Long inpatientId, String inpatientNo, String patientName, String requestNo);
+
+   ApiResponse<List<BloodInventoryResponse>> getAvailableInventory(BloodInventoryRequest request);
+
+   ApiResponse<String> allocateBloodUnits(BloodRequestAllocationRequest request);
+
+   ApiResponse<Page<BloodTrackingResponse>> getAllPendingBloodRequest(
+           int page,
+           int size,
+           String patientName,
+           Long wardId);
+
+   ApiResponse<Page<BloodAllocatedResponse>> getAllocatedBloodRequestList(
+           int page,
+           int size,
+           String patientName,
+           Long wardId);
+
+   ApiResponse<String> saveCrossmatch(BloodCrossmatchRequest request);
+
+   ApiResponse<Page<BloodIssueResponse>> getPendingBloodIssue(
+           int page,
+           int size,
+           String requestNo,
+           String patientName,
+           Long wardId);
+
+   ApiResponse<String> updateBloodIssueAndTrackingStatus(BloodIssueStatusRequest request);
+
+   ApiResponse<String> acknowledgeBloodRequest(BloodAcknowledgementRequest request);
 }

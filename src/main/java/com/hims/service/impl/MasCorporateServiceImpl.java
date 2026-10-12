@@ -8,7 +8,9 @@ import com.hims.entity.repository.MasCorporateRepository;
 import com.hims.request.MasCorporateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasCorporateResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasCorporateService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,9 @@ public class MasCorporateServiceImpl implements MasCorporateService {
     private MasCorporateRepository repository;
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
     @Override
     public ApiResponse<List<MasCorporateResponse>> getAllMasCorporate(int flag) {
 
@@ -88,9 +93,9 @@ public class MasCorporateServiceImpl implements MasCorporateService {
 
         try {
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -111,7 +116,7 @@ public class MasCorporateServiceImpl implements MasCorporateService {
             entity.setCreditDays(request.getCreditDays());
 
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setLastChgBy(user.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -151,9 +156,9 @@ public class MasCorporateServiceImpl implements MasCorporateService {
                 );
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -171,7 +176,7 @@ public class MasCorporateServiceImpl implements MasCorporateService {
             entity.setCreditAllowed(request.getCreditAllowed());
             entity.setCreditDays(request.getCreditDays());
 
-            entity.setLastChgBy(user.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -211,9 +216,9 @@ public class MasCorporateServiceImpl implements MasCorporateService {
                 );
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found",
                         404
@@ -221,7 +226,7 @@ public class MasCorporateServiceImpl implements MasCorporateService {
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastChgBy(user.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             repository.save(entity);

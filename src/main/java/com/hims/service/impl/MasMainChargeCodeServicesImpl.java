@@ -8,7 +8,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasMainChargeCodeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasMainChargeCodeDTO;
+import com.hims.response.UserContext;
 import com.hims.service.MasMainChargeCodeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,9 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
 
     @Autowired
     private MasMainChargeCodeRepository masMainChargeCodeRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     UserRepo userRepo;
@@ -102,13 +107,13 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
                 chargeCode.setChargecodeCode(codeRequest.getChargecode_code());
                 chargeCode.setChargecodeName(codeRequest.getChargecode_name());
                 chargeCode.setStatus("y");
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                chargeCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                chargeCode.setLastChgBy(String.valueOf(userContext.getUserId()));
                 chargeCode.setLastChgDate(LocalDate.now());
                 chargeCode.setLastChgTime(getCurrentTimeFormatted());
                 return ResponseUtils.createSuccessResponse(toResponse(masMainChargeCodeRepository.save(chargeCode)), new TypeReference<>() {});
@@ -129,13 +134,13 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
                 MasMainChargeCode chargeCode = optionalCode.get();
                 chargeCode.setChargecodeCode(codeRequest.getChargecode_code());
                 chargeCode.setChargecodeName(codeRequest.getChargecode_name());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                chargeCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                chargeCode.setLastChgBy(String.valueOf(userContext.getUserId()));
                 chargeCode.setLastChgDate(LocalDate.now());
                 chargeCode.setLastChgTime(getCurrentTimeFormatted());
 
@@ -170,13 +175,13 @@ public class MasMainChargeCodeServicesImpl implements MasMainChargeCodeService {
                 }
                 codes.setStatus(status);
 
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                codes.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                codes.setLastChgBy(String.valueOf(userContext.getUserId()));
                 codes.setLastChgDate(LocalDate.now());
                 codes.setLastChgTime(getCurrentTimeFormatted());
 

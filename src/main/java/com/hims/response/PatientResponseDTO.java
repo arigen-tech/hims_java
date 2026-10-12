@@ -16,6 +16,7 @@ public class PatientResponseDTO {
     private String patientAge;
     private Long genderId;
     private String genderName;
+    private Long bloodGroupId;
     private String patientEmailId;
     private String patientMobileNumber;
     private String patientAddress1;

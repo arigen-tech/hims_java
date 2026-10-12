@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasQuestion;
 import com.hims.entity.MasQuestionHeading;
 import com.hims.entity.User;
@@ -9,7 +10,9 @@ import com.hims.entity.repository.MasQuestionRepository;
 import com.hims.request.MasQuestionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasQuestionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasQuestionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,9 @@ public class MasQuestionServiceImpl implements MasQuestionService {
 
     private final MasQuestionRepository repository;
     private final AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
     @Autowired
     private MasQuestionHeadingRepository masQuestionHeadingRepository;
 
@@ -72,8 +78,8 @@ public class MasQuestionServiceImpl implements MasQuestionService {
     public ApiResponse<MasQuestionResponse> create(MasQuestionRequest request) {
         log.info("Creating Question");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -89,10 +95,10 @@ public class MasQuestionServiceImpl implements MasQuestionService {
                     .question(request.getQuestion())
                     .questionHeadingId(masQuestionHeading.orElse(null))
                     .optionValue(request.getOptionValue())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
-                    .lastChgBy(user.getUserId())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
+                    .lastChgBy(userContext.getUserId())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -119,8 +125,8 @@ public class MasQuestionServiceImpl implements MasQuestionService {
                         "Question not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -136,8 +142,8 @@ public class MasQuestionServiceImpl implements MasQuestionService {
             entity.setQuestion(request.getQuestion());
             entity.setQuestionHeadingId(masQuestionHeading.orElse(null));
             entity.setOptionValue(request.getOptionValue());
-            entity.setLastUpdatedBy(user.getFirstName());
-            entity.setLastChgBy(user.getUserId());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
+            entity.setLastChgBy(userContext.getUserId());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -170,16 +176,16 @@ public class MasQuestionServiceImpl implements MasQuestionService {
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
-            entity.setLastChgBy(user.getUserId());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
+            entity.setLastChgBy(userContext.getUserId());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

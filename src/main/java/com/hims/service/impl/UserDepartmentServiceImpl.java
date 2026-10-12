@@ -12,8 +12,10 @@ import com.hims.projection.UserDepartmentProjection;
 import com.hims.request.UserDepartmentRequest;
 import com.hims.request.UserDepartmentRequestOne;
 import com.hims.response.ApiResponse;
+import com.hims.response.UserContext;
 import com.hims.response.UserDepartmentProjectionResponse;
 import com.hims.response.UserDepartmentResponse;
+import com.hims.service.UserContextService;
 import com.hims.service.UserDepartmentService;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,9 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
 
     @Autowired
     private MasDepartmentRepository masDepartmentRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
     private String getCurrentTimeFormatted() {
         return LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
@@ -75,14 +80,14 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
     @Override
     public ApiResponse<UserDepartmentResponse> addUserDepartment(UserDepartmentRequest request) {
 
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
 
         UserDepartment userDepartment = new UserDepartment();
-        userDepartment.setLastChgBy(currentUser.getUsername());
+        userDepartment.setLastChgBy(userContext.getUserFullName());
         userDepartment.setLasUpdatedDt(OffsetDateTime.now());
         userDepartment.setStatus(AppConstants.STATUS_Y.toLowerCase());
 
@@ -103,15 +108,15 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
     @Override
     public ApiResponse<UserDepartmentResponse> updateUserDepartment(Long id, UserDepartmentResponse details) {
 
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
         Optional<UserDepartment> existingOpt = userDepartmentRepository.findById(id);
         if (existingOpt.isPresent()) {
             UserDepartment existing = existingOpt.get();
-            existing.setLastChgBy(currentUser.getUsername());
+            existing.setLastChgBy(userContext.getUserFullName());
             existing.setLasUpdatedDt(OffsetDateTime.now());
 
             if (details.getUserId() != null) {
@@ -144,8 +149,8 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
     @Override
     public ApiResponse<String> addOrUpdateUserDept(UserDepartmentRequestOne request) {
 
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found",
@@ -187,7 +192,7 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
             if (existing != null) {
                 existing.setStatus(status);
                 existing.setLasUpdatedDt(OffsetDateTime.now());
-                existing.setLastChgBy(currentUser.getUsername());
+                existing.setLastChgBy(userContext.getUserFullName());
                 userDepartmentRepository.save(existing);
                 success = true;
             } else {
@@ -208,7 +213,7 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
                 newUserDept.setDepartment(dept);
                 newUserDept.setStatus(status);
                 newUserDept.setLasUpdatedDt(OffsetDateTime.now());
-                newUserDept.setLastChgBy(currentUser.getUsername());
+                newUserDept.setLastChgBy(userContext.getUserFullName());
                 userDepartmentRepository.save(newUserDept);
                 success = true;
             }
@@ -216,9 +221,9 @@ public class UserDepartmentServiceImpl implements UserDepartmentService {
 
         for (UserDepartment ud : existingUserDepartments) {
             if (!incomingDeptIds.contains(ud.getDepartment().getId())) {
-                ud.setStatus("n");
+                ud.setStatus(AppConstants.STATUS_N.toLowerCase());
                 ud.setLasUpdatedDt(OffsetDateTime.now());
-                ud.setLastChgBy(currentUser.getUsername());
+                ud.setLastChgBy(userContext.getUserFullName());
                 userDepartmentRepository.save(ud);
                 success = true;
             }

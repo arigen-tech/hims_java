@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasDepartmentType;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasDepartmentTypeRepository;
@@ -8,7 +9,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasDepartmentTypeRequest;
 import com.hims.response.MasDepartmentTypeResponse;
 import com.hims.response.ApiResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasDepartmentTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +37,9 @@ public class MasDepartmentTypeServiceImpl implements MasDepartmentTypeService {
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private UserContextService userContextService;
+
     private boolean isValidStatus(String status) {
         return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
     }
@@ -53,14 +59,14 @@ public class MasDepartmentTypeServiceImpl implements MasDepartmentTypeService {
             MasDepartmentType departmentType = new MasDepartmentType();
             departmentType.setDepartmentTypeCode(request.getDepartmentTypeCode());
             departmentType.setDepartmentTypeName(request.getDepartmentTypeName());
-            departmentType.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            departmentType.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            departmentType.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            departmentType.setLastChgBy(String.valueOf(userContext.getUserId()));
             departmentType.setLastChgDate(LocalDateTime.now());
 
             MasDepartmentType savedDepartmentType = masDepartmentTypeRepository.save(departmentType);
@@ -85,13 +91,13 @@ public class MasDepartmentTypeServiceImpl implements MasDepartmentTypeService {
             if (departmentTypeOpt.isPresent()) {
                 MasDepartmentType departmentType = departmentTypeOpt.get();
                 departmentType.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                departmentType.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                departmentType.setLastChgBy(String.valueOf(userContext.getUserId()));
                 departmentType.setLastChgDate(LocalDateTime.now());
                 masDepartmentTypeRepository.save(departmentType);
                 return ResponseUtils.createSuccessResponse("Department Type status updated to '" + status + "'", new TypeReference<>() {
@@ -113,13 +119,13 @@ public class MasDepartmentTypeServiceImpl implements MasDepartmentTypeService {
                 MasDepartmentType departmentType = departmentTypeOpt.get();
                 departmentType.setDepartmentTypeCode(request.getDepartmentTypeCode());
                 departmentType.setDepartmentTypeName(request.getDepartmentTypeName());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                departmentType.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                departmentType.setLastChgBy(String.valueOf(userContext.getUserId()));
                 departmentType.setLastChgDate(LocalDateTime.now());
                 masDepartmentTypeRepository.save(departmentType);
                 return ResponseUtils.createSuccessResponse(mapToResponse(departmentType), new TypeReference<>() {

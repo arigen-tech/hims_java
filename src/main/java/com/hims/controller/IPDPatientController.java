@@ -379,7 +379,7 @@ public class IPDPatientController {
 
     }
     @PostMapping("/saveAdvanceCollection")
-    public ApiResponse<String> saveDischargeSummary(@Valid @RequestBody AdvanceCollectionRequest request) {
+    public ApiResponse<String> saveAdvanceCollection(@Valid @RequestBody AdvanceCollectionRequest request) {
 
         log.info("Request received to save discharge summary for inpatientId: {}", request.getInpatientId());
 
@@ -580,6 +580,7 @@ public class IPDPatientController {
             @RequestParam(required = false) String mobileNo,
             @RequestParam(required = false) String admissionNo,
             @RequestParam(required = false) Long wardId,
+            @RequestParam(required = false) Long patientId,
             @RequestParam Integer admissionStatus) {
 
         log.info("Fetching active admissions. page={}, size={}, patientName={}, mobileNo={}, admissionNo={}, wardId={}, admissionStatus={}", page, size, patientName, mobileNo,
@@ -591,6 +592,7 @@ public class IPDPatientController {
                         mobileNo,
                         admissionNo,
                         wardId,
+                patientId,
                         admissionStatus);
         return ResponseEntity.ok(response);
     }
@@ -622,7 +624,7 @@ public class IPDPatientController {
         return response;
     }
 
-    @GetMapping("/getPerviousDietOrderHistory")
+    @GetMapping("/getPreviousDietOrderHistory")
     public ResponseEntity<ApiResponse<List<PreviousDietHistoryResponse>>> getPreviousDietHistory(@RequestParam Long inpatientId) {
         log.info("Request received to fetch previous diet history. inpatientId={}", inpatientId);
         ApiResponse<List<PreviousDietHistoryResponse>> response = ipdPatientService.getPreviousDietHistory(inpatientId);
@@ -669,4 +671,15 @@ public class IPDPatientController {
         log.info("getShiftHandover completed successfully.inpatientId={}", inpatientId);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/getWardWiseInpatient")
+    public ResponseEntity<ApiResponse<List<WardWiseInpatientResponse>>> getWardWiseInpatient(
+            @RequestParam(required = false) String patientName,
+            @RequestParam(required = false) String mobileNo,
+            @RequestParam(required = false) Long wardId) {
+
+        ApiResponse<List<WardWiseInpatientResponse>> response = ipdPatientService.getWardWiseInpatient(patientName, mobileNo, wardId);
+        return ResponseEntity.ok(response);
+    }
+
 }

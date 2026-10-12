@@ -6,8 +6,10 @@ import com.hims.entity.repository.LabHdRepository;
 import com.hims.entity.repository.PatientLoginRepository;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.exception.SDDException;
+import com.hims.jwt.JwtHelper;
 import com.hims.request.LoginRequest;
 import com.hims.response.ApiResponse;
+import com.hims.response.AuthResponse;
 import com.hims.response.MobileLoginResponce;
 import com.hims.response.PatientIdResponse;
 import com.hims.service.MobileLoginService;
@@ -38,6 +40,61 @@ public class MobileLoginServiceimpl implements MobileLoginService {
     private PatientLoginRepository patientLoginRepository;
     @Autowired
     private PatientRepository patientRepository;
+    @Autowired
+    private JwtHelper jwtHelper;
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<AuthResponse> switchPatient(Long patientId, String mobileNumber) 
+    {
+        try {
+            boolean patientBelongsToMobile = patientLoginRepository
+                .findByMobileNoOrderByPatientLoginIdDesc(mobileNumber)
+                .stream()
+                .anyMatch(patientLogin -> patientId.equals(patientLogin.getPatientId()));
+
+            if (!patientBelongsToMobile) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                "Patient is not linked to this mobile number", HttpStatus.BAD_REQUEST.value());
+            }
+
+            Patient patient = patientRepository.findById(patientId).orElse(null);
+            if (patient == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                "Patient not found", HttpStatus.NOT_FOUND.value());
+            }
+
+            AuthResponse authResponse = new AuthResponse();
+            authResponse.setToken(jwtHelper.mobileGenerateToken(mobileNumber, patientId));
+            authResponse.setRefreshToken(jwtHelper.mobileGenerateRefreshToken(mobileNumber, patientId));
+            authResponse.setPatientIdResponseList(List.of(toPatientIdResponse(patient)));
+            authResponse.setMessage("Patient switched successfully");
+            return ResponseUtils.createSuccessResponse(authResponse, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Unable to switch patient: patientId={}, mobileNumber={}", patientId, mobileNumber, e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                "Unable to switch patient. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    private PatientIdResponse toPatientIdResponse(Patient patient) 
+    {
+        PatientIdResponse patientResponse = new PatientIdResponse();
+        patientResponse.setPatientId(patient.getId());
+        String fullName = Stream.of(patient.getPatientFn(), patient.getPatientMn(), patient.getPatientLn())
+            .filter(Objects::nonNull)
+            .filter(name -> !name.trim().isEmpty())
+            .collect(Collectors.joining(" "));
+        patientResponse.setPatientName(fullName.isEmpty() ? null : fullName);
+        patientResponse.setAge(patient.getPatientAge());
+        patientResponse.setGender(patient.getPatientGender() != null
+            ? patient.getPatientGender().getGenderName() : null);
+        patientResponse.setPatientPhoneNumber(patient.getPatientMobileNumber());
+        patientResponse.setRelation(patient.getPatientRelation() != null
+            ? patient.getPatientRelation().getRelationName() : null);
+        return patientResponse;
+    }
+
     @Override
     @Transactional
     public ApiResponse loginRequest(LoginRequest request) {

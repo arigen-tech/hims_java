@@ -172,7 +172,7 @@ SELECT new com.hims.response.OrderTrackingReportResponse(
     inv.investigationName,
     ots.orderStatusId,
     ots.orderStatusName,
-    oh.orderDate
+    oh.orderTime
 )
 FROM DgOrderDt od
 JOIN od.orderHd oh
@@ -181,11 +181,24 @@ LEFT JOIN p.patientGender g
 LEFT JOIN od.investigation inv
 LEFT JOIN od.orderTrackingStatus ots
 WHERE oh.hospitalId=:hospitalId
-AND p.id=:patientId
+AND (
+    (:inPatientId IS NOT NULL AND oh.inpatientId.inpatientId = :inPatientId)
+    OR (
+        :inPatientId IS NULL
+        AND p.id = :patientId
+        AND (
+            :resultType IS NULL
+            OR (:resultType = 'OPD' AND oh.inpatientId IS NULL)
+            OR (:resultType = 'IPD' AND oh.inpatientId IS NOT NULL)
+        )
+    )
+)
 """)
     Page<OrderTrackingReportResponse> getOrderTrackingDetailsByPatientId(
             Long hospitalId,
             Long patientId,
+            Long inPatientId,
+            String resultType,
             Pageable pageable
     );
 

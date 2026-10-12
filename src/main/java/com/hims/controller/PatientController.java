@@ -65,6 +65,13 @@ public class PatientController {
         ApiResponse<PatientRegFollowUpResp> response = patientService.registerPatientWithOpd(request.getPatient(), request.getOpdPatientDetail(), request.getVisits());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PostMapping("/register/family-member")
+    public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> registerFamilyMember(
+            @Valid @RequestBody PatientFamilyMemberRegistrationRequest request) {
+        return ResponseEntity.ok(patientService.registerFamilyMember(request));
+    }
+
     @PostMapping("/update")
     public ResponseEntity<ApiResponse<PatientRegFollowUpResp>> updatePatient(@RequestBody PatientFollowUpReq request) {
         ApiResponse<PatientRegFollowUpResp> response = patientService.updatePatient(request);

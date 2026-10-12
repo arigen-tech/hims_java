@@ -3,7 +3,9 @@ package com.hims.controller;
 
 import com.hims.request.*;
 import com.hims.response.ApiResponse;
+import com.hims.response.MasResultFlagResponse;
 import com.hims.service.LabService;
+import com.hims.service.ResultFlagService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,6 +23,8 @@ import java.util.List;
 public class LabController {
 
     private final LabService labService;
+
+    private final ResultFlagService resultFlagService;
 
     /**
      * Fetch Pending Sample Collection Headers
@@ -643,6 +647,16 @@ public class LabController {
     }
 
 
+    @GetMapping("/detect-flag")
+    public ResponseEntity<ApiResponse<MasResultFlagResponse>> detectFlag(
+            @RequestParam(value = "result", required = false)      String result,
+            @RequestParam(value = "normalRange", required = false) String normalRange) {
+
+
+        return ResponseEntity.ok(resultFlagService.detectResultFlag(result, normalRange));
+    }
+
+
 
     /* *************************************  Report Section ************************************************** */
 
@@ -659,6 +673,8 @@ public class LabController {
      * - Hospital ID: Filters records for the specified hospital
      * - Patient Mobile Number: Optional partial search filter for patient mobile number
      * - Patient Name: Optional partial search filter for patient name (case-insensitive)
+        * - Patient ID: Optional filter for the selected OPD/IPD patient
+        * - IPD: Optional flag; when true, patient data is resolved through the result header's inpatient
      * - From Date: Optional start date filter for result entry date
      * - To Date: Optional end date filter for result entry date
      * - Result Validation Status: Fixed filter for validated results ('Y')
@@ -676,8 +692,11 @@ public class LabController {
      * @param hospitalId ID of the hospital (required)
      * @param patientMobileNumber Patient mobile number for search (optional, supports partial match)
      * @param patientName Patient name for search (optional, supports partial match, case-insensitive)
+        * @param patientId Patient ID for search (optional)
+        * @param ipd When true, fetches patient details through dg_result_entry_header.inpatient_id (default: false)
      * @param fromDate Start date for result entry search (optional, ISO date format)
      * @param toDate End date for result entry search (optional, ISO date format)
+     * @param investigationName Investigation name to search (optional)
      * @param page Page number for pagination (optional, default: 0)
      * @param size Number of records per page (optional, default: 5)
      * @return Paginated list of laboratory investigations report with complete test details
@@ -688,8 +707,10 @@ public class LabController {
             @RequestParam(required = false) String patientMobileNumber,
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) Long patientId,
+            @RequestParam(name = "IPD", defaultValue = "false") boolean ipd,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(required = false) String investigationName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
@@ -699,13 +720,37 @@ public class LabController {
                         patientMobileNumber,
                         patientName,
                         patientId,
+                        ipd,
                         fromDate,
                         toDate,
+                        investigationName,
                         page,
                         size
                 )
         );
     }
+
+        @GetMapping("/investigationsReport/headers")
+        public ResponseEntity<?> searchLabReportHeaders(
+                        @RequestParam Long hospitalId,
+                        @RequestParam(required = false) String patientMobileNumber,
+                        @RequestParam(required = false) String patientName,
+                        @RequestParam(required = false) Long patientId,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+                        @RequestParam(defaultValue = "0") int page,
+                        @RequestParam(defaultValue = "5") int size) {
+                return ResponseEntity.ok(labService.getInvestigationReportHeaders(
+                                hospitalId,
+                                patientMobileNumber,
+                                patientName,
+                                patientId,
+                                fromDate,
+                                toDate,
+                                page,
+                                size
+                ));
+        }
 
     /**
      * Fetch Detailed Laboratory Turn Around Time (TAT) Report
@@ -976,7 +1021,9 @@ public class LabController {
      * It's essential for managing laboratory workflow and patient care coordination.
      *
      * @param hospitalId ID of the hospital (required)
-     * @param patientId Patient ID for search (required)
+        * @param patientId Patient ID for search (required when inPatientId is absent)
+        * @param inPatientId Inpatient ID for search; when provided, this takes precedence over patientId
+        * @param resultType Optional record type filter: OPD, IPD, or null for both
      * @param page Page number for pagination (optional, default: 0)
      * @param size Number of records per page (optional, default: 5)
      * @return Paginated list of order tracking reports with complete order lifecycle information
@@ -984,7 +1031,9 @@ public class LabController {
     @GetMapping("/orderTrackingByPatientId")
     public ResponseEntity<?> getOrderTrackingDetailsByPatientId(
             @RequestParam Long  hospitalId,
-            @RequestParam Long patientId,
+            @RequestParam(required = false) Long patientId,
+            @RequestParam(name = "inPatientId", required = false) Long inPatientId,
+            @RequestParam(required = false) String resultType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
@@ -992,6 +1041,8 @@ public class LabController {
                 labService.getOrderTrackingDetailsByPatientId(
                         hospitalId,
                         patientId,
+                        inPatientId,
+                        resultType,
                         page,
                         size
                 )
@@ -1137,4 +1188,3 @@ public class LabController {
     }
 
 }
-

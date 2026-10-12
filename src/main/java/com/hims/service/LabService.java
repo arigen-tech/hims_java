@@ -40,10 +40,23 @@ public interface LabService {
                                                                                          String mobileNo,
                                                                                          String patientName,
                                                                                          Long patientId,
+                                                                                         boolean ipd,
                                                                                          LocalDate fromDate,
                                                                                          LocalDate toDate,
+                                                                                         String investigationName,
                                                                                          int page,
                                                                                          int size
+    );
+
+    ApiResponse<Page<LabInvestigationReportHeaderResponse>> getInvestigationReportHeaders(
+            Long hospitalId,
+            String mobileNo,
+            String patientName,
+            Long patientId,
+            LocalDate fromDate,
+            LocalDate toDate,
+            int page,
+            int size
     );
 
     ApiResponse<Page<LabDetailedTATReportResponse>> getDetailedTatReports(
@@ -109,6 +122,8 @@ public interface LabService {
     ApiResponse<Page<OrderTrackingReportResponse>>  getOrderTrackingDetailsByPatientId(
             Long hospitalId,
             Long patientId,
+            Long inPatientId,
+            String resultType,
             int page,
             int size
     );

@@ -10,4 +10,7 @@ public interface DashboardService {
     ApiResponse<Map<String, Object>> getDashboardData(LocalDate fromDate, LocalDate toDate);
 
     ApiResponse<Map<String, Object>> getBillingFinanceDashboardData(LocalDate fromDate, LocalDate toDate);
+
+
+    ApiResponse<Map<String, Object>> getInpatientSummaryData(LocalDate fromDate, LocalDate toDate);
 }

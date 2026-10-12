@@ -1,18 +1,15 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.DgUom;
 import com.hims.entity.MasWardCategory;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasCareLevelRepo;
 import com.hims.entity.repository.MasWardCategoryRepository;
-import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasWardCategoryRequest;
 import com.hims.response.ApiResponse;
-import com.hims.response.AppsetupResponse;
-import com.hims.response.DgUomResponse;
 import com.hims.response.MasWardCategoryResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasWardCategoryService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +32,8 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
     private MasWardCategoryRepository masWardCategoryRepository;
     @Autowired
     private MasCareLevelRepo masCareLevelRepo;
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Override
@@ -77,8 +76,8 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
 
     @Override
     public ApiResponse<MasWardCategoryResponse> addMasWard(MasWardCategoryRequest request) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found",400);
         }
@@ -87,9 +86,9 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
         masWardCategory.setDescription(request.getDescription());
         masWardCategory.setMasCareLevel(masCareLevelRepo.findById(request.getCareId()).orElseThrow(()-> new RuntimeException("Invalid care level Id")));
         masWardCategory.setStatus("y");
-        masWardCategory.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+        masWardCategory.setCreatedBy(userContext.getUserFullName());
         masWardCategory.setLastUpdateDate(LocalDate.now());
-        masWardCategory.setLastUpdatedBY(currentUser.getFirstName()+" "+currentUser.getLastName());
+        masWardCategory.setLastUpdatedBY(userContext.getUserFullName());
 
         MasWardCategory mas= masWardCategoryRepository.save(masWardCategory);
         return ResponseUtils.createSuccessResponse(  mapToConverted(mas),new TypeReference<>(){});
@@ -97,8 +96,8 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
 
     @Override
     public ApiResponse<MasWardCategoryResponse> update(Long id, MasWardCategoryRequest request) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -112,7 +111,7 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
         masWardCategory1.setMasCareLevel(masCareLevelRepo.findById(request.getCareId()).orElseThrow(()-> new RuntimeException("Invalid care level id")));
         masWardCategory1.setStatus("y");
         masWardCategory1.setLastUpdateDate(LocalDate.now());
-        masWardCategory1.setLastUpdatedBY(currentUser.getFirstName()+" "+currentUser.getLastName());
+        masWardCategory1.setLastUpdatedBY(userContext.getUserFullName());
 
         MasWardCategory mas= masWardCategoryRepository.save(masWardCategory1);
         return ResponseUtils.createSuccessResponse(  mapToConverted(mas),new TypeReference<>(){});
@@ -122,8 +121,8 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
     @Override
     public ApiResponse<MasWardCategoryResponse> changeMasWardStatus(Long id, String status) {
 
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -135,7 +134,7 @@ public class MasWardCategoryServiceImpl implements MasWardCategoryService {
             MasWardCategory masWardCategory1=masWardCategory.get();
             masWardCategory1.setStatus(status);
             masWardCategory1.setLastUpdateDate(LocalDate.now());
-            masWardCategory1.setLastUpdatedBY(currentUser.getFirstName()+" "+currentUser.getLastName());
+            masWardCategory1.setLastUpdatedBY(userContext.getUserFullName());
             MasWardCategory mas= masWardCategoryRepository.save(masWardCategory1);
             log.info("");
             return ResponseUtils.createSuccessResponse(  mapToConverted(mas),new TypeReference<>(){});

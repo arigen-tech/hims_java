@@ -20,4 +20,6 @@ public interface MasStoreSectionService {
     ApiResponse<List<MasStoreSectionResponse>> findStoreSectionByItemType(int id);
 
     ApiResponse<List<MasStoreSectionResponse>> getSectionByItemType(String itemTypeCode);
+
+    ApiResponse<List<MasStoreSectionResponse>> getSectionByItemTypeCode(String itemTypeCode);
 }

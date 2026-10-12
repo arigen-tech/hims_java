@@ -7,7 +7,9 @@ import com.hims.entity.repository.MasNursingTypeRepository;
 import com.hims.request.MasNursingTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasNursingTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasNursingTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,9 @@ public class MasNursingTypeServiceImpl implements MasNursingTypeService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasNursingTypeResponse>> getAll(int flag) {
@@ -89,14 +94,14 @@ public class MasNursingTypeServiceImpl implements MasNursingTypeService {
                 request.getNursingTypeName());
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasNursingType nursingType = MasNursingType.builder()
                     .nursingTypeName(request.getNursingTypeName())
                     .description(request.getDescription())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -133,11 +138,11 @@ public class MasNursingTypeServiceImpl implements MasNursingTypeService {
                         "Nursing Type ID not found!", 404);
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             nursingType.setNursingTypeName(request.getNursingTypeName());
             nursingType.setDescription(request.getDescription());
-            nursingType.setLastUpdatedBy(user.getFirstName());
+            nursingType.setLastUpdatedBy(userContext.getUserFullName());
             nursingType.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(nursingType);
@@ -182,10 +187,10 @@ public class MasNursingTypeServiceImpl implements MasNursingTypeService {
                 );
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             nursingType.setStatus(status);
-            nursingType.setLastUpdatedBy(user.getFirstName());
+            nursingType.setLastUpdatedBy(userContext.getUserFullName());
             nursingType.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(nursingType);

@@ -91,4 +91,7 @@ public class IpDischargeSummary {
 
     @Column(name = "last_updated_by", length = 200)
     private String lastUpdatedBy;
+
+    @Column(name = "discharge_number", length = 20)
+    private String dischargeNumber;
 }

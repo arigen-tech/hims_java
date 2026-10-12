@@ -9,7 +9,9 @@ import com.hims.entity.repository.RadiologyTemplateRepository;
 import com.hims.request.RadiologyTemplateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.RadiologyTemplateResponse;
+import com.hims.response.UserContext;
 import com.hims.service.RadiologyTemplateService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,9 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
     private final RadiologyTemplateRepository radiologyTemplateRepository;
     private final AuthUtil authUtil;
     private final MasSubChargeCodeRepository masSubChargeCodeRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<RadiologyTemplateResponse>> getAll(int flag) {
@@ -66,8 +71,8 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
     @Override
     public ApiResponse<RadiologyTemplateResponse> create(RadiologyTemplateRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 401
@@ -88,8 +93,8 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
             entity.setTemplateText(request.getTemplateText());
             entity.setStatus("y");
 
-            entity.setCreatedBy(user.getFullName());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             MasPacsTemplate saved = radiologyTemplateRepository.save(entity);
             return ResponseUtils.createSuccessResponse(
@@ -113,8 +118,8 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
                 return ResponseUtils.createNotFoundResponse("Radiology template not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 401
@@ -137,7 +142,7 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
             entity.setSubChargecodeId(subChargeCode);
             entity.setTemplateText(request.getTemplateText());
 
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             MasPacsTemplate saved = radiologyTemplateRepository.save(entity);
             return ResponseUtils.createSuccessResponse(
@@ -168,8 +173,8 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
                 return ResponseUtils.createNotFoundResponse("Radiology template not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 401
@@ -177,7 +182,7 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             MasPacsTemplate saved = radiologyTemplateRepository.save(entity);
             return ResponseUtils.createSuccessResponse(

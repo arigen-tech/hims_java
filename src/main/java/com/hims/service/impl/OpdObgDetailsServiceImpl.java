@@ -13,7 +13,9 @@ import com.hims.projection.OpdObgDetailsProjection;
 import com.hims.request.OpdObgDetailsRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpdObgDetailsResponse;
+import com.hims.response.UserContext;
 import com.hims.service.OpdObgDetailsService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,8 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
     private final PatientRepository patientRepository;
     private final VisitRepository visitRepository;
     @Autowired
+    private UserContextService userContextService;
+    @Autowired
     private AuthUtil authUtil;
 
     @Override
@@ -42,7 +46,7 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid visit ID", HttpStatus.BAD_REQUEST.value());
             }
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             Patient patient = patientRepository.findById(request.getPatientId())
                     .orElseThrow(() -> new RuntimeException("Patient not found"));
             Visit visit = visitRepository.findById(visitId)
@@ -155,9 +159,9 @@ public class OpdObgDetailsServiceImpl implements OpdObgDetailsService {
             // System fields
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
             if (isNew) {
-                entity.setCreatedBy(user.getFullName());
+                entity.setCreatedBy(userContext.getUserFullName());
             }
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             opdObgDetailsRepository.save(entity);

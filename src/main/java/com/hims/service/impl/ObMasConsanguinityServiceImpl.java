@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.ObMasConsanguinity;
 import com.hims.entity.User;
 import com.hims.entity.repository.ObMasConsanguinityRepository;
 import com.hims.request.ObMasConsanguinityRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.ObMasConsanguinityResponse;
+import com.hims.response.UserContext;
 import com.hims.service.ObMasConsanguinityService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,9 @@ public class ObMasConsanguinityServiceImpl implements ObMasConsanguinityService 
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<ObMasConsanguinityResponse>> getAll(int flag) {
@@ -80,8 +86,8 @@ public class ObMasConsanguinityServiceImpl implements ObMasConsanguinityService 
 
         log.info("Creating Consanguinity={}", request.getConsanguinityValue());
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404
@@ -90,9 +96,9 @@ public class ObMasConsanguinityServiceImpl implements ObMasConsanguinityService 
 
             ObMasConsanguinity consanguinity = ObMasConsanguinity.builder()
                     .consanguinityValue(request.getConsanguinityValue())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -123,8 +129,8 @@ public class ObMasConsanguinityServiceImpl implements ObMasConsanguinityService 
                         "Consanguinity not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404
@@ -133,7 +139,7 @@ public class ObMasConsanguinityServiceImpl implements ObMasConsanguinityService 
 
             consanguinity.setConsanguinityValue(
                     request.getConsanguinityValue());
-            consanguinity.setLastUpdatedBy(user.getFirstName());
+            consanguinity.setLastUpdatedBy(userContext.getUserFullName());
             consanguinity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(consanguinity);
@@ -171,8 +177,8 @@ public class ObMasConsanguinityServiceImpl implements ObMasConsanguinityService 
                 );
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404
@@ -180,7 +186,7 @@ public class ObMasConsanguinityServiceImpl implements ObMasConsanguinityService 
             }
 
             consanguinity.setStatus(status);
-            consanguinity.setLastUpdatedBy(user.getFirstName());
+            consanguinity.setLastUpdatedBy(userContext.getUserFullName());
             consanguinity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(consanguinity);

@@ -1,14 +1,18 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.MasDepartmentRepository;
+import com.hims.entity.repository.MasHospitalRepository;
 import com.hims.entity.repository.MasOpdMedicalAdviseRepository;
 import com.hims.request.MasOpdMedicalAdviseRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasOpdMedicalAdviseResponse;
 import com.hims.response.MasOutputTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasOpdMedicalAdviseService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +31,11 @@ public class MasOpdMedicalAdviseServiceImpl implements MasOpdMedicalAdviseServic
     private AuthUtil authUtil;
     @Autowired
     private MasDepartmentRepository masDepartmentRepository;
+    @Autowired
+    private MasHospitalRepository masHospitalRepository;
+    @Autowired
+    private UserContextService userContextService;
+
     @Override
     public ApiResponse<List<MasOpdMedicalAdviseResponse>> getAll(int flag) {
         try {
@@ -57,7 +66,7 @@ public class MasOpdMedicalAdviseServiceImpl implements MasOpdMedicalAdviseServic
     @Override
     public ApiResponse<MasOpdMedicalAdviseResponse> create(MasOpdMedicalAdviseRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             MasDepartment masDepartment = null;
             if (request.getDepartmentId() != null) {
                 masDepartment = masDepartmentRepository.findById(request.getDepartmentId()).orElse(null);
@@ -67,9 +76,9 @@ public class MasOpdMedicalAdviseServiceImpl implements MasOpdMedicalAdviseServic
                     MasOpdMedicalAdvise.builder()
                             .medicalAdviseName(request.getMedicalAdviceName())
                             .departmentId(masDepartment)
-                            .status("y")
-                            .createdBy(user.getFirstName())
-                            .lastUpdatedBy(user.getFirstName())
+                            .status(AppConstants.STATUS_Y.toLowerCase())
+                            .createdBy(userContext.getUserFullName())
+                            .lastUpdatedBy(userContext.getUserFullName())
                             .lastUpdateDate(LocalDateTime.now())
                             .build();
 
@@ -95,11 +104,10 @@ public class MasOpdMedicalAdviseServiceImpl implements MasOpdMedicalAdviseServic
             if (advise == null)
                 return ResponseUtils.createNotFoundResponse("Medical advice not found", 404);
 
-            User user = authUtil.getCurrentUser();
-
+            UserContext userContext = userContextService.getCurrentUserContext();
             advise.setMedicalAdviseName(request.getMedicalAdviceName());
             advise.setDepartmentId( masDepartment);
-            advise.setLastUpdatedBy(user.getFirstName());
+            advise.setLastUpdatedBy(userContext.getUserFullName());
             advise.setLastUpdateDate(LocalDateTime.now());
 
             masOpdMedicalAdviseRepository.save(advise);
@@ -126,10 +134,10 @@ public class MasOpdMedicalAdviseServiceImpl implements MasOpdMedicalAdviseServic
             if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n"))
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status", 400);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             advise.setStatus(status);
-            advise.setLastUpdatedBy(user.getFirstName());
+            advise.setLastUpdatedBy(userContext.getUserFullName());
             advise.setLastUpdateDate(LocalDateTime.now());
 
             masOpdMedicalAdviseRepository.save(advise);

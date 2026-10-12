@@ -31,7 +31,7 @@ public class OpdPatientRecallResponce {
     //============================== For OpdPatientDetails ==================================
 
     private Long opdPatientId;
-    private Instant opdDate;
+    private LocalDateTime opdDate;
 
                 //=============clinic===========
     private String pastMedicalHistory;
@@ -68,6 +68,7 @@ public class OpdPatientRecallResponce {
     private NewDPatientPrescriptionHd patientPrescriptionHd;
     private List<NewDPatientPrescriptionHd> patientPrescriptionHds;
     private List<NewDPatientPrescriptionDt> patientPrescriptionDts;
+    private DentalDetailsResponse dentalDetailsResponse;
 
 
     // ============================== final medicine advice =============================

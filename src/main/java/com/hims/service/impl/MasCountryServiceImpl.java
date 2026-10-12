@@ -8,7 +8,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasCountryRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasCountryResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasCountryService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +37,9 @@ public class MasCountryServiceImpl implements MasCountryService {
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private UserContextService userContextService;
+
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepo.findByUserName(username);
@@ -55,13 +60,13 @@ public class MasCountryServiceImpl implements MasCountryService {
             country.setCountryCode(request.getCountryCode());
             country.setCountryName(request.getCountryName());
             country.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            country.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            country.setLastChgBy(String.valueOf(userContext.getUserId()));
             country.setLastChgDate(Instant.now());
             country.setLastChgTime(getCurrentTimeFormatted());
 
@@ -82,13 +87,13 @@ public class MasCountryServiceImpl implements MasCountryService {
             if (countryOpt.isPresent()) {
                 MasCountry country = countryOpt.get();
                 country.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                country.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                country.setLastChgBy(String.valueOf(userContext.getUserId()));
                 country.setLastChgDate(Instant.now());
                 masCountryRepository.save(country);
                 return ResponseUtils.createSuccessResponse("Country status updated", new TypeReference<>() {
@@ -111,13 +116,13 @@ public class MasCountryServiceImpl implements MasCountryService {
                 MasCountry country = countryOpt.get();
                 country.setCountryCode(request.getCountryCode());
                 country.setCountryName(request.getCountryName());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                country.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                country.setLastChgBy(String.valueOf(userContext.getUserId()));
                 country.setLastChgDate(Instant.now());
                 country.setLastChgTime(getCurrentTimeFormatted());
 

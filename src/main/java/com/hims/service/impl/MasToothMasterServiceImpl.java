@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasToothMaster;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasToothMasterRepository;
 import com.hims.request.MasToothMasterRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasToothMasterResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasToothMasterService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,14 +30,15 @@ public class MasToothMasterServiceImpl implements MasToothMasterService {
     @Autowired
     private AuthUtil authUtil;
 
+    @Autowired
+    private UserContextService userContextService;
+
     @Override
     public ApiResponse<List<MasToothMasterResponse>> getAll(int flag) {
         log.info("Fetching Tooth Master list, flag={}", flag);
         try {
             List<MasToothMaster> list =
-                    (flag == 1)
-                            ? repository.findByStatusIgnoreCaseOrderByDisplayOrderAsc("y")
-                            : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
+                    (flag == 1) ? repository.findByStatusIgnoreCaseOrderByDisplayOrderAsc(AppConstants.STATUS_Y.toLowerCase()): repository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             return ResponseUtils.createSuccessResponse(
                     list.stream().map(this::toResponse).toList(),
@@ -80,16 +84,16 @@ public class MasToothMasterServiceImpl implements MasToothMasterService {
         log.info("Creating Tooth Master, toothNumber={}",
                 request.getToothNumber());
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasToothMaster tooth = MasToothMaster.builder()
                     .toothNumber(request.getToothNumber())
                     .toothType(request.getToothType())
                     .quadrant(request.getQuadrant())
                     .displayOrder(request.getDisplayOrder())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -124,13 +128,13 @@ public class MasToothMasterServiceImpl implements MasToothMasterService {
                         "Tooth ID not found!", 404);
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             tooth.setToothNumber(request.getToothNumber());
             tooth.setToothType(request.getToothType());
             tooth.setQuadrant(request.getQuadrant());
             tooth.setDisplayOrder(request.getDisplayOrder());
-            tooth.setLastUpdatedBy(user.getFirstName());
+            tooth.setLastUpdatedBy(userContext.getUserFullName());
             tooth.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(tooth);
@@ -172,10 +176,10 @@ public class MasToothMasterServiceImpl implements MasToothMasterService {
                 );
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             tooth.setStatus(status);
-            tooth.setLastUpdatedBy(user.getFirstName());
+            tooth.setLastUpdatedBy(userContext.getUserFullName());
             tooth.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(tooth);
@@ -189,6 +193,37 @@ public class MasToothMasterServiceImpl implements MasToothMasterService {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Status update failed", 500
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<List<MasToothMasterResponse>> getToothByToothType(String toothType) {
+        log.info("Fetching Tooth Master by toothType={}", toothType);
+        try {
+
+            List<MasToothMaster> teeth = repository.findByToothTypeIgnoreCaseAndStatusIgnoreCaseOrderByDisplayOrderAsc(toothType , AppConstants.STATUS_Y);
+            if (teeth.isEmpty()) {
+                log.warn("No Tooth Master found for toothType={}", toothType);
+                return ResponseUtils.createNotFoundResponse(
+                        "No teeth found for tooth type: " + toothType,
+                        404
+                );
+            }
+            List<MasToothMasterResponse> response = teeth.stream()
+                    .map(this::toResponse)
+                    .toList();
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<List<MasToothMasterResponse>>() {});
+
+        } catch (Exception e) {
+
+            log.error("Error while fetching Tooth Master by toothType={}", toothType, e);
+
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<List<MasToothMasterResponse>>() {},
+                    "Error occurred",
+                    500
             );
         }
     }

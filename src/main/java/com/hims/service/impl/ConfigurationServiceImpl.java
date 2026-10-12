@@ -12,6 +12,7 @@ import com.hims.request.TemplateApplicationRequest;
 import com.hims.request.UserApplicationRequest;
 import com.hims.response.*;
 import com.hims.service.ConfigurationService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +53,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Autowired
     private UserRepo userRepo;
+    @Autowired
+    private UserContextService userContextService;
 
     // ==================== USER APPLICATION OPERATIONS ====================
 
@@ -98,8 +101,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public ApiResponse<UserApplicationResponse> createApplication(UserApplicationRequest request) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -108,7 +111,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             application.setUserAppName(request.getUserAppName());
             application.setUrl(request.getUrl());
             application.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            application.setLastChgBy(currentUser.getUserId());
+            application.setLastChgBy(userContext.getUserId());
             application.setLastChgDate(Instant.now());
 
             UserApplication savedApplication = userApplicationRepository.save(application);
@@ -126,8 +129,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         try {
             Optional<UserApplication> existingApplication = userApplicationRepository.findById(id);
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -136,7 +139,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
                 UserApplication application = existingApplication.get();
                 application.setUserAppName(request.getUserAppName());
                 application.setUrl(request.getUrl());
-                application.setLastChgBy(currentUser.getUserId());
+                application.setLastChgBy(userContext.getUserId());
                 application.setLastChgDate(Instant.now());
 
                 UserApplication updatedApplication = userApplicationRepository.save(application);
@@ -160,8 +163,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
                         "Invalid status. Status should be 'Y' or 'N'", 400);
             }
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -171,7 +174,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
                 UserApplication userApplication = application.get();
                 userApplication.setStatus(status);
                 userApplication.setLastChgDate(Instant.now());
-                userApplication.setLastChgBy(currentUser.getUserId());
+                userApplication.setLastChgBy(userContext.getUserId());
                 userApplicationRepository.save(userApplication);
                 return ResponseUtils.createSuccessResponse(
                         "Application status updated to '" + status + "'", new TypeReference<>() {});

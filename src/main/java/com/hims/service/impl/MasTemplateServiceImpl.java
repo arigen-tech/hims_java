@@ -1,16 +1,17 @@
 package com.hims.service.impl;
 
-import com.hims.entity.User;
-import com.hims.entity.UserDepartment;
-import com.hims.entity.repository.UserDepartmentRepository;
-import com.hims.entity.repository.UserRepo;
-import com.hims.service.MasTemplateService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasTemplate;
+import com.hims.entity.User;
 import com.hims.entity.repository.MasTemplateRepository;
+import com.hims.entity.repository.UserDepartmentRepository;
+import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasTemplateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasTemplateResponse;
+import com.hims.response.UserContext;
+import com.hims.service.MasTemplateService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,9 @@ public class MasTemplateServiceImpl implements MasTemplateService {
 
     @Autowired
     UserRepo userRepo;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     private UserDepartmentRepository userDepartmentRepository;
@@ -72,8 +76,8 @@ public class MasTemplateServiceImpl implements MasTemplateService {
 
     public ApiResponse<MasTemplateResponse> createTemplate(MasTemplateRequest request) {
 
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -82,9 +86,9 @@ public class MasTemplateServiceImpl implements MasTemplateService {
         template.setTemplateCode(request.getTemplateCode());
         template.setTemplateName(request.getTemplateName());
         template.setStatus("Y"); // Default status to "Y"
-        template.setLastChgBy(currentUser.getUserId());
+        template.setLastChgBy(userContext.getUserId());
         template.setLastChgDate(Instant.now());
-        template.setHospitalId(currentUser.getHospital().getId());
+        template.setHospitalId(userContext.getHospitalId());
 
 
         MasTemplate savedTemplate = masTemplateRepository.save(template);
@@ -105,8 +109,8 @@ public class MasTemplateServiceImpl implements MasTemplateService {
     public ApiResponse<MasTemplateResponse> updateTemplate(Long id, MasTemplateRequest request) {
         Optional<MasTemplate> existingTemplate = masTemplateRepository.findById(id);
 
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -115,9 +119,9 @@ public class MasTemplateServiceImpl implements MasTemplateService {
             MasTemplate template = existingTemplate.get();
             template.setTemplateCode(request.getTemplateCode());
             template.setTemplateName(request.getTemplateName());
-            template.setLastChgBy(currentUser.getUserId());
+            template.setLastChgBy(userContext.getUserId());
             template.setLastChgDate(Instant.now());
-            template.setHospitalId(currentUser.getHospital().getId());
+            template.setHospitalId(userContext.getHospitalId());
 
             MasTemplate updatedTemplate = masTemplateRepository.save(template);
             return ResponseUtils.createSuccessResponse(convertToResponse(updatedTemplate), new TypeReference<>() {});
@@ -131,8 +135,8 @@ public class MasTemplateServiceImpl implements MasTemplateService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status. Status should be 'Y' or 'N'", 400);
         }
 
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -142,8 +146,8 @@ public class MasTemplateServiceImpl implements MasTemplateService {
             MasTemplate masTemplate = template.get();
             masTemplate.setStatus(status);
             masTemplate.setLastChgDate(Instant.now());
-            masTemplate.setLastChgBy(currentUser.getUserId());
-            masTemplate.setHospitalId(currentUser.getHospital().getId());
+            masTemplate.setLastChgBy(userContext.getUserId());
+            masTemplate.setHospitalId(userContext.getHospitalId());
 
             masTemplateRepository.save(masTemplate);
             return ResponseUtils.createSuccessResponse("Template status updated to '" + status + "'", new TypeReference<>() {});

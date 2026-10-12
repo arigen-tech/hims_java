@@ -8,7 +8,9 @@ import com.hims.request.MasMedicalHistoryRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasMedicalHistoryResponse;
 import com.hims.response.MasWardResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasMedicalHistoryService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +30,10 @@ public class MasMedicalHistoryServiceImpl implements MasMedicalHistoryService {
     private AuthUtil authUtil;
     @Autowired
     private MasMedicalHistoryRepository masMedicalHistoryRepository;
+
+    @Autowired
+    private UserContextService userContextService;
+
     @Override
     public ApiResponse<List<MasMedicalHistoryResponse>> getMasMedicalHistory(int flag) {
         try {
@@ -51,15 +57,15 @@ public class MasMedicalHistoryServiceImpl implements MasMedicalHistoryService {
     public ApiResponse<MasMedicalHistoryResponse> addMas(MasMedicalHistoryRequest request) {
         try {
             log.info("MasHistory() method Started...");
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found", HttpStatus.NOT_FOUND.value());
             }
             MasMedicalHistory masWard=new MasMedicalHistory();
             masWard.setMedicalHistoryName(request.getMedicalHistoryName());
-            masWard.setStatus("y");
-            masWard.setLastUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
-            masWard.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+            masWard.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            masWard.setLastUpdatedBy(userContext.getUserFullName());
+            masWard.setCreatedBy(userContext.getUserFullName());
             masWard.setLastUpdateDate(LocalDateTime.now());
             MasMedicalHistory  masWard1=  masMedicalHistoryRepository.save(masWard);
             log.info("MasHistory() method Ended...");
@@ -76,13 +82,13 @@ public class MasMedicalHistoryServiceImpl implements MasMedicalHistoryService {
     public ApiResponse<MasMedicalHistoryResponse> update(Long id, MasMedicalHistoryRequest request) {
         try {
             log.info("updateMasHistory() method Started...");
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.NOT_FOUND.value());
             }
             MasMedicalHistory masWard=  masMedicalHistoryRepository.findById(id).orElseThrow(()-> new RuntimeException("Invalid medical Id"));
             masWard.setMedicalHistoryName(request.getMedicalHistoryName());
-            masWard.setLastUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+            masWard.setLastUpdatedBy(userContext.getUserFullName());
             masWard.setLastUpdateDate(LocalDateTime.now());
             masWard.setStatus("y");
             MasMedicalHistory masWard1= masMedicalHistoryRepository.save( masWard);
@@ -98,8 +104,8 @@ public class MasMedicalHistoryServiceImpl implements MasMedicalHistoryService {
     public ApiResponse<MasMedicalHistoryResponse> changeMasStatus(Long id, String status) {
         try {
             log.info("MasHistory() method Started...");
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.NOT_FOUND.value());
             }
             Optional<MasMedicalHistory> masWard=masMedicalHistoryRepository.findById(id);
@@ -109,7 +115,7 @@ public class MasMedicalHistoryServiceImpl implements MasMedicalHistoryService {
             MasMedicalHistory masWard1=masWard.get();
             masWard1.setStatus(status);
             masWard1.setLastUpdateDate(LocalDateTime.now());
-            masWard1.setLastUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+            masWard1.setLastUpdatedBy(userContext.getUserFullName());
             MasMedicalHistory save = masMedicalHistoryRepository.save( masWard1);
             log.info("changeActiveStatus() method Ended...");
             return  ResponseUtils.createSuccessResponse(mapToResponse(save), new TypeReference<>() {});

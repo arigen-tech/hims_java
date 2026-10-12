@@ -19,6 +19,7 @@ public class PatientRequest {
     private LocalDate patientDob;
     private String patientAge;
     private Long patientGenderId;
+    private Long bloodGroupId;
     private String patientEmailId;
     private String patientMobileNumber;
     private String patientImage;

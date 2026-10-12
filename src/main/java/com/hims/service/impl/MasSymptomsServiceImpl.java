@@ -7,9 +7,10 @@ import com.hims.entity.repository.MasSymptomsRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasSymptomsRequest;
 import com.hims.response.ApiResponse;
-import com.hims.response.DgMasCollectionResponse;
 import com.hims.response.MasSymptomsResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasSymptomsService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,9 @@ public class MasSymptomsServiceImpl implements MasSymptomsService {
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private UserContextService userContextService;
+
     @Override
     @Transactional
     public ApiResponse<MasSymptomsResponse> createSymptom(MasSymptomsRequest symptomsReq) {
@@ -43,13 +47,13 @@ public class MasSymptomsServiceImpl implements MasSymptomsService {
             masSymptoms.setSymptomsCode(symptomsReq.getSymptomsCode());
             masSymptoms.setSymptomsName(symptomsReq.getSymptomsName());
             masSymptoms.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            masSymptoms.setLastChgBy(currentUser.getUsername());
+            masSymptoms.setLastChgBy(userContext.getUserFullName());
             masSymptoms.setLastChgDate(Instant.now());
             masSymptoms.setMostCommonUse(symptomsReq.getMostCommonUse());
             return ResponseUtils.createSuccessResponse(mapToResponse(symptomsRepo.save(masSymptoms)), new TypeReference<>() {
@@ -69,13 +73,13 @@ public class MasSymptomsServiceImpl implements MasSymptomsService {
                 MasSymptoms masSymptoms = masSymptomsOpt.get();
                 masSymptoms.setSymptomsCode(symptomsReq.getSymptomsCode());
                 masSymptoms.setSymptomsName(symptomsReq.getSymptomsName());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                masSymptoms.setLastChgBy(currentUser.getUsername());
+                masSymptoms.setLastChgBy(userContext.getUserFullName());
                 masSymptoms.setLastChgDate(Instant.now());
                 masSymptoms.setMostCommonUse(symptomsReq.getMostCommonUse());
                 return ResponseUtils.createSuccessResponse(mapToResponse(symptomsRepo.save(masSymptoms)), new TypeReference<>() {
@@ -103,13 +107,13 @@ public class MasSymptomsServiceImpl implements MasSymptomsService {
                             "Invalid status value. Use 'Y' for Active and 'N' for Inactive.", 400);
                 }
                 masSymptoms.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                masSymptoms.setLastChgBy(currentUser.getUsername());
+                masSymptoms.setLastChgBy(userContext.getUserFullName());
                 masSymptoms.setLastChgDate(Instant.now());
                 return ResponseUtils.createSuccessResponse(mapToResponse(symptomsRepo.save(masSymptoms)), new TypeReference<>() {
                 });

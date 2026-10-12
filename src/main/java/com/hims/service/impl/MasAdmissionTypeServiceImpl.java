@@ -1,14 +1,14 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.constants.AppConstants;
 import com.hims.entity.MasAdmissionType;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasAdmissionTypeRepository;
 import com.hims.request.MasAdmissionTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasAdmissionTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasAdmissionTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.hims.constants.AppConstants.*;
+import static com.hims.constants.AppConstants.STATUS_N;
+import static com.hims.constants.AppConstants.STATUS_Y;
 
 @Service
 public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
@@ -27,6 +28,9 @@ public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasAdmissionTypeResponse>> getAll(int flag) {
@@ -62,14 +66,14 @@ public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
     @Override
     public ApiResponse<MasAdmissionTypeResponse> create(MasAdmissionTypeRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasAdmissionType data = MasAdmissionType.builder()
                     .admissionTypeName(request.getAdmissionTypeName())
                     .description(request.getDescription())
                     .status(STATUS_Y.toLowerCase())
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -90,11 +94,11 @@ public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
             if (data == null)
                 return ResponseUtils.createNotFoundResponse("ID Not Found!", 404);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             data.setAdmissionTypeName(request.getAdmissionTypeName());
             data.setDescription(request.getDescription());
-            data.setLastUpdatedBy(user.getFirstName());
+            data.setLastUpdatedBy(userContext.getUserFullName());
             data.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(data);
@@ -118,10 +122,10 @@ public class MasAdmissionTypeServiceImpl implements MasAdmissionTypeService {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid Status!", 400);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             data.setStatus(status);
-            data.setLastUpdatedBy(user.getFirstName());
+            data.setLastUpdatedBy(userContext.getUserFullName());
             data.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(data);

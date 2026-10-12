@@ -9,12 +9,7 @@ import java.time.LocalDateTime;
 public class ConsumableEntryRequest {
     private Long itemId;
     private Long InpatientId;
-    private LocalDateTime dateTime;
     private BigDecimal requestQty;
-    private String batchNo;
-    private LocalDate expiryDate;
-    private String givenBy;
-    private String remark;
+    private Long batchStockId;
     private Long procedureId;
-
 }

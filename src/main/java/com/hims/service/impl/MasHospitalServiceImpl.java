@@ -9,6 +9,7 @@ import com.hims.request.MasHospitalRequest;
 import com.hims.response.*;
 import com.hims.response.MasHospitalResponseDto;
 import com.hims.service.MasHospitalService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +46,9 @@ public class MasHospitalServiceImpl implements MasHospitalService {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private UserContextService userContextService;
 
     private String getCurrentTimeFormatted() {
         return LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
@@ -135,17 +139,17 @@ public class MasHospitalServiceImpl implements MasHospitalService {
             MasHospital hospital = new MasHospital();
             hospital.setHospitalCode(hospitalRequest.getHospitalCode());
             hospital.setHospitalName(hospitalRequest.getHospitalName());
-            hospital.setStatus("y");
+            hospital.setStatus(AppConstants.STATUS_Y.toLowerCase());
             hospital.setAddress(hospitalRequest.getAddress());
             hospital.setContactNumber(hospitalRequest.getContactNumber());
             hospital.setContactNumber2(hospitalRequest.getContactNumber2());
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            hospital.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            hospital.setLastChgBy(String.valueOf(userContext.getUserId()));
             hospital.setLastChgDate(LocalDate.now());
             hospital.setLastChgTime(getCurrentTimeFormatted());
 
@@ -204,13 +208,13 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                 existingHospital.setAddress(hospitalRequest.getAddress());
                 existingHospital.setContactNumber(hospitalRequest.getContactNumber());
                 existingHospital.setContactNumber2(hospitalRequest.getContactNumber2());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                existingHospital.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                existingHospital.setLastChgBy(String.valueOf(userContext.getUserId()));
                 existingHospital.setLastChgDate(LocalDate.now());
                 existingHospital.setLastChgTime(getCurrentTimeFormatted());
 
@@ -302,13 +306,13 @@ public class MasHospitalServiceImpl implements MasHospitalService {
                 }
 
                 existingHospital.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                existingHospital.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                existingHospital.setLastChgBy(String.valueOf(userContext.getUserId()));
                 MasHospital updatedHospital = masHospitalRepository.save(existingHospital);
 
                 return ResponseUtils.createSuccessResponse(convertToResponse(updatedHospital), new TypeReference<>() {

@@ -8,6 +8,7 @@ import com.hims.projection.InvestigationProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.DgMasInvestigationService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
@@ -78,6 +79,9 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     private Long mainChargecodeId;
     @Value("${radioInvestigation.mainChargecodeId}")
     private Long radMainChargeCodeId;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Override
@@ -336,8 +340,8 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     @Override
     public ApiResponse<String> changeInvestigationStatus(Long investigationId, String status) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
@@ -348,7 +352,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             }
             DgMasInvestigation dgMasInvestigation = dgMasInvestigationOpt.get();
             dgMasInvestigation.setStatus(status);
-            dgMasInvestigation.setLastChgBy(currentUser.getUsername());
+            dgMasInvestigation.setLastChgBy(userContext.getUserFullName());
             dgMasInvestigation.setLastChgDate(Instant.now());
             dgMasInvestigation.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             dgMasInvestigationRepo.save(dgMasInvestigation);
@@ -375,13 +379,13 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 masInvestigation.setMultipleResults("n");
             }
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            masInvestigation.setLastChgBy(currentUser.getUsername());
+            masInvestigation.setLastChgBy(userContext.getUserFullName());
             masInvestigation.setLastChgDate(Instant.now());
             masInvestigation.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             masInvestigation.setMaxNormalValue(investigationRequest.getMaxNormalValue());
@@ -485,7 +489,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 
     @Override
     public ApiResponse<DgMasInvestigationSingleResponse> updateSingleInvestigation(Long investigationId, DgMasInvestigationSingleReqest investigationRequest) {
-        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         try{
             Optional<DgMasInvestigation> masInvestigation = dgMasInvestigationRepo.findById(investigationId);
             if (masInvestigation.isPresent()) {
@@ -494,7 +498,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                 dmi.setInvestigationName(investigationRequest.getInvestigationName());
                 dmi.setConfidential(investigationRequest.getConfidential());
                 dmi.setInvestigationType(investigationRequest.getInvestigationType());
-                dmi.setLastChgBy(currentUser.getUsername());
+                dmi.setLastChgBy(userContext.getUserFullName());
                 dmi.setLastChgDate(Instant.now());
                 dmi.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
                 dmi.setMaxNormalValue(investigationRequest.getMaxNormalValue());
@@ -598,13 +602,13 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
     @Override
     @Transactional
     public ApiResponse<String> updateMultipleInvestigation(DgMasInvestigationMultiRequest multiRequest) {
-        User currentUser = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         Optional<DgMasInvestigation> masInvestOpt = dgMasInvestigationRepo.findById(multiRequest.getInvestigationId());
         DgMasInvestigation masInvestigation = masInvestOpt.get();
         masInvestigation.setInvestigationName(multiRequest.getInvestigationName());
         masInvestigation.setConfidential(multiRequest.getConfidential());
         masInvestigation.setInvestigationType(multiRequest.getInvestigationType());
-        masInvestigation.setLastChgBy(currentUser.getUsername());
+        masInvestigation.setLastChgBy(userContext.getUserFullName());
         masInvestigation.setLastChgDate(Instant.now());
         masInvestigation.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
         masInvestigation.setMaxNormalValue(multiRequest.getMaxNormalValue());
@@ -695,7 +699,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                     }
 
                     newSubObj.setComparisonType(subInvestObj.getComparisonType());
-                    newSubObj.setLastChgBy(currentUser.getUsername());
+                    newSubObj.setLastChgBy(userContext.getUserFullName());
                     newSubObj.setLastChgDate(Instant.now());
                     newSubObj.setLastChgTime(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
                     Optional<MasMainChargeCode> mmcc = mainChargeCodeRepo.findById(subInvestObj.getMainChargeCodeId());
@@ -794,7 +798,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
                         existing.setSubInvestigationCode(subInvestObj.getSubInvestigationCode());
                         existing.setResultType(subInvestObj.getResultType());
                         existing.setComparisonType(subInvestObj.getComparisonType());
-                        existing.setLastChgBy(currentUser.getUsername());
+                        existing.setLastChgBy(userContext.getUserFullName());
                         existing.setPrintOrder(subInvestObj.getPrintOrder());
                         if (subInvestObj.getParentAutoCompleteInvestigationId() != null) {
                             existing.setParentAutoCompeteInvestigationId(

@@ -10,7 +10,9 @@ import com.hims.helperUtil.HelperUtils;
 import com.hims.request.MasGenderRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasGenderResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasGenderService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Helper;
@@ -37,6 +39,8 @@ public class MasGenderServiceImpl implements MasGenderService {
 
     @Autowired
     private MasGenderRepository masGenderRepository;
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     UserRepo userRepo;
@@ -94,13 +98,13 @@ public class MasGenderServiceImpl implements MasGenderService {
             gender.setStatus(AppConstants.STATUS_Y.toLowerCase());
             gender.setCode(null);
 
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
             }
-            gender.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            gender.setLastChgBy(String.valueOf(userContext.getUserId()));
 
 
             MasGender savedGender = masGenderRepository.save(gender);
@@ -124,13 +128,13 @@ public class MasGenderServiceImpl implements MasGenderService {
                 existingGender.setGenderName(genderDetails.getGenderName());
                 existingGender.setLastChgDt(LocalDateTime.now());
                 existingGender.setCode(null);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
                 }
-                existingGender.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                existingGender.setLastChgBy(String.valueOf(userContext.getUserId()));
 
 
                 MasGender updatedGender = masGenderRepository.save(existingGender);
@@ -162,13 +166,13 @@ public class MasGenderServiceImpl implements MasGenderService {
                 }
                 existingGender.setLastChgDt(LocalDateTime.now());
                 existingGender.setStatus(status); // Set status as "Y" or "N"
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
                 }
-                existingGender.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                existingGender.setLastChgBy(String.valueOf(userContext.getUserId()));
 
                 MasGender updatedGender = masGenderRepository.save(existingGender);
 

@@ -7,6 +7,7 @@ import com.hims.entity.repository.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.OpeningBalanceEntryService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
@@ -39,16 +40,13 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     @Autowired
     private MasManufacturerRepository manufacturerRepo;
     @Autowired
-    UserRepo userRepo;
+    private UserContextService userContextService;
 
     @Autowired
     private MasDepartmentRepository masDepartmentRepository;
 
     @Autowired
     private StoreItemBatchStockRepository storeItemBatchStockRepository;
-
-    @Autowired
-    private MasHsnRepository masHsnRepository;
 
     @Autowired
     private StoreStockLedgerRepository storeStockLedgerRepository;
@@ -86,8 +84,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     @Transactional
     public ApiResponse<OpeningBalanceEntryResponse> add(OpeningBalanceEntryRequest openingBalanceEntryRequest) {
 
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
                     "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
@@ -96,7 +94,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         // Save HD record
         StoreBalanceHd hd = new StoreBalanceHd();
         MasDepartment depObj = masDepartmentRepository.getById(openingBalanceEntryRequest.getDepartmentId());
-        hd.setHospitalId(currentUser.getHospital());
+        hd.setHospitalId(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new EntityNotFoundException("Hospital not found")));
         hd.setDepartmentId(depObj);
         hd.setEnteredBy(openingBalanceEntryRequest.getEnteredBy());
         String orderNum = createInvoice();
@@ -171,9 +169,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     @Override
     @Transactional
     public ApiResponse<String> update(Long id, OpeningBalanceEntryRequest openingBalanceEntryRequest) {
-        User currentUser = authUtil.getCurrentUser();
-
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
                     "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
@@ -262,8 +259,8 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
     @Transactional
     @Override
     public ApiResponse<String> approved(Long id, OpeningBalanceEntryRequest2 request) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
@@ -274,13 +271,12 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
             return ResponseUtils.createNotFoundResponse("Store Balance Hd not found", 404);
         }
 
-        String fName = currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
 
         StoreBalanceHd hd = hdOpt.get();
         hd.setStatus(request.getStatus());
         hd.setApprovalDt(LocalDateTime.now());
         hd.setRemarks(request.getRemark());
-        hd.setApprovedBy(fName);
+        hd.setApprovedBy(userContext.getUserFullName());
         StoreBalanceHd hdObj = hdRepo.save(hd);
 
         if ("a".equalsIgnoreCase(request.getStatus())) {
@@ -329,7 +325,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                         MasDepartment department = masDepartmentRepository.getById(deptId);
 
                         stock = new StoreItemBatchStock();
-                        stock.setHospitalId(currentUser.getHospital());
+                        stock.setHospitalId(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID")));
                         stock.setDepartmentId(department);
                         stock.setItemId(dt.getItemId());
                         stock.setManufacturerId(dt.getManufacturerId());
@@ -350,7 +346,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                         stock.setLastChgDate(LocalDateTime.now());
 
 
-                        stock.setLastChgBy(fName);
+                        stock.setLastChgBy(userContext.getUserFullName());
 
                         stock = storeItemBatchStockRepository.save(stock);
 
@@ -358,7 +354,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
                     }
 
                     stock.setLastChgDate(LocalDateTime.now());
-                    stock.setLastChgBy(currentUser.getUsername());
+                    stock.setLastChgBy(userContext.getUserFullName());
 
                     stockMap.put(key, stock);
                 }
@@ -642,11 +638,10 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         StoreItemBatchStock stock = stockOpt.get();
         StoreStockLedger ledger = new StoreStockLedger();
         ledger.setCreatedDt(LocalDateTime.now());
-        User currentUser = authUtil.getCurrentUser();
-        String fName= currentUser.getFirstName() + " " + currentUser.getMiddleName() + " " + currentUser.getLastName();
+        UserContext userContext = userContextService.getCurrentUserContext();
 
-        if (currentUser != null) {
-            ledger.setCreatedBy(fName);
+        if (userContext != null) {
+            ledger.setCreatedBy(userContext.getUserFullName());
         }
         ledger.setTxnDate(LocalDate.now());
         ledger.setQtyIn(BigDecimal.valueOf(qty));
@@ -654,7 +649,7 @@ public class OpeningBalanceEntryServiceImp implements OpeningBalanceEntryService
         ledger.setQtyBefore(BigDecimal.valueOf(stock.getClosingStock()));
         ledger.setQtyAfter(BigDecimal.valueOf(stock.getClosingStock()+qty));
         ledger.setReferenceNum(referenceNum);
-        ledger.setHospital(authUtil.getCurrentUser().getHospital());
+        ledger.setHospital(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new IllegalArgumentException("Invalid hospital ID")));
         ledger.setDept(masDepartmentRepository.findById(authUtil.getCurrentDepartmentId()).orElseThrow(()-> new RuntimeException("Department Not Found")));
         ledger.setTxnSource(opTxnType);
         ledger.setTxnType(opTxnType);

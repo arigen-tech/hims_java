@@ -736,7 +736,7 @@ public class LabReportServiceImpl implements LabReportService {
         response.setMobileNum(patient.getPatientMobileNumber());
         response.setPatientName(patient.getPatientMn().trim().isBlank()?patient.getPatientFn()+" "+patient.getPatientLn():patient.getFullName());
         response.setInvestigationName(entity.getInvestigation().getInvestigationName());
-        response.setOrderDate(entity.getOrderHd().getOrderDate());
+        response.setOrderDate(entity.getOrderHd().getOrderTime());
 
         return  response;
     }

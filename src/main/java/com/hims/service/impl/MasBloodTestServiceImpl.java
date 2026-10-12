@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasBloodCollectionType;
 import com.hims.entity.MasBloodTest;
 import com.hims.entity.User;
@@ -9,7 +10,9 @@ import com.hims.entity.repository.MasBloodTestRepository;
 import com.hims.request.MasBloodTestRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasBloodTestResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasBloodTestService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,9 @@ public class MasBloodTestServiceImpl implements MasBloodTestService {
     private final AuthUtil authUtil;
     @Autowired
     private MasBloodCollectionTypeRepository masBloodCollectionTypeRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasBloodTestResponse>> getAll(int flag) {
@@ -69,8 +75,8 @@ public class MasBloodTestServiceImpl implements MasBloodTestService {
     @Override
     public ApiResponse<MasBloodTestResponse> create(MasBloodTestRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 401);
@@ -81,9 +87,9 @@ public class MasBloodTestServiceImpl implements MasBloodTestService {
                     .testName(request.getTestName())
                     .isMandatory(request.getIsMandatory())
                     .applicableCollectionTypeId(masBloodCollectionType.orElse(null))
-                    .status("y")
+                    .status(AppConstants.STATUS_Y.toLowerCase())
                     .createdDate(LocalDateTime.now())
-                    .createdBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
                     .build();
 
             repository.save(entity);

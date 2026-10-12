@@ -3,15 +3,15 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasAdmissionSource;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasAdmissionSourceRepository;
 import com.hims.request.MasAdmissionSourceRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasAdmissionSourceResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasAdmissionSourceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
-import kong.unirest.HttpStatus;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +28,9 @@ public class MasAdmissionSourceServiceImpl implements MasAdmissionSourceService 
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasAdmissionSourceResponse>> getAllMasAdmissionSource(int flag) {
@@ -74,9 +77,9 @@ public class MasAdmissionSourceServiceImpl implements MasAdmissionSourceService 
         log.info("Creating Admission Source");
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found", 404);
             }
 
@@ -85,8 +88,8 @@ public class MasAdmissionSourceServiceImpl implements MasAdmissionSourceService 
             entity.setAdmissionSourceName(request.getAdmissionSourceName());
             entity.setDescription(request.getDescription());
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setCreatedBy(user.getFullName());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -113,14 +116,14 @@ public class MasAdmissionSourceServiceImpl implements MasAdmissionSourceService 
                 return ResponseUtils.createNotFoundResponse("Admission Source not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found", 404);
             }
             entity.setAdmissionSourceName(request.getAdmissionSourceName());
             entity.setDescription(request.getDescription());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(mapToResponse(entity), new TypeReference<>() {});
@@ -144,13 +147,13 @@ public class MasAdmissionSourceServiceImpl implements MasAdmissionSourceService 
             if (entity == null) {
                 return ResponseUtils.createNotFoundResponse("Admission Source not found", 404);
             }
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null,    "Current user not found", 404);
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(mapToResponse(entity), new TypeReference<>() {});

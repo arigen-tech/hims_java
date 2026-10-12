@@ -2,12 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.GynMasMenarcheAge;
-import com.hims.entity.User;
 import com.hims.entity.repository.GynMasMenarcheAgeRepository;
 import com.hims.request.GynMasMenarcheAgeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.GynMasMenarcheAgeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.GynMasMenarcheAgeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,9 @@ public class GynMasMenarcheAgeServiceImpl
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<GynMasMenarcheAgeResponse>> getAll(int flag) {
@@ -66,8 +70,8 @@ public class GynMasMenarcheAgeServiceImpl
 
         log.info("Creating Menarche Age={}", request.getMenarcheAge());
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -76,8 +80,8 @@ public class GynMasMenarcheAgeServiceImpl
             GynMasMenarcheAge entity = GynMasMenarcheAge.builder()
                     .menarcheAge(request.getMenarcheAge())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -105,15 +109,15 @@ public class GynMasMenarcheAgeServiceImpl
                     "Menarche Age not found", 404);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setMenarcheAge(request.getMenarcheAge());
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);
@@ -141,15 +145,15 @@ public class GynMasMenarcheAgeServiceImpl
                     "Invalid status", 400);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setStatus(status);
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);

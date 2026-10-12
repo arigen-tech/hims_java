@@ -5,7 +5,6 @@ import com.hims.projection.BillingHeaderResponseProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -54,6 +53,11 @@ public interface BillingService {
      */
     ApiResponse<List<PendingBillingResponse>> getLabRadiologyBillingDetails(Long billingHdId, String serviceCategoryCode);
 
+        /**
+         * Get Lab/Radiology billing details by billing header ID regardless of payment status
+         */
+        ApiResponse<List<PendingBillingResponse>> getLabRadiologyBillingDetailsAll(Long billingHdId, String serviceCategoryCode);
+
     /**
      * Search invoice details by patient name, phone or registration number
      */
@@ -61,7 +65,7 @@ public interface BillingService {
 
 
     BillingHeader saveBillingHeader(
-            Object orderHd, Visit vId, User currentUser,
+            Object orderHd, Visit vId, UserContext currentUser,
             BigDecimal sum, BigDecimal tax, BigDecimal disc,
             String serviceCategoryCode, boolean isRadiology);
 
@@ -80,14 +84,34 @@ public interface BillingService {
             String serviceCategoryCode);
 
 
-    ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(int page, int size,String patientName,
-                                String mobileNo,String billingServiceType, String refundStatus,LocalDate fromDate,LocalDate toDate);
+//    ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(int page, int size,String patientName,
+//                                String mobileNo,String billingServiceType, String refundStatus,LocalDate fromDate,LocalDate toDate);
 
+    public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(
+            int page,
+            int size,
+            String patientName,
+            String mobileNo,
+            String billingServiceType,
+            String refundStatus,
+            Long paymentModeId,
+            LocalDate fromDate,
+            LocalDate toDate
+    );
+
+        ApiResponse<Page<MobileCancelledRefundResponse>> getMobileCancelledRefundAppointments(
+            Long hospitalId,
+            String departmentType,
+            Long patientId,
+            int page,
+            int size
+    );
     ApiResponse<List<PatientBillingRefundDetailsResponse>> getPatientBillingRefundDetails(Long billingId);
 
-    BillingHeader saveBillingHeaderIfEnabled(boolean billingEnabled, Object orderHd, Visit visit, User currentUser,
+    BillingHeader saveBillingHeaderIfEnabled(boolean billingEnabled, Object orderHd, Visit visit, UserContext currentUser,
                                              BigDecimal total, BigDecimal tax, BigDecimal discount,
                                              String serviceCategoryCode, boolean isRadiology);
 
 
+    ApiResponse<RefundDetailsResponse> getRefundDetails(Long refundId);
 }

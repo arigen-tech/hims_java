@@ -2,22 +2,28 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.NotificationType;
+import com.hims.constants.PaymentStatusCode;
+import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.BillingException;
 import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.PaidCancelledAppointmentMapper;
+import com.hims.mapper.PaymentMapper;
 import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BillingService;
 import com.hims.service.TransactionSequenceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,10 +57,22 @@ public class BillingServiceImpl implements BillingService {
     BillingPaymentRepository billingPaymentRepository;
     @Autowired
     PaymentDetailRepository paymentDetailRepository;
+
+    @Autowired
+    private PaymentDetailsV2Repository paymentDetailsV2Repository;
     @Autowired
     private VisitRepository visitRepository;
+
+    @Autowired
+    private PaymentMapper paymentMapper;
+
+    @Autowired
+    private PaymentUtils paymentUtils;
     @Autowired
     AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     private RandomNumGenerator randomNumGenerator;
@@ -83,6 +102,9 @@ public class BillingServiceImpl implements BillingService {
 
     @Autowired
     private LabOrderTrackingStatusRepository orderTrackingStatusRepository;
+
+    @Autowired
+    private PaymentRefundRepository paymentRefundRepository;
 
     @Value("${lab.track-order-status-reg.ordered}")
     private Long orderedStatusId;
@@ -120,20 +142,29 @@ public class BillingServiceImpl implements BillingService {
     @Autowired
     TransactionSequenceService transactionSequenceService;
 
+    @Autowired
+    MasHospitalRepository masHospitalRepository;
+
+    @Autowired
+    private SMSUtility smsUtility;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
 
     @Override
     @Transactional
     public ApiResponse<OpdBillingPaymentResponse> saveBillingForOpd(Visit visit, MasServiceCategory serviceCategory, MasDiscount discount) {
         BillingHeader header = new BillingHeader();
         OpdBillingPaymentResponse response = new OpdBillingPaymentResponse();
-        User currentUser = authUtil.getCurrentUser();
+        String userContext = userContextService.getCurrentUserFullNameFromToken();
         BigDecimal tax = BigDecimal.ZERO;
         BigDecimal registrationCost = BigDecimal.ZERO;
 
         BillingPolicyMaster policy;
         Patient patient = visit.getPatient();
             BigDecimal totalDiscount = BigDecimal.valueOf(0);
-            header.setBillDate(OffsetDateTime.now());
+            header.setBillDate(HMISUtil.getCurrentLocalDateTime());
             header.setPatient(visit.getPatient());
             header.setPatientDisplayName(visit.getPatient().getFullName());
             header.setPatientAge(visit.getPatient().getPatientAge());
@@ -146,8 +177,13 @@ public class BillingServiceImpl implements BillingService {
             header.setHospitalGstin(visit.getHospital().getGstnNo());
             header.setReferredBy(visit.getIniDoctor().getFullName());
             header.setGstnBillNo("");
-            header.setBillDate(OffsetDateTime.now());
-            Instant currentDate = Instant.now();
+            header.setBillDate(HMISUtil.getCurrentLocalDateTime());
+        Instant instant = Instant.now();
+        Instant dateOnly = instant
+                .atZone(ZoneId.of("Asia/Kolkata"))
+                .toLocalDate()
+                .atStartOfDay(ZoneId.of("Asia/Kolkata"))
+                .toInstant();
             Optional<Visit> lastVisitOpt = visitRepository.findPreviousVisit(
                     patient.getId(),
                     visit.getDoctor().getUserId(),
@@ -163,7 +199,7 @@ public class BillingServiceImpl implements BillingService {
 
             header.setBillingPolicy(policy);
 
-            Optional<MasServiceOpd> serviceOpd = masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatIdAndCurrentDate(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory, currentDate);
+            Optional<MasServiceOpd> serviceOpd = masServiceOpdRepository.findByHospitalIdAndDoctorUserIdAndDepartmentIdAndServiceCatIdAndCurrentDate(visit.getHospital(), visit.getDoctor(), visit.getDepartment(), serviceCategory, dateOnly);
             if (serviceOpd.isPresent()) {
                 if (discount != null) {
                     if (discount.getDisPercentage() != null && discount.getMaxDiscount() != null) {
@@ -206,13 +242,10 @@ public class BillingServiceImpl implements BillingService {
             } else {
                 header.setPaymentStatus(AppConstants.PAYMENT_NOT_PAID.toLowerCase());
             }
-            header.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
-            header.setCreatedBy(currentUser.getFullName());
-            header.setUpdatedDt(Instant.now());
-            header.setCreatedDt(Instant.now());
+            header.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, visit.getHospital().getId()));
+            header.setCreatedBy(userContext);
             header.setInvoiceNo("");
-            header.setUpdatedAt(OffsetDateTime.now());
-            header.setBillingDate(Instant.now());
+            header.setBillingDate(HMISUtil.getCurrentLocalDateTime());
             header.setDiscount(discount);
             header.setVisit(visit);
             header.setServiceCategory(serviceCategory);
@@ -573,6 +606,7 @@ public class BillingServiceImpl implements BillingService {
             response.setPatientUhid(patient.getUhidNo());
 
 
+
             List<AppointmentBlock> appointments = visits.stream().map(v -> {
 
                 AppointmentBlock block = new AppointmentBlock();
@@ -582,7 +616,7 @@ public class BillingServiceImpl implements BillingService {
                 block.setDepartment(v.getDepartmentName());
                 block.setConsultedDoctor(v.getConsultedDoctor());
                 block.setSessionName(v.getSessionName());
-                block.setVisitDate(v.getVisitDate());
+                block.setVisitDate(HelperUtils.instantToLocalDateTime(v.getVisitDate()));
                 block.setBillingHdId(v.getBillingHdId());
                 block.setTariff(v.getTariff());
                 block.setDiscount(v.getDiscountAmount());
@@ -655,7 +689,9 @@ public class BillingServiceImpl implements BillingService {
             Page<BillingHeaderResponseProjection> response = billingHeaderRepository.searchBillingStatus(
                     patientNameLike,
                     phoneNoLike,
-                    registrationNoLike, AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_P.toLowerCase(),serviceCategoryId, pageable
+                    registrationNoLike, AppConstants.STATUS_Y.toLowerCase(), AppConstants.STATUS_P.toLowerCase()
+                    ,AppConstants.VISIT_STATUS_CANCELLED.toLowerCase()
+                    ,serviceCategoryId, pageable
             );
 
             return ResponseUtils.createSuccessResponse(
@@ -683,7 +719,7 @@ public class BillingServiceImpl implements BillingService {
         PaymentResponse res = new PaymentResponse();
         BillingHeader header;
         List<PaymentUpdateRequest.OpdBillPayment> opdPayments = request.getOpdBillPayments();
-        User currentUser = authUtil.getCurrentUser();
+        String fullName = userContextService.getCurrentUserFullNameFromToken();
         if (opdPayments == null || opdPayments.isEmpty()) {
             throw new SDDException(500,"OPD payment items missing in request.");
         }
@@ -705,7 +741,7 @@ public class BillingServiceImpl implements BillingService {
                 for (BillingDetail bdt : details) {
                     bdt.setChargeCost(bdt.getNetAmount());
                     bdt.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-                    bdt.setCollectedBy(currentUser);
+                    bdt.setCollectedBy(fullName);
                     billingDetailRepository.save(bdt);
                 }
             }
@@ -714,23 +750,24 @@ public class BillingServiceImpl implements BillingService {
             if (visit == null) {
                 throw new SDDException(billHeaderId,"Visit not linked with OPD Bill Header " );
             }
+            PaymentDetailsV2 payment;
+            if(!paymentDetailsV2Repository.existsByBillingHeader_Id(header.getId())){
+                payment=savePaymentDetailsV2(header,request);
+            }else{
 
-            PaymentDetail paymentDetail = new PaymentDetail();
-            paymentDetail.setPaymentMode(request.getMode());
-            paymentDetail.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-            paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
-            paymentDetail.setPaymentDate(Instant.now());
-            paymentDetail.setAmount(netAmount);
-            paymentDetail.setCreatedBy(currentUser.getFullName());
-            paymentDetail.setCreatedAt(Instant.now());
-            paymentDetail.setUpdatedAt(Instant.now());
-            paymentDetail.setBillingHd(header);
-            paymentDetailRepository.save(paymentDetail);
+                payment=  paymentDetailsV2Repository.findByBillingHeader_Id(header.getId())
+                        .orElseThrow(()-> new SDDException("Payment Details",
+                                HttpStatus.NOT_FOUND.value(),
+                                "Payment Details not found for this billing "
+                        ));
+
+            }
+
 
             BigDecimal oldPaid = header.getTotalPaid() == null ? BigDecimal.ZERO : header.getTotalPaid();
             header.setTotalPaid(oldPaid.add(netAmount));
             header.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-            header.setCreatedBy(currentUser.getFullName());
+            header.setCreatedBy(fullName);
             billingHeaderRepository.save(header);
 
             visit.setBillingStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -745,6 +782,22 @@ public class BillingServiceImpl implements BillingService {
             item.setTokenNo(visit.getTokenNo());
             item.setDoctorName(visit.getDoctorName());
             paymentItemList.add(item);
+
+            Map<String, String> opdVariables = buildNotificationVariables(header, payment, "OPD");
+
+            eventPublisher.publishEvent(
+                    new NotificationEvent(
+                            NotificationType.INVOICE_GENERATED,
+                            header.getPatient().getPatientMobileNumber(),
+                            opdVariables
+                    )
+            );
+
+            log.info(
+                    "OPD Invoice notification event published for patient: {}",
+                    visit.getPatient().getFullName()
+            );
+
         }
         res.setMsg("Success");
         res.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -760,26 +813,40 @@ public class BillingServiceImpl implements BillingService {
 
         log.info("Starting LAB payment update");
         log.debug("Request: {}", request);
-        User currentUser = authUtil.getCurrentUser();
+        String userContext = userContextService.getCurrentUserFullNameFromToken();
         PaymentResponse res = new PaymentResponse();
         try {
             BillingHeader billingHeader = billingHeaderRepository
                     .findById(request.getBillHeaderId())
                     .orElseThrow(() -> new RuntimeException("BillingHeader not found"));
 
-            PaymentDetail paymentDetail = new PaymentDetail();
-            paymentDetail.setPaymentMode(request.getMode());
-            paymentDetail.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-            paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
-            paymentDetail.setPaymentDate(Instant.now());
-            paymentDetail.setAmount(request.getAmount());
-            paymentDetail.setCreatedBy(currentUser.getFullName());
-            paymentDetail.setCreatedAt(Instant.now());
-            paymentDetail.setUpdatedAt(Instant.now());
-            paymentDetail.setBillingHd(billingHeader);
+//            PaymentDetail paymentDetail = new PaymentDetail();
+//            paymentDetail.setPaymentMode(request.getMode());
+//            paymentDetail.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+//            paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
+//            paymentDetail.setPaymentDate(Instant.now());
+//            paymentDetail.setAmount(request.getAmount());
+//            paymentDetail.setCreatedBy(currentUser.getFullName());
+//            paymentDetail.setCreatedAt(Instant.now());
+//            paymentDetail.setUpdatedAt(Instant.now());
+//            paymentDetail.setBillingHd(billingHeader);
 
-            PaymentDetail saved = paymentDetailRepository.save(paymentDetail);
-            log.info("PaymentDetail saved, id={}", saved.getId());
+//            PaymentDetail saved = paymentDetailRepository.save(paymentDetail);
+
+            PaymentDetailsV2 payment;
+            if(!paymentDetailsV2Repository.existsByBillingHeader_Id(billingHeader.getId())){
+//                Optional<PaymentDetailsV2> paymentDetailsV2 = paymentDetailsV2Repository.findByBillingHeader_Id(billingHeader.getId());
+//                savePaymentDetailsV2(paymentDetailsV2.get(),billingHeader,request);
+                payment=savePaymentDetailsV2(billingHeader,request);
+            }else{
+                Optional<PaymentDetailsV2> paymentOpt
+                        = paymentDetailsV2Repository.findByBillingHeader_Id(billingHeader.getId());
+                 payment = paymentOpt.orElseThrow(() -> new SDDException("Payment Details",
+                        HttpStatus.NOT_FOUND.value(),
+                        "Payment details not found for the given billing"
+                ));
+            }
+
 
             for (InvestigationandPackegBillStatus item : request.getInvestigationandPackegBillStatus()) {
 
@@ -787,7 +854,7 @@ public class BillingServiceImpl implements BillingService {
 
                 if (AppConstants.INVESTIGATION.equalsIgnoreCase(item.getType())) {
                     billingDetailRepository.updatePaymentStatusInvestigation(
-                            AppConstants.PAYMENT_PAID.toLowerCase(), currentUser, item.getId(), billHdId);
+                            AppConstants.PAYMENT_PAID.toLowerCase(), userContext, item.getId(), billHdId);
 
                     labDtRepository.updatePaymentStatusInvestigationDt(
                             AppConstants.PAYMENT_PAID.toLowerCase(), item.getId(), billHdId);
@@ -795,7 +862,7 @@ public class BillingServiceImpl implements BillingService {
                 } else {
                     //for package status
                     billingDetailRepository.updatePaymentStatusPackage(
-                            AppConstants.PAYMENT_PAID.toLowerCase(),currentUser, item.getId(), billHdId);
+                            AppConstants.PAYMENT_PAID.toLowerCase(),userContext, item.getId(), billHdId);
 
                     labDtRepository.updatePaymentStatusPackageDt(
                             AppConstants.PAYMENT_PAID.toLowerCase(), item.getId(), billHdId);
@@ -823,7 +890,7 @@ public class BillingServiceImpl implements BillingService {
                     .orElse(BigDecimal.ZERO);
 
             billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUI));
-            billingHeader.setCreatedBy(currentUser.getFullName());
+            billingHeader.setCreatedBy(userContext);
 
             if (fullyPaid) {
                 orderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -840,7 +907,22 @@ public class BillingServiceImpl implements BillingService {
 
             labHdRepository.save(orderHd);
             if (visit != null) visitRepository.save(visit);
-            billingHeaderRepository.save(billingHeader);
+            BillingHeader save = billingHeaderRepository.save(billingHeader);
+
+            Map<String, String> labVariables = buildNotificationVariables(billingHeader, payment, "Lab");
+
+            eventPublisher.publishEvent(
+                    new NotificationEvent(
+                            NotificationType.INVOICE_GENERATED,
+                            save.getPatient().getPatientMobileNumber(),
+                            labVariables
+                    )
+            );
+
+            log.info(
+                    "Lab Invoice notification event published for patient: {}",
+                    visit.getPatient().getFullName()
+            );
 
             res.setBillNo(billingHeader.getBillNo());
             res.setMsg("Success");
@@ -863,7 +945,7 @@ public class BillingServiceImpl implements BillingService {
         log.info("Starting payment status update process");
         log.debug("Received PaymentUpdateRequest: {}", request);
         PaymentResponse res = new PaymentResponse();
-        User currentUser = authUtil.getCurrentUser();
+        String fullName = userContextService.getCurrentUserFullNameFromToken();
         try {
 
 
@@ -882,32 +964,49 @@ public class BillingServiceImpl implements BillingService {
                         .orElseThrow(() -> new SDDException(
                                 billId,"BillingHeader not found"));
 
-                PaymentDetail paymentDetail = new PaymentDetail();
-                paymentDetail.setPaymentMode(request.getMode());
-                paymentDetail.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
-                paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
-                paymentDetail.setPaymentDate(Instant.now());
-                paymentDetail.setAmount(request.getAmount());
-                paymentDetail.setCreatedBy(currentUser.getFullName());
-                paymentDetail.setCreatedAt(Instant.now());
-                paymentDetail.setUpdatedAt(Instant.now());
-                paymentDetail.setBillingHd(billingHeader);
+//                PaymentDetail paymentDetail = new PaymentDetail();
+//                paymentDetail.setPaymentMode(request.getMode());
+//                paymentDetail.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
+//                paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
+//                paymentDetail.setPaymentDate(Instant.now());
+//                paymentDetail.setAmount(request.getAmount());
+//                paymentDetail.setCreatedBy(currentUser.getFullName());
+//                paymentDetail.setCreatedAt(Instant.now());
+//                paymentDetail.setUpdatedAt(Instant.now());
+//                paymentDetail.setBillingHd(billingHeader);
+//
+//                paymentDetailRepository.save(paymentDetail);
 
-                paymentDetailRepository.save(paymentDetail);
+                PaymentDetailsV2 payment;
+
+                if(!paymentDetailsV2Repository.existsByBillingHeader_Id(billingHeader.getId())){
+//                    Optional<PaymentDetailsV2> paymentDetailsV2 = paymentDetailsV2Repository.findByBillingHeader_Id(billingHeader.getId());
+//                    savePaymentDetailsV2(paymentDetailsV2.get(),header,request);
+
+                    payment=savePaymentDetailsV2(billingHeader,request);
+                }else{
+
+                   payment=  paymentDetailsV2Repository.findByBillingHeader_Id(billingHeader.getId())
+                                     .orElseThrow(()-> new SDDException("Payment Details",
+                                             HttpStatus.NOT_FOUND.value(),
+                                             "Payment Details not found or this bill number "+billingHeader.getBillNo()
+                                     ));
+
+                }
 
                 // INVESTIGATION LOOP SAME
                 for (InvestigationandPackegBillStatus invpkg : request.getInvestigationandPackegBillStatus()) {
 
                     if (AppConstants.INVESTIGATION.toLowerCase().equalsIgnoreCase(invpkg.getType())) {
                         billingDetailRepository.updatePaymentStatusInvestigation(
-                                AppConstants.PAYMENT_PAID.toLowerCase(),currentUser, invpkg.getId(), billId);
+                                AppConstants.PAYMENT_PAID.toLowerCase(),fullName, invpkg.getId(), billId);
 
                         radOrderDtRepository.updatePaymentStatusInvestigationDt(
                                 AppConstants.PAYMENT_PAID.toLowerCase(), invpkg.getId(), billId);
 
                     } else {
                         billingDetailRepository.updatePaymentStatusPackage(
-                                AppConstants.PAYMENT_PAID.toLowerCase(),currentUser, invpkg.getId(), billId);
+                                AppConstants.PAYMENT_PAID.toLowerCase(),fullName, invpkg.getId(), billId);
 
                         radOrderDtRepository.updatePaymentStatusPackegDt(
                                 AppConstants.PAYMENT_PAID.toLowerCase(),
@@ -934,7 +1033,7 @@ public class BillingServiceImpl implements BillingService {
                         .orElse(BigDecimal.ZERO);
 
                 billingHeader.setTotalPaid(totalPaidDB.add(totalPaidUi));
-                billingHeader.setCreatedBy(currentUser.getFullName());
+                billingHeader.setCreatedBy(fullName);
 
                 if (fullyPaid) {
                     orderHd.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -952,6 +1051,19 @@ public class BillingServiceImpl implements BillingService {
                 visitOpt.ifPresent(visitRepository::save);
                 billingHeaderRepository.save(billingHeader);
 
+                Map<String, String> radiologyVariables = buildNotificationVariables(billingHeader, payment, "Radiology");
+                eventPublisher.publishEvent(
+                        new NotificationEvent(
+                                NotificationType.INVOICE_GENERATED,
+                                billingHeader.getPatient().getPatientMobileNumber(),
+                                radiologyVariables
+                        )
+                );
+
+                log.info(
+                        "Radiology Invoice notification event published for patient: {}",
+                        billingHeader.getPatient().getFullName()
+                );
                 res.setBillNo(billingHeader.getBillNo());
             }
             res.setMsg("Success");
@@ -966,7 +1078,6 @@ public class BillingServiceImpl implements BillingService {
     }
 
 
-    // ✅ NEW METHOD: Map Order Detail to BillingDetailResponse
     private BillingDetailResponse mapOrderDetailToResponse(DgOrderDt orderDetail) {
         BillingDetailResponse response = new BillingDetailResponse();
 
@@ -975,7 +1086,6 @@ public class BillingServiceImpl implements BillingService {
         BigDecimal basePrice = BigDecimal.ZERO;
         BigDecimal tariff = BigDecimal.ZERO;
 
-        // ✅ CASE 1: Investigation - Get price from InvestigationPriceDetails table
         if (orderDetail.getInvestigation() != null) {
             DgMasInvestigation investigation = orderDetail.getInvestigation();
 
@@ -983,25 +1093,20 @@ public class BillingServiceImpl implements BillingService {
             response.setInvestigationName(safe(investigation.getInvestigationName()));
             response.setItemName(safe(investigation.getInvestigationName()));
 
-            // ✅ Get actual price from investigation_price_details table
             basePrice = getCurrentInvestigationPrice(investigation);
             tariff = basePrice;
         }
 
-        // ✅ CASE 2: Package - Get price directly from Package entity
         if (orderDetail.getInvestigationPackage() != null) {
             DgInvestigationPackage package_obj = orderDetail.getInvestigationPackage();
 
             response.setPackageId(package_obj.getPackId());
             response.setPackageName(safe(package_obj.getPackName()));
 
-            // If package exists but investigation doesn't, use package pricing
             if (orderDetail.getInvestigation() == null) {
                 response.setItemName(safe(package_obj.getPackName()));
             }
 
-            // ✅ Get actual price directly from package entity fields
-            // Use actualCost if available, otherwise use baseCost
             if (package_obj.getActualCost() > 0) {
                 basePrice = BigDecimal.valueOf(package_obj.getActualCost());
                 tariff = BigDecimal.valueOf(package_obj.getActualCost());
@@ -1014,13 +1119,11 @@ public class BillingServiceImpl implements BillingService {
         response.setBasePrice(basePrice);
         response.setTariff(tariff);
         response.setQuantity(orderDetail.getOrderQty() > 0 ? orderDetail.getOrderQty() : 1);
-        // ✅ Get discount from order detail
         BigDecimal discount = orderDetail.getDiscountAmt() != null ?
                 BigDecimal.valueOf(orderDetail.getDiscountAmt()) : BigDecimal.ZERO;
 
         response.setDiscount(discount);
 
-        // ✅ Calculate net amounts
         BigDecimal charge = basePrice.multiply(BigDecimal.valueOf(response.getQuantity()));
         BigDecimal netAmount = charge.subtract(discount);
 
@@ -1062,7 +1165,7 @@ public class BillingServiceImpl implements BillingService {
                 ab.setConsultedDoctor(single.getConsultedDoctor());
                 ab.setDepartment(single.getDepartment());
                 ab.setSessionName(single.getSessionName());
-                ab.setVisitDate(single.getVisitDate());
+                ab.setVisitDate(HelperUtils.instantToLocalDateTime(single.getVisitDate()));
                 ab.setTokenNo(single.getTokenNo());
                 ab.setVisitType(single.getVisitType());
 
@@ -1109,7 +1212,7 @@ public class BillingServiceImpl implements BillingService {
                 ab.setConsultedDoctor(item.getConsultedDoctor());
                 ab.setDepartment(item.getDepartment());
                 ab.setSessionName(item.getSessionName());
-                ab.setVisitDate(item.getVisitDate());
+                ab.setVisitDate(HelperUtils.instantToLocalDateTime(item.getVisitDate()));
                 ab.setTokenNo(item.getTokenNo());
                 ab.setVisitType(item.getVisitType());
                 appointmentList.add(ab);
@@ -1248,6 +1351,43 @@ public class BillingServiceImpl implements BillingService {
         }
     }
 
+    @Override
+    public ApiResponse<List<PendingBillingResponse>> getLabRadiologyBillingDetailsAll(Long billingHdId, String serviceCategoryCode) {
+        try {
+
+            MasServiceCategory serviceCategory =
+                    masServiceCategoryRepository.findByServiceCateCode(serviceCategoryCode);
+
+            Long categoryId = serviceCategory.getId();
+
+            List<LabRadioBillingDetailsProjection> detailsList =
+                    billingHeaderRepository.getBillingDetailsByBillingHdId(billingHdId, categoryId);
+
+            PendingBillingResponse response = mapPendingBilling(detailsList);
+
+            List<PendingBillingResponse> responses = new ArrayList<>();
+            if (response != null) {
+                responses.add(response);
+            }
+
+            return ResponseUtils.createSuccessResponse(
+                    responses,
+                    new TypeReference<List<PendingBillingResponse>>() {
+                    }
+            );
+
+        } catch (Exception e) {
+            log.error("Error fetching Lab/Radiology billing details for all payment statuses", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {
+                    },
+                    "Internal Server Error",
+                    500
+            );
+        }
+    }
+
     public PendingBillingResponse mapPendingBilling(List<LabRadioBillingDetailsProjection> rows) {
 
         List<Long> billIds = new ArrayList<>();
@@ -1325,12 +1465,12 @@ public class BillingServiceImpl implements BillingService {
 
 
     public BillingHeader saveBillingHeader(
-            Object orderHd, Visit vId, User currentUser,
+            Object orderHd, Visit vId, UserContext userContext,
             BigDecimal sum, BigDecimal tax, BigDecimal disc,
             String serviceCategoryCode, boolean isRadiology) {
 
         BillingHeader billingHeader = new BillingHeader();
-        billingHeader.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, currentUser.getHospital().getId()));
+        billingHeader.setBillNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.BILL_NO, userContext.getHospitalId()));
 
         billingHeader.setPatient(vId.getPatient());
         billingHeader.setVisit(vId);
@@ -1341,7 +1481,10 @@ public class BillingServiceImpl implements BillingService {
         billingHeader.setPatientGender(vId.getPatient().getPatientGender().getGenderName());
         billingHeader.setPatientAddress(vId.getPatient().getPatientAddress1());
 
-        billingHeader.setHospital(currentUser.getHospital());
+        billingHeader.setHospital(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new SDDException("Hospital Id",
+                HttpStatus.NOT_FOUND.value(),
+                "Hospital Data not found")
+        ));
         billingHeader.setHospitalName(vId.getPatient().getPatientHospital().getHospitalName());
         billingHeader.setHospitalAddress(vId.getHospital().getAddress());
         billingHeader.setHospitalMobileNo(vId.getHospital().getContactNumber());
@@ -1352,7 +1495,7 @@ public class BillingServiceImpl implements BillingService {
         );
 
         billingHeader.setReferredBy(vId.getDoctorName());
-        billingHeader.setBillingDate(Instant.now());
+        billingHeader.setBillingDate(HMISUtil.getCurrentLocalDateTime());
         //Lab Billing Condition for Hospital
         if(vId.getHospital().getLabBilling().equalsIgnoreCase(AppConstants.STATUS_N)) {
             billingHeader.setPaymentStatus(AppConstants.PAYMENT_PAID.toLowerCase());
@@ -1369,11 +1512,8 @@ public class BillingServiceImpl implements BillingService {
         billingHeader.setDiscountAmount(disc);
         billingHeader.setNetAmount(sum.subtract(disc).add(tax));
         billingHeader.setTaxTotal(tax);
-        billingHeader.setCreatedBy(currentUser.getFullName());
-        billingHeader.setCreatedDt(Instant.now());
-        billingHeader.setUpdatedDt(Instant.now());
-        billingHeader.setBillDate(OffsetDateTime.now());
-        billingHeader.setUpdatedAt(OffsetDateTime.now());
+        billingHeader.setCreatedBy(userContext.getUserFullName());
+        billingHeader.setBillDate(HMISUtil.getCurrentLocalDateTime());
         return billingHeaderRepository.save(billingHeader);
     }
 
@@ -1502,82 +1642,241 @@ public class BillingServiceImpl implements BillingService {
 
 
 
+//    @Override
+//    @Transactional(readOnly = true)
+//    public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(int page,int size,String patientName,
+//                String mobileNo,String billingServiceType,String refundStatus,LocalDate fromDate,LocalDate toDate
+//    ) {
+//
+//        try {
+//            log.info(
+//                    "Fetching billing refund patient list: " +
+//                            "page={}, size={}, patientName={}, mobileNo={}, " +
+//                            "billingService={}, refundStatus={}, fromDate={}, toDate={}",
+//                    page,
+//                    size,
+//                    patientName,
+//                    mobileNo,
+//                    billingServiceType,
+//                    refundStatus,
+//                    fromDate,
+//                    toDate
+//            );
+//
+//            helperUtils.validatePagination(page, size);
+//            helperUtils.validateDateRange(fromDate, toDate);
+//            patientName = helperUtils.cleanValue(patientName);
+//            mobileNo = helperUtils.cleanValue(mobileNo);
+//            billingServiceType = helperUtils.cleanValue(billingServiceType);
+//            refundStatus = helperUtils.normalizeRefundStatusFilter(refundStatus);
+//            Pageable pageable = PageRequest.of(page, size);
+//            Page<PaidCancelledAppointmentProjection> projectionPage =
+//                    visitRepository.getBillingRefundPatientList(
+//                            patientName,
+//                            mobileNo,
+//                            billingServiceType,
+//                            refundStatus,
+//                            AppConstants.STATUS_Y.toLowerCase(),
+//                            AppConstants.STATUS_N.toLowerCase(),
+//                            AppConstants.STATUS_N.toLowerCase(),
+//                            AppConstants.BILLING_REFUND_STATUS_COMPLETED_LABEL,
+//                            AppConstants.BILLING_REFUND_STATUS_PENDING_LABEL,
+//                            fromDate,
+//                            toDate,
+//                            pageable
+//                    );
+//
+//            Page<PaidCancelledAppointmentResponse> responsePage =
+//                    projectionPage.map(paidCancelledAppointmentMapper::mapToResponse);
+//
+//            log.info("Billing refund patient list fetched successfully. " + "Total records={}",
+//                    responsePage.getTotalElements());
+//
+//            return ResponseUtils.createSuccessResponse(
+//                    responsePage,
+//                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+//                    },
+//                    "Billing refund patient list fetched successfully"
+//            );
+//
+//        } catch (IllegalArgumentException exception) {
+//            log.warn("Invalid billing refund search request: {}", exception.getMessage());
+//
+//            return ResponseUtils.createFailureResponse(
+//                    null,
+//                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+//                    },
+//                    exception.getMessage(),
+//                    HttpStatus.BAD_REQUEST.value()
+//            );
+//        } catch (Exception exception) {
+//            log.error("Error while fetching billing refund patient list",
+//                    exception);
+//
+//            return ResponseUtils.createFailureResponse(
+//                    null,
+//                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+//                    },
+//                    "Unable to fetch billing refund patient list",
+//                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+//            );
+//        }
+//    }
+@Override
+@Transactional(readOnly = true)
+public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(
+        int page,
+        int size,
+        String patientName,
+        String mobileNo,
+        String billingServiceType,
+        String refundStatus,
+        Long paymentModeId,
+        LocalDate fromDate,
+        LocalDate toDate
+) {
+
+    try {
+
+        log.info(
+                "Fetching billing refund patient list: " +
+                        "page={}, size={}, patientName={}, mobileNo={}, " +
+                        "billingService={}, refundStatus={}, paymentModeId={}, " +
+                        "fromDate={}, toDate={}",
+                page,
+                size,
+                patientName,
+                mobileNo,
+                billingServiceType,
+                refundStatus,
+                paymentModeId,
+                fromDate,
+                toDate
+        );
+
+        helperUtils.validatePagination(page, size);
+        helperUtils.validateDateRange(fromDate, toDate);
+
+        patientName = helperUtils.cleanValue(patientName);
+        mobileNo = helperUtils.cleanValue(mobileNo);
+        billingServiceType = helperUtils.cleanValue(billingServiceType);
+        refundStatus = helperUtils.normalizeRefundStatusFilter(refundStatus);
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<PaidCancelledAppointmentProjection> projectionPage =
+                paymentRefundRepository.getBillingRefundPatientList(
+                        patientName,
+                        mobileNo,
+                        billingServiceType,
+                        refundStatus,
+                        paymentModeId,
+                        pageable
+                );
+
+        Page<PaidCancelledAppointmentResponse> responsePage =
+                projectionPage.map(
+                        paidCancelledAppointmentMapper::mapToResponse
+                );
+
+        log.info(
+                "Billing refund patient list fetched successfully. Total records={}",
+                responsePage.getTotalElements()
+        );
+
+        return ResponseUtils.createSuccessResponse(
+                responsePage,
+                new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                },
+                "Billing refund patient list fetched successfully"
+        );
+
+    } catch (IllegalArgumentException exception) {
+
+        log.warn(
+                "Invalid billing refund search request: {}",
+                exception.getMessage()
+        );
+
+        return ResponseUtils.createFailureResponse(
+                null,
+                new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                },
+                exception.getMessage(),
+                HttpStatus.BAD_REQUEST.value()
+        );
+
+    } catch (Exception exception) {
+
+        log.error(
+                "Error while fetching billing refund patient list",
+                exception
+        );
+
+        return ResponseUtils.createFailureResponse(
+                null,
+                new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                },
+                "Unable to fetch billing refund patient list",
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
+        );
+    }
+}
+
+
     @Override
     @Transactional(readOnly = true)
-    public ApiResponse<Page<PaidCancelledAppointmentResponse>> getBillingRefundPatientList(int page,int size,String patientName,
-                String mobileNo,String billingServiceType,String refundStatus,LocalDate fromDate,LocalDate toDate
+    public ApiResponse<Page<MobileCancelledRefundResponse>> getMobileCancelledRefundAppointments(
+            Long hospitalId,
+            String departmentType,
+            Long patientId,
+            int page,
+            int size
     ) {
-
         try {
-            log.info(
-                    "Fetching billing refund patient list: " +
-                            "page={}, size={}, patientName={}, mobileNo={}, " +
-                            "billingService={}, refundStatus={}, fromDate={}, toDate={}",
-                    page,
-                    size,
-                    patientName,
-                    mobileNo,
-                    billingServiceType,
-                    refundStatus,
-                    fromDate,
-                    toDate
-            );
+            if (hospitalId == null || hospitalId <= 0) {
+                throw new IllegalArgumentException("Valid hospitalId is required");
+            }
+            if (patientId == null || patientId <= 0) {
+                throw new IllegalArgumentException("Valid patientId is required");
+            }
+            if (departmentType == null || departmentType.isBlank()) {
+                throw new IllegalArgumentException("departmentType is required");
+            }
 
             helperUtils.validatePagination(page, size);
-            helperUtils.validateDateRange(fromDate, toDate);
-            patientName = helperUtils.cleanValue(patientName);
-            mobileNo = helperUtils.cleanValue(mobileNo);
-            billingServiceType = helperUtils.cleanValue(billingServiceType);
-            refundStatus = helperUtils.normalizeRefundStatusFilter(refundStatus);
+
             Pageable pageable = PageRequest.of(page, size);
-            Page<PaidCancelledAppointmentProjection> projectionPage =
-                    visitRepository.getBillingRefundPatientList(
-                            patientName,
-                            mobileNo,
-                            billingServiceType,
-                            refundStatus,
-                            AppConstants.STATUS_Y.toLowerCase(),
-                            AppConstants.STATUS_N.toLowerCase(),
-                            AppConstants.STATUS_N.toLowerCase(),
-                            AppConstants.BILLING_REFUND_STATUS_COMPLETED_LABEL,
-                            AppConstants.BILLING_REFUND_STATUS_PENDING_LABEL,
-                            fromDate,
-                            toDate,
-                            pageable
-                    );
-
-            Page<PaidCancelledAppointmentResponse> responsePage =
-                    projectionPage.map(paidCancelledAppointmentMapper::mapToResponse);
-
-            log.info("Billing refund patient list fetched successfully. " + "Total records={}",
-                    responsePage.getTotalElements());
+            Page<MobileCancelledRefundResponse> responsePage =
+                    paymentRefundRepository.findMobileCancelledRefundAppointments(
+                                    hospitalId,
+                                    departmentType.trim(),
+                                    patientId,
+                                    pageable
+                            )
+                            .map(paidCancelledAppointmentMapper::mapToMobileCancelledRefundResponse);
 
             return ResponseUtils.createSuccessResponse(
                     responsePage,
-                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                    new TypeReference<Page<MobileCancelledRefundResponse>>() {
                     },
-                    "Billing refund patient list fetched successfully"
+                    "Cancelled appointment refund list fetched successfully"
             );
-
         } catch (IllegalArgumentException exception) {
-            log.warn("Invalid billing refund search request: {}", exception.getMessage());
-
             return ResponseUtils.createFailureResponse(
                     null,
-                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                    new TypeReference<Page<MobileCancelledRefundResponse>>() {
                     },
                     exception.getMessage(),
                     HttpStatus.BAD_REQUEST.value()
             );
         } catch (Exception exception) {
-            log.error("Error while fetching billing refund patient list",
-                    exception);
-
+            log.error("Error while fetching mobile cancelled appointment refund list", exception);
             return ResponseUtils.createFailureResponse(
                     null,
-                    new TypeReference<Page<PaidCancelledAppointmentResponse>>() {
+                    new TypeReference<Page<MobileCancelledRefundResponse>>() {
                     },
-                    "Unable to fetch billing refund patient list",
+                    "Unable to fetch cancelled appointment refund list",
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
@@ -1661,7 +1960,7 @@ public class BillingServiceImpl implements BillingService {
 
     @Override
     public BillingHeader saveBillingHeaderIfEnabled(
-            boolean billingEnabled, Object orderHd, Visit visit, User currentUser,
+            boolean billingEnabled, Object orderHd, Visit visit, UserContext currentUser,
             BigDecimal total, BigDecimal tax, BigDecimal discount,
             String serviceCategoryCode, boolean isRadiology) {
 
@@ -1682,9 +1981,130 @@ public class BillingServiceImpl implements BillingService {
         return billing;
     }
 
+    @Override
+    public ApiResponse<RefundDetailsResponse> getRefundDetails(Long refundId) {
+        try {
+            log.info("Fetching refund details for refundId: {} started..", refundId);
+            RefundDetailsProjection refundDetailsProjection = paymentRefundRepository.findRefundDetailsById(refundId)
+                    .orElseThrow(() -> new SDDException("Refund Details",
+                            HttpStatus.NOT_FOUND.value(),
+                            "Refund details not found for refundId: " + refundId)
+                    );
+            RefundDetailsResponse refundDetails = paymentMapper.getRefundDetails(refundDetailsProjection);
+            log.info("Fetching refund details for refundId: {} ended..", refundId);
+            return ResponseUtils.createSuccessResponse(refundDetails, new TypeReference<>(){});
+        }catch (SDDException e){
+            log.error("Error while fetching refund details for refundId: {}", refundId, e);
+            return  ResponseUtils.createFailureResponse(null,
+                    new TypeReference<>(){},
+                    e.getMessage(),
+                    e.getStatus());
+        } catch (Exception e){
+            log.error("Error while fetching refund details for refundId: {}", refundId, e);
+          return ResponseUtils.createFailureResponse(null,
+                    new TypeReference<>(){},
+                    AppConstants.INTERNAL_SERVER_ERR_MSG,
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+    }
+
     private LabOrderTrackingStatus getOrderedStatus(){
         return orderTrackingStatusRepository.findById(orderedStatusId).orElseThrow(()-> new RuntimeException("Order status not found")) ;
     }
+
+//    private void savePaymentDetailsV2(PaymentDetailsV2 paymentDetailsV2,BillingHeader billingHeader,PaymentUpdateRequest request){
+   private PaymentDetailsV2 savePaymentDetailsV2(BillingHeader billingHeader,PaymentUpdateRequest request){
+
+    try {
+            if(billingHeader==null){
+                throw  new SDDException("Billing Header",
+                        HttpStatus.NOT_FOUND.value(),
+                        "Invalid billing header Id ,Billing header not found"
+                );
+            }
+        Optional<PaymentDetailsV2> paymentOpt =
+                paymentDetailsV2Repository
+                        .findByBillingHeader_IdAndGatewayPaymentIdIsNull(billingHeader.getId());
+
+        PaymentDetailsV2 payment;
+
+        if (paymentOpt.isEmpty()
+                && (request.getAmount().compareTo(BigDecimal.ZERO) == 0
+                || "free".equalsIgnoreCase(request.getMode()))) {
+
+            payment = new PaymentDetailsV2();
+            payment.setBillingHeader(billingHeader);
+            payment.setAmount(request.getAmount());
+            payment.setCurrency("INR");
+            payment.setPaymentGateway("FREE");
+            payment.setPaymentVia(request.getMode());
+            payment.setPaymentStatusId(
+                    paymentUtils.getPaymentStatus(PaymentStatusCode.PAID).getId()
+            );
+            payment.setPaymentReferenceNo(
+                    paymentUtils.generatePaymentReferenceNo()
+            );
+            payment.setCreatedBy(userContextService.getCurrentUserFullNameFromToken());
+            payment.setCreatedAt(HMISUtil.getCurrentLocalDateTime());
+
+        } else {
+
+            payment = new PaymentDetailsV2();
+            payment.setBillingHeader(billingHeader);
+            payment.setPaymentReferenceNo(
+                    paymentUtils.generatePaymentReferenceNo()
+            );
+            payment.setAmount(request.getAmount());
+            payment.setCurrency("INR");
+            payment.setPaymentGateway("CASH");
+            payment.setPaymentVia(request.getMode());
+            payment.setPaymentModeId(
+                    paymentUtils.getPaymentMode(request.getMode()).getPaymentModeId()
+            );
+            payment.setReceiptNo(
+                    paymentUtils.generateReceiptNumber(billingHeader)
+            );
+            payment.setPaymentStatusId(
+                    paymentUtils.getPaymentStatus(PaymentStatusCode.PAID).getId()
+            );
+            payment.setCreatedBy(userContextService.getCurrentUserContext().getUserFullName());
+            payment.setPaymentDate(HMISUtil.getCurrentLocalDateTime());
+        }
+
+        PaymentDetailsV2 saved = paymentDetailsV2Repository.save(payment);
+
+
+
+        log.info("PaymentDetail saved, id={}", saved.getPaymentId());
+        return saved;
+
+        }catch (Exception e){
+            log.error("savePaymentDetailsV2 method error :: ",e);
+            throw  e;
+        }
+    }
+
+    private Map<String,String> buildNotificationVariables(BillingHeader billingHeader,PaymentDetailsV2 payment,String serviceName){
+
+        Map<String, String> variables = new HashMap<>();
+
+        variables.put("var1", billingHeader.getPatientDisplayName());
+        variables.put("var2", billingHeader.getBillNo());
+        variables.put("var3", payment.getAmount().toString());
+        variables.put("var4",serviceName);
+        variables.put("var5",paymentUtils.getPaymentGateway(payment.getPaymentGateway()).getGatewayName());
+        variables.put("var6",billingHeader.getHospitalMobileNo());
+
+//        smsUtility.sendSMS(billingHeader.getPatient().getPatientMobileNumber(), SMSTemplate.INVOICE_NOTIFICATION, variables);
+
+        log.info("Invoice notification variables : {}", variables);
+        return  variables;
+
+    }
+
+
+
 
 }
 

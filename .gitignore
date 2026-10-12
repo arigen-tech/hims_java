@@ -11,6 +11,7 @@ Thumbs.db
 
 # Log files
 *.log
+*.gz
 
 # Compiled class files
 *.class

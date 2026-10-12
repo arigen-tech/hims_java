@@ -8,7 +8,9 @@ import com.hims.entity.repository.MasOtTeamRoleRepository;
 import com.hims.request.MasOtTeamRoleRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasOtTeamRoleResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasOtTeamRoleService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -30,13 +32,16 @@ public class MasOtTeamRoleServiceImpl implements MasOtTeamRoleService {
     @Autowired
     private AuthUtil authUtil;
 
+    @Autowired
+    private UserContextService userContextService;
+
     // CREATE
     @Override
     public ApiResponse<String> saveOtTeamRole(MasOtTeamRoleRequest request) {
 
         try {
 
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             Optional<MasOtTeamRole> existingCode =
                     masOtTeamRoleRepository.findByRoleCodeIgnoreCase(request.getRoleCode());
@@ -62,7 +67,7 @@ public class MasOtTeamRoleServiceImpl implements MasOtTeamRoleService {
             entity.setRoleName(request.getRoleName());
             entity.setDescription(request.getDescription());
             entity.setStatus(AppConstants.STATUS_Y.toUpperCase());
-            entity.setLastChgBy(currentUser.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             masOtTeamRoleRepository.save(entity);
@@ -155,9 +160,9 @@ public class MasOtTeamRoleServiceImpl implements MasOtTeamRoleService {
                         "Invalid status value and value should be y and n", 400);
             }
 
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             entity.setStatus(status.toUpperCase());
-            entity.setLastChgBy(currentUser.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
             masOtTeamRoleRepository.save(entity);
 
@@ -178,7 +183,7 @@ public class MasOtTeamRoleServiceImpl implements MasOtTeamRoleService {
 
         try {
 
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasOtTeamRole entity = masOtTeamRoleRepository.findById(id).orElse(null);
 
@@ -208,7 +213,7 @@ public class MasOtTeamRoleServiceImpl implements MasOtTeamRoleService {
             entity.setRoleCode(request.getRoleCode());
             entity.setRoleName(request.getRoleName());
             entity.setDescription(request.getDescription());
-            entity.setLastChgBy(currentUser.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             masOtTeamRoleRepository.save(entity);

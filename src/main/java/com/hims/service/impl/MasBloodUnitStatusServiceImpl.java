@@ -2,16 +2,18 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasBloodUnitStatus;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasBloodUnitStatusRepository;
 import com.hims.request.MasBloodUnitStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasBloodUnitStatusResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasBloodUnitStatusService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,6 +26,8 @@ public class MasBloodUnitStatusServiceImpl
 
     private final MasBloodUnitStatusRepository repository;
     private final AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasBloodUnitStatusResponse>> getAll(int flag) {
@@ -66,8 +70,8 @@ public class MasBloodUnitStatusServiceImpl
     public ApiResponse<MasBloodUnitStatusResponse> create(
             MasBloodUnitStatusRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 401);
@@ -78,8 +82,8 @@ public class MasBloodUnitStatusServiceImpl
                     .statusName(request.getStatusName())
                     .description(request.getDescription())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -107,8 +111,8 @@ public class MasBloodUnitStatusServiceImpl
                         "Blood unit status not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 401);
@@ -117,7 +121,7 @@ public class MasBloodUnitStatusServiceImpl
             entity.setStatusCode(request.getStatusCode().toUpperCase());
             entity.setStatusName(request.getStatusName());
             entity.setDescription(request.getDescription());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -150,15 +154,15 @@ public class MasBloodUnitStatusServiceImpl
                         "Blood unit status not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 401);
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

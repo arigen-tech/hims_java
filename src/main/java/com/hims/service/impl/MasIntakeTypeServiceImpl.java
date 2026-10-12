@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasIntakeType;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasIntakeTypeRepository;
 import com.hims.request.MasIntakeTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasIntakeTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasIntakeTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +27,9 @@ public class MasIntakeTypeServiceImpl  implements MasIntakeTypeService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasIntakeTypeResponse>> getAll(int flag) {
@@ -69,14 +75,14 @@ public class MasIntakeTypeServiceImpl  implements MasIntakeTypeService {
     @Override
     public ApiResponse<MasIntakeTypeResponse> create(MasIntakeTypeRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasIntakeType intake = MasIntakeType.builder()
                     .intakeTypeName(request.getIntakeTypeName())
                     .isLiquid(request.getIsLiquid())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -102,11 +108,11 @@ public class MasIntakeTypeServiceImpl  implements MasIntakeTypeService {
             if (intake == null)
                 return ResponseUtils.createNotFoundResponse("Intake Type ID not found!", 404);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             intake.setIntakeTypeName(request.getIntakeTypeName());
             intake.setIsLiquid(request.getIsLiquid());
-            intake.setLastUpdatedBy(user.getFirstName());
+            intake.setLastUpdatedBy(userContext.getUserFullName());
             intake.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(intake);
@@ -138,10 +144,10 @@ public class MasIntakeTypeServiceImpl  implements MasIntakeTypeService {
                         400
                 );
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             intake.setStatus(status);
-            intake.setLastUpdatedBy(user.getFirstName());
+            intake.setLastUpdatedBy(userContext.getUserFullName());
             intake.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(intake);

@@ -11,4 +11,5 @@ public class ResultEntryValidationRequest {
     private Boolean validated;  // true = validated, false/null = pending
     private Long fixedId;
     private String comparisonType;
+    private Long resultFlagId;
 }

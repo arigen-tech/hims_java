@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.ObMasPvLiquor;
 import com.hims.entity.User;
 import com.hims.entity.repository.ObMasPvLiquorRepository;
 import com.hims.request.ObMasPvLiquorRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.ObMasPvLiquorResponse;
+import com.hims.response.UserContext;
 import com.hims.service.ObMasPvLiquorService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,9 @@ public class ObMasPvLiquorServiceImpl implements ObMasPvLiquorService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<ObMasPvLiquorResponse>> getAll(int flag) {
@@ -65,8 +71,8 @@ public class ObMasPvLiquorServiceImpl implements ObMasPvLiquorService {
 
         log.info("Creating PV Liquor={}", request.getLiquorValue());
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -74,9 +80,9 @@ public class ObMasPvLiquorServiceImpl implements ObMasPvLiquorService {
 
             ObMasPvLiquor entity = ObMasPvLiquor.builder()
                     .liquorValue(request.getLiquorValue())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -104,15 +110,15 @@ public class ObMasPvLiquorServiceImpl implements ObMasPvLiquorService {
                     "PV Liquor not found", 404);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setLiquorValue(request.getLiquorValue());
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);
@@ -140,15 +146,15 @@ public class ObMasPvLiquorServiceImpl implements ObMasPvLiquorService {
                     "Invalid status", 400);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setStatus(status);
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);

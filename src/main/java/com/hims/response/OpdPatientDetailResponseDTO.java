@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -23,7 +24,7 @@ public class OpdPatientDetailResponseDTO {
     private String workingDiag;
     private String icdDiag;
 
-    private Instant opdDate;
+    private LocalDateTime opdDate;
 
     private Long patientId;
     private String patientName;

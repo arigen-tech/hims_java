@@ -62,6 +62,14 @@ List<MasDepartmentResponse> findActiveWardDepartments(
 
     List<MasDepartment> findByDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(Long opdId, String keyword);
 
+
+    @Query("""
+        SELECT d.id
+        FROM MasDepartment d
+        WHERE LOWER(d.departmentType.departmentTypeCode) IN :deptTypeCodes
+          AND LOWER(d.status) = 'y'
+    """)
+    List<Long> findDepartmentIdsByDepartmentTypeCodes(@Param("deptTypeCodes") List<String> deptTypeCodes);
     /**
      * Get department IDs by department type code
      * @param deptTypeCode Department type code from mas_department_type table
@@ -94,6 +102,20 @@ List<MasDepartmentResponse> findActiveWardDepartments(
 
 
     List<MasDepartment> findByHospitalIdAndDepartmentTypeIdAndDepartmentNameContainingIgnoreCaseOrderByDepartmentNameAsc(Long hospitalId, Long opdDeptTypeId, String searchInput);
+
+        @Query(value = """
+                SELECT d.*
+                FROM mas_department d
+                WHERE d.hospital_id = :hospitalId
+                    AND d.department_type_id = :departmentTypeId
+                    AND LOWER(COALESCE(d.department_name, '')) LIKE LOWER(CONCAT('%', :searchInput, '%'))
+                ORDER BY d.department_name ASC
+                """, nativeQuery = true)
+        List<MasDepartment> findByHospitalAndDepartmentTypeAndNameNative(
+                        @Param("hospitalId") Long hospitalId,
+                        @Param("departmentTypeId") Long departmentTypeId,
+                        @Param("searchInput") String searchInput
+        );
 
     List<MasDepartment> findByHospitalIdAndDepartmentTypeId(Long hospitalId, Long opdId);
 
@@ -150,6 +172,7 @@ List<MasDepartmentResponse> findActiveWardDepartments(
 
     @Query(value = "select d.department_id from mas_department d where department_id = :departmentId", nativeQuery = true)
     Long findByDepartmentId(@Param("departmentId") Long departmentId);
+
     @Query("""
     SELECT new com.hims.response.DepartmentDropdownResponse(
         d.id,

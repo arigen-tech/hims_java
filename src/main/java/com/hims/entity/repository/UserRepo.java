@@ -3,6 +3,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.MasEmployee;
 import com.hims.entity.User;
+import com.hims.projection.UserContextProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,7 +19,29 @@ public interface UserRepo extends JpaRepository<User, Long> {
 
     User findByUserNameAndStatus(String username , String isActive);
 
-    User findByUserName(String email);
+    User findByUserName(String mobileNo);
+
+    @Query("""
+    SELECT
+        u.userId AS userId,
+        u.userName AS userName,
+        u.email AS email,
+        h.id AS hospitalId,
+        CONCAT(
+            u.firstName, ' ',
+            COALESCE(u.middleName, ''), ' ',
+            u.lastName
+        ) AS userFullName
+    FROM User u
+    JOIN u.employee e
+    JOIN u.hospital h
+    WHERE u.userName = :userName
+""")
+    UserContextProjection findUserContextByUserName(
+            @Param("userName") String userName
+    );
+
+
 
     Optional<User> findByEmployee(MasEmployee employee);
 

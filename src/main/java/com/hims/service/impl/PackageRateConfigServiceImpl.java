@@ -9,7 +9,9 @@ import com.hims.projection.PackageRateConfigProjection;
 import com.hims.request.PackageRateConfigRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.PackageRateConfigResponse;
+import com.hims.response.UserContext;
 import com.hims.service.PackageRateConfigService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -43,19 +45,21 @@ public class PackageRateConfigServiceImpl implements PackageRateConfigService {
     private MasRoomCategoryRepo roomCategoryRepository;
     @Autowired
     private AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
     @Override
     @Transactional
     public ApiResponse<PackageRateConfigResponse> savePackageRateConfig(PackageRateConfigRequest request) {
 
-        User user = authUtil.getCurrentUser();
+        UserContext userContext = userContextService.getCurrentUserContext();
         try {
             PackageRateConfig entity = new PackageRateConfig();
 
             mapRequestToEntity(entity, request);
 
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setCreatedBy(user.getFullName());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
             repository.save(entity);
 
@@ -73,14 +77,14 @@ public class PackageRateConfigServiceImpl implements PackageRateConfigService {
     public ApiResponse<PackageRateConfigResponse> updatePackageRateConfig(Long id, PackageRateConfigRequest request) {
 
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             PackageRateConfig entity = repository.findById(id).orElse(null);
             if (entity == null) {
                 return ResponseUtils.createNotFoundResponse("Record not found", HttpStatus.NOT_FOUND.value());
             }
             mapRequestToEntity(entity, request);
 
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
             repository.save(entity);
 
@@ -104,9 +108,9 @@ public class PackageRateConfigServiceImpl implements PackageRateConfigService {
                 return ResponseUtils.createNotFoundResponse("Record not found", HttpStatus.NOT_FOUND.value());
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
             entity.setStatus(status.toLowerCase());
-            entity.setLastUpdatedBy(user.getFullName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdatedDate(LocalDateTime.now());
             repository.save(entity);
 

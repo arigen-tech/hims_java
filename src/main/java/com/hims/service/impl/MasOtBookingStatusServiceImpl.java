@@ -4,12 +4,13 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasOtBookingStatus;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasOtBookingStatusRepository;
 import com.hims.request.MasOtBookingStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasOtBookingStatusResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasOtBookingStatusService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -27,17 +28,18 @@ public class MasOtBookingStatusServiceImpl implements MasOtBookingStatusService 
 
     @Autowired
     private MasOtBookingStatusRepository masOtBookingStatusRepository;
-
+    @Autowired
+    private UserContextService userContextService;
     @Autowired
     private AuthUtil authUtil;
+
 
     // CREATE
     @Override
     public ApiResponse<String> saveOtBookingStatus(MasOtBookingStatusRequest request) {
 
         try {
-
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             Optional<MasOtBookingStatus> existing =
                     masOtBookingStatusRepository.findByStatusCodeIgnoreCase(request.getStatusCode());
@@ -54,7 +56,7 @@ public class MasOtBookingStatusServiceImpl implements MasOtBookingStatusService 
             entity.setStatusName(request.getStatusName());
             entity.setDescription(request.getDescription());
             entity.setStatus(AppConstants.STATUS_Y.toUpperCase());
-            entity.setLastChgBy(currentUser.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             masOtBookingStatusRepository.save(entity);
@@ -132,6 +134,7 @@ public class MasOtBookingStatusServiceImpl implements MasOtBookingStatusService 
     public ApiResponse<MasOtBookingStatusResponse> changeStatus(Long id, String status) {
 
         try {
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasOtBookingStatus entity = masOtBookingStatusRepository.findById(id).orElse(null);
 
@@ -147,9 +150,8 @@ public class MasOtBookingStatusServiceImpl implements MasOtBookingStatusService 
                         "Invalid status value and value should be y and n", 400);
             }
 
-            User currentUser = authUtil.getCurrentUser();
             entity.setStatus(status.toUpperCase());
-            entity.setLastChgBy(currentUser.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
             masOtBookingStatusRepository.save(entity);
 
@@ -169,8 +171,7 @@ public class MasOtBookingStatusServiceImpl implements MasOtBookingStatusService 
     public ApiResponse<String> updateOtBookingStatus(Long id, MasOtBookingStatusRequest request) {
 
         try {
-
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasOtBookingStatus entity = masOtBookingStatusRepository.findById(id).orElse(null);
 
@@ -191,7 +192,7 @@ public class MasOtBookingStatusServiceImpl implements MasOtBookingStatusService 
             entity.setStatusCode(request.getStatusCode());
             entity.setStatusName(request.getStatusName());
             entity.setDescription(request.getDescription());
-            entity.setLastChgBy(currentUser.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             masOtBookingStatusRepository.save(entity);

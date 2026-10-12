@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasRelation;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasRelationRepository;
@@ -8,7 +9,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasRelationRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasRelationResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasRelationService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +36,9 @@ public class MasRelationServiceImpl implements MasRelationService {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private UserContextService userContextService;
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -93,14 +99,14 @@ public class MasRelationServiceImpl implements MasRelationService {
         try{
             MasRelation relation = new MasRelation();
             relation.setRelationName(relationRequest.getRelationName());
-            relation.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            relation.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            relation.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            relation.setLastChgBy(String.valueOf(userContext.getUserId()));
             relation.setLastChgDate(LocalDateTime.now());
             relation.setCode(relationRequest.getCode());
 
@@ -121,13 +127,13 @@ public class MasRelationServiceImpl implements MasRelationService {
             if (existingRelationOpt.isPresent()) {
                 MasRelation existingRelation = existingRelationOpt.get();
                 existingRelation.setRelationName(relationRequest.getRelationName());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                existingRelation.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                existingRelation.setLastChgBy(String.valueOf(userContext.getUserId()));
                 existingRelation.setLastChgDate(LocalDateTime.now());
                 existingRelation.setCode(relationRequest.getCode());
 
@@ -154,19 +160,19 @@ public class MasRelationServiceImpl implements MasRelationService {
                 MasRelation existingRelation = existingRelationOpt.get();
 
                 // Validate status value
-                if (!status.equalsIgnoreCase("y") && !status.equalsIgnoreCase("n")) {
+                if (!status.equalsIgnoreCase(AppConstants.STATUS_Y.toLowerCase()) && !status.equalsIgnoreCase(AppConstants.STATUS_N.toLowerCase())) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<MasRelationResponse>() {
                     }, "Invalid status value. Use 'Y' for Active and 'N' for Inactive.", 400);
                 }
 
                 existingRelation.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                existingRelation.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                existingRelation.setLastChgBy(String.valueOf(userContext.getUserId()));
                 existingRelation.setLastChgDate(LocalDateTime.now());
 
                 MasRelation updatedRelation = masRelationRepository.save(existingRelation);

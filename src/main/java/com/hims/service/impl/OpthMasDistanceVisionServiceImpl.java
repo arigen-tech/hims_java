@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.OpthMasDistanceVision;
 import com.hims.entity.User;
 import com.hims.entity.repository.OpthMasDistanceVisionRepository;
 import com.hims.request.OpthMasDistanceVisionRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OpthMasDistanceVisionResponse;
+import com.hims.response.UserContext;
 import com.hims.service.OpthMasDistanceVisionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +29,9 @@ public class OpthMasDistanceVisionServiceImpl implements OpthMasDistanceVisionSe
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<OpthMasDistanceVisionResponse>> getAll(int flag) {
@@ -79,8 +85,8 @@ public class OpthMasDistanceVisionServiceImpl implements OpthMasDistanceVisionSe
 
         log.info("Creating Distance Vision value={}", request.getVisionValue());
         try {
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -90,9 +96,9 @@ public class OpthMasDistanceVisionServiceImpl implements OpthMasDistanceVisionSe
             OpthMasDistanceVision vision =
                     OpthMasDistanceVision.builder()
                             .visionValue(request.getVisionValue())
-                            .status("y")
-                            .createdBy(user.getFirstName())
-                            .lastUpdatedBy(user.getFirstName())
+                            .status(AppConstants.STATUS_Y.toLowerCase())
+                            .createdBy(userContext.getUserFullName())
+                            .lastUpdatedBy(userContext.getUserFullName())
                             .lastUpdateDate(LocalDateTime.now())
                             .build();
 
@@ -126,8 +132,8 @@ public class OpthMasDistanceVisionServiceImpl implements OpthMasDistanceVisionSe
                         "Vision ID not found!", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if( user ==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if( userContext ==null){
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "current user not fount", 404
@@ -135,7 +141,7 @@ public class OpthMasDistanceVisionServiceImpl implements OpthMasDistanceVisionSe
             }
 
             vision.setVisionValue(request.getVisionValue());
-            vision.setLastUpdatedBy(user.getFirstName());
+            vision.setLastUpdatedBy(userContext.getUserFullName());
             vision.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(vision);
@@ -176,10 +182,10 @@ public class OpthMasDistanceVisionServiceImpl implements OpthMasDistanceVisionSe
                         "Vision ID not found!", 404);
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             vision.setStatus(status);
-            vision.setLastUpdatedBy(user.getFirstName());
+            vision.setLastUpdatedBy(userContext.getUserFullName());
             vision.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(vision);

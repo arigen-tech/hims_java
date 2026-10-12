@@ -4,11 +4,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.projection.*;
 import com.hims.request.MasStoreItemRequest;
 import com.hims.request.NonDrugStoreItemRequest;
 import com.hims.response.*;
 import com.hims.service.MasStoreItemService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import com.hims.utils.StockFound;
@@ -26,7 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -108,6 +109,12 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     @Value("${mas.item.group}")
     private String masItemGroup;
 
+    @Autowired
+    private UserContextService userContextService;
+
+    @Autowired
+    MasHospitalRepository masHospitalRepository;
+
 
     private static final Logger log = LoggerFactory.getLogger(DoctorRosterServicesImpl.class);
 
@@ -128,8 +135,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
     @Transactional
     public ApiResponse<MasStoreItemResponse> addMasStoreItem(MasStoreItemRequest masStoreItemRequest) {
         try{
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
                     "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
@@ -150,7 +157,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setAdispQty(masStoreItemRequest.getAdispQty());
 //       masStoreItem.setHospitalId(currentUser.getHospital().getId());
 //        masStoreItem.setDepartmentId(depObj.getId());
-        masStoreItem.setLastChgBy(currentUser.getUserId());
+        masStoreItem.setLastChgBy(userContext.getUserId());
         masStoreItem.setLastChgDate(LocalDate.now());
         masStoreItem.setLastChgTime(getCurrentTimeFormatted());
         masStoreItem.setReOrderLevelStore(masStoreItemRequest.getReOrderLevelStore() != null ? masStoreItemRequest.getReOrderLevelStore().intValue() : null);
@@ -211,7 +218,7 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
         masStoreItem.setDispROL(masStoreItemRequest.getReOrderLevelDispensary());
         masStoreItem.setWardROL(masStoreItemRequest.getReOrderLevelWard());
 
-        MasHospital hospital = currentUser.getHospital();
+        MasHospital hospital = masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new SDDException("Invalid Hospital Id "+ userContext.getHospitalId(),404,"Hospital not found"));
 
         if (AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRoIsManual())) {
             masStoreItem.setStoreRoLManual(AppConstants.STATUS_Y.toLowerCase());
@@ -233,8 +240,8 @@ public class MasStoreItemServiceImp implements MasStoreItemService {
                 storeItemFacilityMap.setItem(savedItem);
                 storeItemFacilityMap.setFacility(masItemFacilityRepository.findById(facilityId).orElseThrow());
                 storeItemFacilityMap.setStatus(AppConstants.STATUS_N.toLowerCase());
-                storeItemFacilityMap.setCreatedBy(currentUser.getFullName());
-                storeItemFacilityMap.setLastUpdatedBy(currentUser.getFullName());
+                storeItemFacilityMap.setCreatedBy(userContext.getUserFullName());
+                storeItemFacilityMap.setLastUpdatedBy(userContext.getUserFullName());
                 storeItemFacilityMap.setLastUpdateDate(LocalDateTime.now());
                 storeItemFacilityMapRepository.save(storeItemFacilityMap);
             }
@@ -448,8 +455,8 @@ public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPag
     @Override
     public ApiResponse<MasStoreItemResponse> update(Long id, MasStoreItemRequest request) {
         try {
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -492,7 +499,7 @@ public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPag
             item.setReOrderLevelDispensary(request.getReOrderLevelDispensary() != null ? request.getReOrderLevelDispensary().intValue() : null);
 //            item.setHospitalId(currentUser.getHospital().getId());
 //            item.setDepartmentId(depObj.getId());
-            item.setLastChgBy(currentUser.getUserId());
+            item.setLastChgBy(userContext.getUserId());
             item.setLastChgDate(LocalDate.now());
             item.setLastChgTime(getCurrentTimeFormatted());
             item.setStoreROL(request.getReOrderLevelStore());
@@ -546,7 +553,7 @@ public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPag
                 item.setMasItemCategory(masItemCategoryRepository.findById(request.getMasItemCategoryId())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ItemCategory not found")));
             }
-            MasHospital hospital = currentUser.getHospital();
+            MasHospital hospital = masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new SDDException("Invalid Hospital Id "+ userContext.getHospitalId(),404,"Hospital not found"));
 
             if (AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRoIsManual())) {
                 item .setStoreRoLManual(AppConstants.STATUS_Y.toLowerCase());
@@ -594,8 +601,8 @@ public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPag
                         map.setItem(updatedItem);
                         map.setFacility(facility);
                         map.setStatus(AppConstants.STATUS_N.toLowerCase());
-                        map.setCreatedBy(currentUser.getFullName());
-                        map.setLastUpdatedBy(currentUser.getFullName());
+                        map.setCreatedBy(userContext.getUserFullName());
+                        map.setLastUpdatedBy(userContext.getUserFullName());
                         map.setLastUpdateDate(LocalDateTime.now());
 
                         storeItemFacilityMapRepository.save(map);
@@ -628,13 +635,13 @@ public ApiResponse<Page<MasStoreItemResponse>> getAllMasStoreItemWithOutStockPag
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                 }, "Invalid status. Status should be 'y' or 'n'", 400);
             }
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            entity.setLastChgBy(currentUser.getUserId());
+            entity.setLastChgBy(userContext.getUserId());
             entity.setLastChgDate(LocalDate.now());
             entity.setLastChgTime(getCurrentTimeFormatted());
 
@@ -867,8 +874,8 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
     @Override
     public ApiResponse<NonDrugStoreItemResponse> addNonDrugStoreItem(NonDrugStoreItemRequest nonDrugStoreItemRequest) {
         try{
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "HospitalId user not found", HttpStatus.UNAUTHORIZED.value());
@@ -886,7 +893,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             masStoreItem.setPvmsNo(nonDrugStoreItemRequest.getPvmsNo());
             masStoreItem.setNomenclature(nonDrugStoreItemRequest.getNomenclature());
             masStoreItem.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            masStoreItem.setLastChgBy(currentUser.getUserId());
+            masStoreItem.setLastChgBy(userContext.getUserId());
             masStoreItem.setLastChgDate(LocalDate.now());
             masStoreItem.setLastChgTime(getCurrentTimeFormatted());
             Optional<MasHSN> masHSN = masHsnRepository.findById(nonDrugStoreItemRequest.getHsn());
@@ -927,7 +934,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             masStoreItem.setMasItemCategory(masItemCategory.get());
             masStoreItem.setHsnCode(masHSN.get());
 
-            MasHospital hospital = currentUser.getHospital();
+            MasHospital hospital = masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new SDDException("Invalid Hospital Id "+ userContext.getHospitalId(),404,"Hospital not found"));
 
             if (AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRoIsManual())) {
                 masStoreItem.setStoreRoLManual(AppConstants.STATUS_Y.toLowerCase());
@@ -950,8 +957,8 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
     @Override
     public ApiResponse<NonDrugStoreItemResponse> updateNonDrugItem(Long id, NonDrugStoreItemRequest request) {
         try {
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
@@ -990,7 +997,7 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
             long deptId = authUtil.getCurrentDepartmentId();
             MasDepartment depObj = masDepartmentRepository.getById(deptId);
 
-            item.setLastChgBy(currentUser.getUserId());
+            item.setLastChgBy(userContext.getUserId());
             item.setLastChgDate(LocalDate.now());
             item.setLastChgTime(getCurrentTimeFormatted());
 
@@ -1031,7 +1038,8 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
                 item.setMasItemCategory(masItemCategoryRepository.findById(request.getMasItemCategoryId())
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ItemCategory not found")));
             }
-            MasHospital hospital = currentUser.getHospital();
+            MasHospital hospital = masHospitalRepository.findById(userContext.getHospitalId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hospital not found"));
 
             if (AppConstants.STATUS_Y.toLowerCase().equalsIgnoreCase(hospital.getRoIsManual())) {
                 item .setStoreRoLManual(AppConstants.STATUS_Y.toLowerCase());
@@ -1387,11 +1395,11 @@ public ApiResponse<Page<MasStoreItemResponseWithStock>> getMasStoreItemDynamic(i
         response.setMasItemCategoryName(item.getMasItemCategory()!=null?item.getMasItemCategory().getItemCategoryName():null);
 
 
-        Long avlableStokes = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), deptIdStore, item.getItemId(), hospDefinedstoreDays);
+        Long avlableStokes = stockFound.getAvailableStocks(userContextService.getCurrentUserContext().getDepartmentId(), deptIdStore, item.getItemId(), hospDefinedstoreDays);
         response.setStorestocks(avlableStokes);
-        Long dispstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), dispdeptId, item.getItemId(), hospDefineddispDays);
+        Long dispstocks = stockFound.getAvailableStocks(userContextService.getCurrentUserContext().getHospitalId(), dispdeptId, item.getItemId(), hospDefineddispDays);
         response.setDispstocks(dispstocks);
-        Long wardstocks = stockFound.getAvailableStocks(authUtil.getCurrentUser().getHospital().getId(), warddeptId, item.getItemId(), hospDefinedwardDays);
+        Long wardstocks = stockFound.getAvailableStocks(userContextService.getCurrentUserContext().getHospitalId(), warddeptId, item.getItemId(), hospDefinedwardDays);
         response.setWardstocks(wardstocks );
 
         return response;

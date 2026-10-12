@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasDepartment;
 import com.hims.entity.MasTreatmentAdvise;
 import com.hims.entity.User;
@@ -9,7 +10,9 @@ import com.hims.entity.repository.MasTreatmentAdviseRepository;
 import com.hims.request.MasTreatmentAdviseRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasTreatmentAdviseResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasTreatmentAdviseService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +32,9 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
     private MasTreatmentAdviseRepository masTreatmentAdviseRepository;
     @Autowired
     private MasDepartmentRepository masDepartmentRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Override
@@ -65,8 +71,8 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
     @Override
     public ApiResponse<MasTreatmentAdviseResponse> add(MasTreatmentAdviseRequest request) {
         try {
-            User currentUser = util.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", 404);
             }
             MasDepartment masDepartment=null;
@@ -77,9 +83,9 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
             MasTreatmentAdvise advise = new MasTreatmentAdvise();
             advise.setDepartment(masDepartment);
             advise.setTreatmentAdvice(request.getTreatmentAdvice());
-            advise.setStatus("y");
-            advise.setCreatedBy(currentUser.getFullName());
-            advise.setLastUpdatedBy(currentUser.getFullName());
+            advise.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            advise.setCreatedBy(userContext.getUserFullName());
+            advise.setLastUpdatedBy(userContext.getUserFullName());
             advise.setLastUpdateDate(LocalDateTime.now());
 
             MasTreatmentAdvise saved = masTreatmentAdviseRepository.save(advise);
@@ -98,9 +104,9 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
     @Override
     public ApiResponse<MasTreatmentAdviseResponse> update(Long id, MasTreatmentAdviseRequest request) {
         try {
-            User currentUser = util.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (currentUser == null) {
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", 404);
             }
 
@@ -115,8 +121,8 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
             advise.setDepartment(masDepartment);
             advise.setTreatmentAdvice(request.getTreatmentAdvice());
             advise.setLastUpdateDate(LocalDateTime.now());
-            advise.setLastUpdatedBy(currentUser.getFullName());
-            advise.setStatus("y");
+            advise.setLastUpdatedBy(userContext.getUserFullName());
+            advise.setStatus(AppConstants.STATUS_Y.toLowerCase());
 
             MasTreatmentAdvise saved = masTreatmentAdviseRepository.save(advise);
 
@@ -134,8 +140,8 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
     @Override
     public ApiResponse<MasTreatmentAdviseResponse> changeStatus(Long id, String status) {
         try {
-            User currentUser = util.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse("Current User Not Found", 404);
             }
 
@@ -144,7 +150,7 @@ public class MasTreatmentAdviseServiceImpl implements MasTreatmentAdviseService 
 
             advise.setStatus(status);
             advise.setLastUpdateDate(LocalDateTime.now());
-            advise.setLastUpdatedBy(currentUser.getFullName());
+            advise.setLastUpdatedBy(userContext.getUserFullName());
 
             MasTreatmentAdvise saved = masTreatmentAdviseRepository.save(advise);
 

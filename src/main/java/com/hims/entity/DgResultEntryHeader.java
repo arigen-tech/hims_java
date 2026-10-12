@@ -53,7 +53,7 @@ public class DgResultEntryHeader {
     @Column(name = "template_id",length = 20)
     private String templateId;
 
-    @Column(name = "last_chgd_by",length = 20)
+    @Column(name = "last_chgd_by",length = 100)
     private String lastChgdBy;
 
     @Column(name = "last_chgd_date")

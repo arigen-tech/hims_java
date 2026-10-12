@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasDistrict;
 import com.hims.entity.MasState;
 import com.hims.entity.User;
@@ -10,7 +11,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasDistrictRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDistrictResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasDistrictService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +39,9 @@ public class MasDistrictServiceImpl implements MasDistrictService {
     private MasStateRepository masStateRepository;
 
     @Autowired
+    private UserContextService userContextService;
+
+    @Autowired
     private UserRepo userRepo;
 
     private User getCurrentUser() {
@@ -57,14 +63,14 @@ public class MasDistrictServiceImpl implements MasDistrictService {
 
             MasDistrict district = new MasDistrict();
             district.setDistrictName(request.getDistrictName());
-            district.setStatus("y");
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            district.setStatus(AppConstants.STATUS_Y.toLowerCase());
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            district.setLasChBy(String.valueOf(currentUser.getUserId()));
+            district.setLasChBy(String.valueOf(userContext.getUserId()));
             district.setLastChgDate(Instant.now());
             district.setState(state);
 
@@ -85,13 +91,13 @@ public class MasDistrictServiceImpl implements MasDistrictService {
             if (districtOpt.isPresent()) {
                 MasDistrict district = districtOpt.get();
                 district.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                district.setLasChBy(String.valueOf(currentUser.getUserId()));
+                district.setLasChBy(String.valueOf(userContext.getUserId()));
                 district.setLastChgDate(Instant.now());
                 masDistrictRepository.save(district);
                 return ResponseUtils.createSuccessResponse("District status updated", new TypeReference<>() {
@@ -117,13 +123,13 @@ public class MasDistrictServiceImpl implements MasDistrictService {
                     return ResponseUtils.createNotFoundResponse("State not found", 404);
                 }
                 district.setDistrictName(request.getDistrictName());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                district.setLasChBy(String.valueOf(currentUser.getUserId()));
+                district.setLasChBy(String.valueOf(userContext.getUserId()));
                 district.setLastChgDate(Instant.now());
                 district.setState(newState);
                 masDistrictRepository.save(district);

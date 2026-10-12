@@ -5,11 +5,9 @@ import com.hims.entity.*;
 import com.hims.entity.repository.DgMasCollectionRepository;
 import com.hims.entity.repository.UserRepo;
 import com.hims.request.DgMasCollectionRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.DgMasCollectionResponse;
-import com.hims.response.MasFrequencyResponse;
-import com.hims.response.MasSubChargeCodeDTO;
+import com.hims.response.*;
 import com.hims.service.DgMasCollectionService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +30,8 @@ public class DgMasCollectionServiceImpl implements DgMasCollectionService {
     private DgMasCollectionRepository dgMasCollectionRepository;
     @Autowired
     private UserRepo userRepo;
+    @Autowired
+    private UserContextService userContextService;
     private static final Logger log = LoggerFactory.getLogger(MasStateServiceImpl.class);
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -48,8 +48,8 @@ public class DgMasCollectionServiceImpl implements DgMasCollectionService {
     public ApiResponse<DgMasCollectionResponse> addDgMasCollection(DgMasCollectionRequest dgMasCollectionRequest) {
         try {
             DgMasCollection dgMasCollection = new DgMasCollection();
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
@@ -60,7 +60,7 @@ public class DgMasCollectionServiceImpl implements DgMasCollectionService {
             dgMasCollection.setStatus("y");
             dgMasCollection.setLastChgTime(getCurrentTimeFormatted());
             dgMasCollection.setLastChgDate(LocalDate.now());
-            dgMasCollection.setLastChgBy(currentUser.getUsername());
+            dgMasCollection.setLastChgBy(userContext.getUserFullName());
 
 
             return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasCollectionRepository.save(dgMasCollection)), new TypeReference<>() {
@@ -79,8 +79,8 @@ public class DgMasCollectionServiceImpl implements DgMasCollectionService {
     @Override
     public ApiResponse<DgMasCollectionResponse> update(Long id, DgMasCollectionRequest request) {
         try{
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                     },
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
@@ -96,7 +96,7 @@ public class DgMasCollectionServiceImpl implements DgMasCollectionService {
         dgMasCollection1.setStatus("y");
         dgMasCollection1.setLastChgTime(getCurrentTimeFormatted());
         dgMasCollection1.setLastChgDate(LocalDate.now());
-        dgMasCollection1.setLastChgBy(currentUser.getUsername());
+        dgMasCollection1.setLastChgBy(userContext.getUserFullName());
 
         return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasCollectionRepository.save(dgMasCollection1)), new TypeReference<>() {
         });
@@ -147,8 +147,8 @@ public class DgMasCollectionServiceImpl implements DgMasCollectionService {
     @Override
     public ApiResponse<DgMasCollectionResponse> changeDgMasCollectionStatus(Long id, String status) {
         try {
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
@@ -168,7 +168,7 @@ public class DgMasCollectionServiceImpl implements DgMasCollectionService {
             dgMasCollection1.setStatus(status.toLowerCase());
             dgMasCollection1.setLastChgTime(getCurrentTimeFormatted());
             dgMasCollection1.setLastChgDate(LocalDate.now());
-            dgMasCollection1.setLastChgBy(currentUser.getUsername());
+            dgMasCollection1.setLastChgBy(userContext.getUserFullName());
 
             return ResponseUtils.createSuccessResponse(convertedToResponse(dgMasCollectionRepository.save(dgMasCollection1)), new TypeReference<>() {
             });

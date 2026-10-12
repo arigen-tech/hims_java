@@ -47,5 +47,7 @@ public class MasProcedure {
     @Column(name = "is_nursing", length = 1)
     private String isNursing;
 
-
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "procedure_type_id")
+    private MasProcedureType procedureType;
 }

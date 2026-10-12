@@ -13,4 +13,6 @@ public class PrescriptionApproveHeaderResponse {
 
     private  Long prescriptionHdId;
     private String NISno;
+    private Long billHdId;
+    private Long visitId;
 }

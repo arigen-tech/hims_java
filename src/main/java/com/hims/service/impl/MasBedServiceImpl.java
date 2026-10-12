@@ -12,7 +12,9 @@ import com.hims.request.MasBedRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.BedStatusCountResponse;
 import com.hims.response.MasBedResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasBedService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -40,21 +42,23 @@ public class MasBedServiceImpl implements MasBedService {
     private MasBedTypeRepository masBedTypeRepository;
     @Autowired
     private MasBedStatusRepo masBedStatusRepository;
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Override
     public ApiResponse<?> createRoomCategory(MasBedRequest request) {
         try {
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse(CURRENT_USER_NOT_FOUND_MSG, HttpStatus.NOT_FOUND.value());
             }
 
             MasBed masBed = new MasBed();
             masBed.setBedNumber(request.getBedNumber());
             masBed.setStatus(STATUS_Y.toLowerCase());
-            masBed.setCreatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
-            masBed.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            masBed.setCreatedBy(userContext.getUserFullName());
+            masBed.setLastUpdatedBy(userContext.getUserFullName());
             masBed.setLastUpdateDate(LocalDate.now());
 
             // ROOM
@@ -95,8 +99,8 @@ public class MasBedServiceImpl implements MasBedService {
     @Override
     public ApiResponse<?> updateRoomCategory(Long id, MasBedRequest request) {
         try {
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse(CURRENT_USER_NOT_FOUND_MSG, HttpStatus.NOT_FOUND.value());
             }
 
@@ -104,7 +108,7 @@ public class MasBedServiceImpl implements MasBedService {
                     .orElseThrow(() -> new RuntimeException("Invalid Bed Id"));
 
             masBed.setBedNumber(request.getBedNumber());
-            masBed.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            masBed.setLastUpdatedBy(userContext.getUserFullName());
             masBed.setLastUpdateDate(LocalDate.now());
 
             // ROOM
@@ -145,8 +149,8 @@ public class MasBedServiceImpl implements MasBedService {
     @Override
     public ApiResponse<MasBedResponse> changeActiveStatus(Long id, String status) {
         try {
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createNotFoundResponse(CURRENT_USER_NOT_FOUND_MSG, HttpStatus.NOT_FOUND.value());
             }
 
@@ -154,7 +158,7 @@ public class MasBedServiceImpl implements MasBedService {
                     .orElseThrow(() -> new RuntimeException("Mas Bed Not Found"));
 
             masBed.setStatus(status);
-            masBed.setLastUpdatedBy(currentUser.getFirstName() + " " + currentUser.getLastName());
+            masBed.setLastUpdatedBy(userContext.getUserFullName());
             masBed.setLastUpdateDate(LocalDate.now());
 
             MasBed saved = masBedRepository.save(masBed);

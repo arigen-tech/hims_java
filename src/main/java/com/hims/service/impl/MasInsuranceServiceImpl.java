@@ -3,16 +3,16 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasInsurance;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasInsuranceRepository;
 import com.hims.request.MasInsuranceRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasInsuranceResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasInsuranceService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.auth.AUTH;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -27,6 +27,9 @@ public class MasInsuranceServiceImpl implements MasInsuranceService {
     private MasInsuranceRepository repository;
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
     @Override
     public ApiResponse<List<MasInsuranceResponse>> getAllMasInsurance(int flag) {
 
@@ -78,8 +81,8 @@ public class MasInsuranceServiceImpl implements MasInsuranceService {
         log.info("Creating insurance");
 
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found", 404);
             }
             MasInsurance entity = new MasInsurance();
@@ -92,7 +95,7 @@ public class MasInsuranceServiceImpl implements MasInsuranceService {
             entity.setAddress(request.getAddress());
 
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setLastChgBy(user.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -120,8 +123,8 @@ public class MasInsuranceServiceImpl implements MasInsuranceService {
             if (entity == null) {
                 return ResponseUtils.createNotFoundResponse("Insurance not found", 404);
             }
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found",
                         404);
@@ -134,7 +137,7 @@ public class MasInsuranceServiceImpl implements MasInsuranceService {
             entity.setEmailId(request.getEmailId());
             entity.setAddress(request.getAddress());
 
-            entity.setLastChgBy(user.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -167,16 +170,16 @@ public class MasInsuranceServiceImpl implements MasInsuranceService {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Current user not found",
                         404);
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setLastChgBy(user.getFullName());
+            entity.setLastChgBy(userContext.getUserFullName());
             entity.setLastChgDate(LocalDateTime.now());
             repository.save(entity);
 

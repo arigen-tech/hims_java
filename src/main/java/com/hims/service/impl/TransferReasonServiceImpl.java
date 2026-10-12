@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.TransferReason;
 import com.hims.entity.User;
 import com.hims.entity.repository.TransferReasonRepository;
@@ -8,7 +9,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.TransferReasonRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasTransferReasonResponse;
+import com.hims.response.UserContext;
 import com.hims.service.TransferReasonService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,15 +36,9 @@ public class TransferReasonServiceImpl implements TransferReasonService {
 
     @Autowired
     private UserRepo userRepo;
-
-    private User getCurrentUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepo.findByUserName(username);
-        if (user == null) {
-            log.warn("User not found for username: {}", username);
-        }
-        return user;
-    }
+    @Autowired
+    private UserContextService userContextService;
+    
 
     @Override
     public ApiResponse<List<MasTransferReasonResponse>> getAll(int flag) {
@@ -77,11 +74,11 @@ public class TransferReasonServiceImpl implements TransferReasonService {
             TransferReason transferReason = new TransferReason();
             transferReason.setTransferReasonName(request.getReasonName());
             transferReason.setDescription(request.getDescription());
-            transferReason.setStatus("Y");
+            transferReason.setStatus(AppConstants.STATUS_Y);
 
-            User currentUser = getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (currentUser == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null,
                         new TypeReference<>() {},
@@ -90,7 +87,7 @@ public class TransferReasonServiceImpl implements TransferReasonService {
                 );
             }
 
-            transferReason.setCreatedBy(String.valueOf(currentUser.getUserId()));
+            transferReason.setCreatedBy(String.valueOf(userContext.getUserId()));
             transferReason.setLastUpdateDate(LocalDateTime.now());
 
             TransferReason saved = transferReasonRepository.save(transferReason);
@@ -126,9 +123,9 @@ public class TransferReasonServiceImpl implements TransferReasonService {
                 transferReason.setTransferReasonName(request.getReasonName());
                 transferReason.setDescription(request.getDescription());
 
-                User currentUser = getCurrentUser();
+                UserContext userContext = userContextService.getCurrentUserContext();
 
-                if (currentUser == null) {
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(
                             null,
                             new TypeReference<>() {},
@@ -137,7 +134,7 @@ public class TransferReasonServiceImpl implements TransferReasonService {
                     );
                 }
 
-                transferReason.setLastUpdatedBy(String.valueOf(currentUser.getUserId()));
+                transferReason.setLastUpdatedBy(String.valueOf(userContext.getUserId()));
                 transferReason.setLastUpdateDate(LocalDateTime.now());
 
                 TransferReason updated = transferReasonRepository.save(transferReason);
@@ -191,9 +188,9 @@ public class TransferReasonServiceImpl implements TransferReasonService {
 
                 transferReason.setStatus(status);
 
-                User currentUser = getCurrentUser();
+                UserContext userContext = userContextService.getCurrentUserContext();
 
-                if (currentUser == null) {
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(
                             null,
                             new TypeReference<>() {},
@@ -202,7 +199,7 @@ public class TransferReasonServiceImpl implements TransferReasonService {
                     );
                 }
 
-                transferReason.setLastUpdatedBy(String.valueOf(currentUser.getUserId()));
+                transferReason.setLastUpdatedBy(String.valueOf(userContext.getUserId()));
                 transferReason.setLastUpdateDate(LocalDateTime.now());
 
                 TransferReason updated = transferReasonRepository.save(transferReason);

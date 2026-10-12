@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.EntMasTonsilGrade;
 import com.hims.entity.User;
 import com.hims.entity.repository.EntMasTonsilGradeRepository;
 import com.hims.request.EntMasTonsilGradeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.EntMasTonsilGradeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.EntMasTonsilGradeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +29,8 @@ public class EntMasTonsilGradeServiceImpl
 
     @Autowired
     private EntMasTonsilGradeRepository repository;
-
+    @Autowired
+    private UserContextService userContextService;
     @Autowired
     private AuthUtil authUtil;
 
@@ -72,8 +76,8 @@ public class EntMasTonsilGradeServiceImpl
             EntMasTonsilGradeRequest request) {
         log.info("Creating Tonsil Grade");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -81,9 +85,9 @@ public class EntMasTonsilGradeServiceImpl
 
             EntMasTonsilGrade entity = EntMasTonsilGrade.builder()
                     .tonsilGrade(request.getTonsilGrade())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -110,15 +114,15 @@ public class EntMasTonsilGradeServiceImpl
                         "Tonsil Grade not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setTonsilGrade(request.getTonsilGrade());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -151,15 +155,15 @@ public class EntMasTonsilGradeServiceImpl
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

@@ -4,6 +4,7 @@ import com.hims.entity.DgOrderDt;
 import com.hims.entity.RadOrderDt;
 import com.hims.entity.RadOrderHd;
 import com.hims.projection.RadiologyBillingProjection;
+import com.hims.projection.RadiologyModalityProjection;
 import com.hims.projection.RadiologyProjection;
 import io.netty.handler.codec.http2.Http2Connection;
 import org.springframework.data.domain.Page;
@@ -63,6 +64,7 @@ left join hd.patient p
 where hd.hospital.id = :hospitalId
   and lower(dt.billingStatus) = lower(:billingStatus)
   and lower(dt.studyStatus)   = lower(:studyStatus)
+  and lower(dt.orderStatus)   = lower(:orderStatus) 
   and dt.subChargecode.subId  = :modalityId
  and (
         :patientName is null
@@ -86,6 +88,7 @@ and (
             @Param("hospitalId") Long hospitalId,
             @Param("billingStatus") String billingStatus,
             @Param("studyStatus") String studyStatus,
+            @Param("orderStatus") String orderStatus,
             @Param("modalityId") Long modalityId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,
@@ -106,6 +109,7 @@ select
   sc.subName as modalityName,
   inv.investigationId as investigationId,
   inv.investigationName as investigationName,
+              hd.hospital.id as hospitalId,
   hd.orderTime as orderTime,
   hd.orderDate as orderDate,
   hd.department.departmentName as department
@@ -163,6 +167,7 @@ select
  hd.orderTime as orderTime,
  hd.orderDate as orderDate,
  hd.department.departmentName as department,
+ hd.hospital.id as hospitalId,
   pacs.studyDatetime as studyDatetime
 
 from RadOrderDt dt
@@ -173,9 +178,11 @@ join dt.investigation inv
 left join PacsHmisStudy pacs
        on pacs.orderNo = dt.orderAccessionNo
       and pacs.uhid = p.uhidNo
-where hd.hospital.id = :hospitalId
+where (:hospitalId is null or hd.hospital.id = :hospitalId)
   and lower(dt.studyStatus) = lower(:studyStatus)
   and (:modalityId is null or sc.subId = :modalityId)
+  and (:patientId is null or p.id = :patientId)
+  and (:reportStatus is null or lower(dt.reportStatus) = :reportStatus)
   and (
         :patientName is null
         or lower(
@@ -197,10 +204,29 @@ where hd.hospital.id = :hospitalId
     Page<RadiologyProjection> getRadiologyPACSStudyList(
             @Param("hospitalId") Long hospitalId,
             @Param("studyStatus") String studyStatus,
+            @Param("reportStatus") String reportStatus,
             @Param("modalityId") Long modalityId,
+            @Param("patientId") Long patientId,
             @Param("patientName") String patientName,
             @Param("phoneNumber") String phoneNumber,
             Pageable pageable
+    );
+
+    @Query("""
+        SELECT DISTINCT sc.subId AS modalityId, sc.subName AS modalityName
+        FROM RadOrderDt dt
+        JOIN dt.radOrderhd hd
+        JOIN hd.patient p
+        JOIN dt.subChargecode sc
+        WHERE (:hospitalId IS NULL OR hd.hospital.id = :hospitalId)
+          AND LOWER(dt.studyStatus) = LOWER(:studyStatus)
+          AND p.id = :patientId
+        ORDER BY sc.subName
+        """)
+    List<RadiologyModalityProjection> findPacsModalitiesByPatient(
+            @Param("hospitalId") Long hospitalId,
+            @Param("studyStatus") String studyStatus,
+            @Param("patientId") Long patientId
     );
 
     @Query(value = """
@@ -208,7 +234,7 @@ SELECT
     i.inpatient_id AS inpatientId, i.admission_no AS admissionNo, i.admission_date AS admissionDate,
     concat(coalesce(p.p_fn,''), coalesce(p.p_ln,'')) as patientName,
     p.uhid_no AS uhid, p.p_age AS age, p.p_mobile_number AS mobileNo, rd.rad_orderhd_id AS radOrderhdId,
-    rd.rad_orderdt_id AS radOrderdtId, rd.order_accession_no AS orderAccessionNo, rh.order_date AS orderDate,
+    rd.rad_orderdt_id AS radOrderdtId, rd.order_accession_no AS orderAccessionNo, rh.order_time AS orderDate,
     rh.order_time AS orderTime, dmi.investigation_id AS investigationId, dmi.investigation_name AS investigationName,
     phs.study_datetime AS studyDatetime, rd.study_status AS studyStatus, rd.report_status AS reportStatus,
     rd.remarks AS remarks, rd.pacs_completion_status AS pacsCompletionStatus, msc.sub_chargecode_id AS modalityId,

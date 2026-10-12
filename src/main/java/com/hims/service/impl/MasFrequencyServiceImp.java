@@ -10,7 +10,9 @@ import com.hims.request.MasFrequencyRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasFrequencyResponse;
 import com.hims.response.MasGenderResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasFrequencyService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +41,9 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
     @Autowired
     private UserRepo userRepo;
 
+    @Autowired
+    private UserContextService userContextService;
+
     private String getCurrentTimeFormatted() {
 
         return LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
@@ -64,13 +69,13 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
             masFrequency.setFrequencyName(masFrequencyRequest.getFrequencyName());
             masFrequency.setStatus(masFrequencyRequest.getStatus());
             masFrequency.setFeq(masFrequencyRequest.getFeq());
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
             }
-            masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            masFrequency.setLastChgBy(String.valueOf(userContext.getUserId()));
             masFrequency.setLastChgTime(getCurrentTimeFormatted());
             masFrequency.setLastChgDate(Instant.now());
             masFrequency.setOrderNo(masFrequencyRequest.getOrderNo());
@@ -91,13 +96,13 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
             masFrequency.setFrequencyName(masFrequencyRequest.getFrequencyName());
             masFrequency.setStatus(masFrequencyRequest.getStatus());
             masFrequency.setFeq(masFrequencyRequest.getFeq());
-            User currentUser = getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
             }
-            masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
+            masFrequency.setLastChgBy(String.valueOf(userContext.getUserId()));
             masFrequency.setLastChgTime(getCurrentTimeFormatted());
             masFrequency.setLastChgDate(Instant.now());
             masFrequency.setOrderNo(masFrequencyRequest.getOrderNo());
@@ -117,13 +122,13 @@ public class MasFrequencyServiceImp implements MasFrequencyService {
             MasFrequency masFrequency=oldMasFrequency.get();
             if(STATUS_Y.equalsIgnoreCase(status)||STATUS_N.equalsIgnoreCase(status)){
                 masFrequency.setStatus(status);
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             CURRENT_USER_NOT_FOUND_MSG, HttpStatus.UNAUTHORIZED.value());
                 }
-                masFrequency.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                masFrequency.setLastChgBy(String.valueOf(userContext.getUserId()));
                 masFrequency.setLastChgTime(getCurrentTimeFormatted());
                 masFrequency.setLastChgDate(Instant.now());
                 return ResponseUtils.createSuccessResponse(convertedToResponse(masFrequencyRepository.save(masFrequency)), new TypeReference<>() {

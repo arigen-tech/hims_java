@@ -5,14 +5,15 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.InsuranceTpaMapping;
 import com.hims.entity.MasInsurance;
 import com.hims.entity.MasTpa;
-import com.hims.entity.User;
 import com.hims.entity.repository.InsuranceTpaMappingRepository;
 import com.hims.entity.repository.MasInsuranceRepository;
 import com.hims.entity.repository.MasTpaRepository;
 import com.hims.request.InsuranceTpaMappingRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.InsuranceTpaMappingResponse;
+import com.hims.response.UserContext;
 import com.hims.service.InsuranceTpaMappingService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,9 @@ public class InsuranceTpaMappingServiceImpl implements InsuranceTpaMappingServic
     private MasInsuranceRepository masInsuranceRepository;
     @Autowired
     private MasTpaRepository masTpaRepository;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     private AuthUtil authUtil;
@@ -93,8 +97,8 @@ public class InsuranceTpaMappingServiceImpl implements InsuranceTpaMappingServic
 
         try {
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found", 404
                 );
             }
@@ -115,10 +119,10 @@ public class InsuranceTpaMappingServiceImpl implements InsuranceTpaMappingServic
             entity.setEffectiveFrom(request.getEffectiveFrom());
             entity.setEffectiveTo(request.getEffectiveTo());
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
-            entity.setCreatedBy(user.getFullName());
+            entity.setCreatedBy(userContext.getUserFullName());
             entity.setCreatedAt(LocalDateTime.now());
             entity.setUpdatedAt(LocalDateTime.now());
-            entity.setUpdatedBy(user.getFullName());
+            entity.setUpdatedBy(userContext.getUserFullName());
             entity.setMode(request.getMode());
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(mapToResponse(entity), new TypeReference<>() {}
@@ -146,9 +150,9 @@ public class InsuranceTpaMappingServiceImpl implements InsuranceTpaMappingServic
                 );
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
-            if (user == null) {
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found",
                         404
                 );
@@ -168,7 +172,7 @@ public class InsuranceTpaMappingServiceImpl implements InsuranceTpaMappingServic
             entity.setTpa(masTpa.get());
             entity.setEffectiveFrom(request.getEffectiveFrom());
             entity.setEffectiveTo(request.getEffectiveTo());
-            entity.setUpdatedBy(user.getFullName());
+            entity.setUpdatedBy(userContext.getUserFullName());
             entity.setUpdatedAt(LocalDateTime.now());
             entity.setMode(request.getMode());
             repository.save(entity);
@@ -194,13 +198,13 @@ public class InsuranceTpaMappingServiceImpl implements InsuranceTpaMappingServic
             if (entity == null) {
                 return ResponseUtils.createNotFoundResponse("Insurance TPA Mapping not found", 404);
             }
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Current user not found", 404);
             }
 
             entity.setStatus(status.toLowerCase());
-            entity.setUpdatedBy(user.getFullName());
+            entity.setUpdatedBy(userContext.getUserFullName());
             entity.setUpdatedAt(LocalDateTime.now());
             repository.save(entity);
             return ResponseUtils.createSuccessResponse(mapToResponse(entity), new TypeReference<>() {});

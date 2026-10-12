@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MasProcedureTypeRepository extends JpaRepository<MasProcedureType, Long> {
@@ -15,4 +16,6 @@ public interface MasProcedureTypeRepository extends JpaRepository<MasProcedureTy
     List<MasProcedureType> findAllByOrderByLastUpdateDateDesc();
 
     List<MasProcedureType> findAllByOrderByStatusDescLastUpdateDateDesc();
+
+    Optional<MasProcedureType>findByProcedureTypeCode(String code);
 }

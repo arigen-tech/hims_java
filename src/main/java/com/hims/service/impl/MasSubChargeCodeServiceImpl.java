@@ -1,6 +1,7 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasMainChargeCode;
 import com.hims.entity.MasSubChargeCode;
 import com.hims.entity.User;
@@ -10,7 +11,9 @@ import com.hims.entity.repository.UserRepo;
 import com.hims.request.MasSubChargeCodeReq;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasSubChargeCodeDTO;
+import com.hims.response.UserContext;
 import com.hims.service.MasSubChargeCodeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +43,9 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private UserContextService userContextService;
 
     private String getCurrentTimeFormatted(){
         return LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
@@ -78,14 +84,14 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
                 MasSubChargeCode subCode = new MasSubChargeCode();
                     subCode.setSubCode(codeReq.getSubCode());
                     subCode.setSubName(codeReq.getSubName());
-                    subCode.setStatus("y");
-                    User currentUser = getCurrentUser();
-                    if (currentUser == null) {
+                    subCode.setStatus(AppConstants.STATUS_Y.toLowerCase());
+                    UserContext userContext = userContextService.getCurrentUserContext();
+                    if (userContext == null) {
                         return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                                 },
                                 "Current user not found", HttpStatus.UNAUTHORIZED.value());
                     }
-                    subCode.setLastChgBy(String.valueOf(currentUser.getFirstName()));
+                    subCode.setLastChgBy(userContext.getUserFullName());
                     subCode.setLastChgDate(LocalDate.now());
                     subCode.setLastChgTime(getCurrentTimeFormatted());
                     subCode.setMainChargeId(mainChargeCode.get());
@@ -108,13 +114,13 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
                 MasSubChargeCode newCode = newSubCode.get();
                 newCode.setSubCode(codeReq.getSubCode());
                 newCode.setSubName(codeReq.getSubName());
-                User currentUser = getCurrentUser();
-                if (currentUser == null) {
+                UserContext userContext = userContextService.getCurrentUserContext();
+                if (userContext == null) {
                     return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                             },
                             "Current user not found", HttpStatus.UNAUTHORIZED.value());
                 }
-                newCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                newCode.setLastChgBy(String.valueOf(userContext.getUserId()));
                 newCode.setLastChgDate(LocalDate.now());
                 newCode.setLastChgTime(getCurrentTimeFormatted());
 
@@ -145,13 +151,13 @@ public class MasSubChargeCodeServiceImpl implements MasSubChargeCodeService {
                 if ("Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status)) {
                     subCode.setStatus(status);
 
-                    User currentUser = getCurrentUser();
-                    if (currentUser == null) {
+                    UserContext userContext = userContextService.getCurrentUserContext();
+                    if (userContext == null) {
                         return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                                 },
                                 "Current user not found", HttpStatus.UNAUTHORIZED.value());
                     }
-                    subCode.setLastChgBy(String.valueOf(currentUser.getUserId()));
+                    subCode.setLastChgBy(String.valueOf(userContext.getUserId()));
                     subCode.setLastChgDate(LocalDate.now());
                     subCode.setLastChgTime(getCurrentTimeFormatted());
 

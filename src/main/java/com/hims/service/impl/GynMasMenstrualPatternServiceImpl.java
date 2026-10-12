@@ -7,7 +7,9 @@ import com.hims.entity.repository.GynMasMenstrualPatternRepository;
 import com.hims.request.GynMasMenstrualPatternRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.GynMasMenstrualPatternResponse;
+import com.hims.response.UserContext;
 import com.hims.service.GynMasMenstrualPatternService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,9 @@ public class GynMasMenstrualPatternServiceImpl
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<GynMasMenstrualPatternResponse>> getAll(int flag) {
@@ -66,8 +71,8 @@ public class GynMasMenstrualPatternServiceImpl
 
         log.info("Creating Menstrual Pattern={}", request.getPatternValue());
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -76,8 +81,8 @@ public class GynMasMenstrualPatternServiceImpl
             GynMasMenstrualPattern entity = GynMasMenstrualPattern.builder()
                     .patternValue(request.getPatternValue())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -106,15 +111,15 @@ public class GynMasMenstrualPatternServiceImpl
                     "Menstrual Pattern not found", 404);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setPatternValue(request.getPatternValue());
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);
@@ -143,15 +148,15 @@ public class GynMasMenstrualPatternServiceImpl
                     "Invalid status", 400);
         }
 
-        User user = authUtil.getCurrentUser();
-        if (user == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(
                     null, new TypeReference<>() {},
                     "Current user not found", 404);
         }
 
         entity.setStatus(status);
-        entity.setLastUpdatedBy(user.getFirstName());
+        entity.setLastUpdatedBy(userContext.getUserFullName());
         entity.setLastUpdateDate(LocalDateTime.now());
 
         repository.save(entity);

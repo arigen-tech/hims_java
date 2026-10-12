@@ -4,15 +4,18 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.LabService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.HMISUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -115,6 +118,12 @@ public class LabServiceImpl implements LabService {
     private Long resultEnteredStatusId;
 
 
+    private final UserContextService userContextService;
+    private final MasHospitalRepository masHospitalRepository;
+
+    private final  MasResultFlagRepository masResultFlagRepository;
+
+
 
     @Override
     public ApiResponse<Page<PendingSampleHeaderResponse>> getPendingSampleHeadersForCollection(Long hospitalId, String patientName, String patientMobileNumber, int page, int size) {
@@ -177,7 +186,7 @@ public class LabServiceImpl implements LabService {
 
         try {
 
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
 
             Optional<Visit>  visitOpt = visitRepository.findById((long) sampleReq.getVisitId());
@@ -210,12 +219,6 @@ public class LabServiceImpl implements LabService {
 
             LocalDateTime now = LocalDateTime.now();
 
-            String fullName = Stream.of(
-                            currentUser.getFirstName(),
-                            currentUser.getMiddleName(),
-                            currentUser.getLastName()
-                    ).filter(Objects::nonNull)
-                    .collect(Collectors.joining(" "));
 
             //GROUP BY MODALITY (SubChargeCodeId)
             Map<Integer, List<SampleCollectionInvestigationReq>> groupedData =
@@ -258,7 +261,7 @@ public class LabServiceImpl implements LabService {
                     header.setInpatient(inpatient);
                     header.setPatientId(dgOrderHd.getPatientId());
 
-                    header.setHospitalId(currentUser.getHospital());
+                    header.setHospitalId(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new RuntimeException("Invalid hospital id")));
 
                     header.setDgOrderHd(dgOrderHd);
 
@@ -272,10 +275,10 @@ public class LabServiceImpl implements LabService {
 
                     header.setSubChargeCode(subChargeCode);
 
-                    header.setCollection_by(fullName);
+                    header.setCollection_by(userContext.getUserFullName());
                     header.setCollection_time(now);
 
-                    header.setLastChgBy(fullName);
+                    header.setLastChgBy(userContext.getUserFullName());
                     header.setLastChgDate(now);
                     header.setLastChgTime(now);
 
@@ -354,7 +357,7 @@ public class LabServiceImpl implements LabService {
                         tat.setOrderHd(dgOrderHd);
                         tat.setPatient(dgOrderHd.getPatientId());
                         tat.setSampleCollectionDateTime(now);
-                        tat.setSampleCollectedBy(fullName);
+                        tat.setSampleCollectedBy(userContext.getUserFullName());
                         tat.setGeneratedSampleId(sampleId);
 
                         labTurnAroundTimeRepository.save(tat);
@@ -476,14 +479,10 @@ public class LabServiceImpl implements LabService {
                     requests != null ? requests.size() : 0);
 
             // =====================  CURRENT USER =====================
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
 
-            String validatedBy =
-                    currentUser.getFirstName() + " " +
-                            currentUser.getMiddleName() + " " +
-                            currentUser.getLastName();
-            log.debug("Validation performed by={}", validatedBy);
+            log.debug("Validation performed by={}", userContext.getUserFullName());
 
 
             Long headerId = requests.get(0).getSampleHeaderId();
@@ -530,7 +529,7 @@ public class LabServiceImpl implements LabService {
                                 );
 
                 tat.setIsReject(!accepted);
-                tat.setSampleValidatedBy(validatedBy);
+                tat.setSampleValidatedBy(userContext.getUserFullName());
                 tat.setSampleValidatedDateTime(LocalDateTime.now());
                 labTurnAroundTimeRepository.save(tat);
                 log.debug("TAT updated for investigationId={}", investigationId);
@@ -599,7 +598,7 @@ public class LabServiceImpl implements LabService {
             header.setValidated(finalHeaderStatus);
             header.setValidation_date(LocalDate.now());
             header.setValidationTime(HMISUtil.getCurrentLocalDateTime());
-            header.setValidatedBy(validatedBy);
+            header.setValidatedBy(userContext.getUserFullName());
             dgSampleCollectionHeaderRepository.save(header);
 
             // ===================== 9. UPDATE ORDER HD =====================
@@ -742,13 +741,13 @@ public class LabServiceImpl implements LabService {
         try {
             Long depart = authUtil.getCurrentDepartmentId();
             MasDepartment depObj = masDepartmentRepository.findById(depart).orElseThrow(()-> new RuntimeException("Invalid Dept Id"));
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", HttpStatus.UNAUTHORIZED.value());
             }
-            log.debug("Current user={}, department={}", currentUser.getUsername(), depObj.getDepartmentName());
+            log.debug("Current user={}, department={}", userContext.getUserFullName(), depObj.getDepartmentName());
             //  Check if header already exists for same Sample + SubChargeCode
             Optional<DgResultEntryHeader> existingHeaderOpt =
                     dgResultEntryHeaderRepository.findBySampleCollectionHeaderId_SampleCollectionHeaderIdAndSubChargeCodeId_SubId(
@@ -772,7 +771,7 @@ public class LabServiceImpl implements LabService {
                 // Update existing header
                 header = existingHeaderOpt.get();
                 header.setRemarks(request.getClinicalNotes());
-                header.setLastChgdBy(currentUser.getLastChangedBy());
+                header.setLastChgdBy(userContext.getUserFullName());
                 header.setLastChgdDate(LocalDate.now());
                 header.setResultStatus("n");
                 header.setLastChgdTime(String.valueOf(LocalTime.now()));
@@ -796,12 +795,12 @@ public class LabServiceImpl implements LabService {
                 header.setResultStatus("n");
                 //  header.setVerified("n");
                 header.setDepartmentId(depObj);
-                header.setLastChgdBy(currentUser.getLastChangedBy());
+                header.setLastChgdBy(userContext.getUserFullName());
                 header.setLastChgdDate(LocalDate.now());
                 header.setLastChgdTime(String.valueOf(LocalTime.now()));
                 header.setResultNo(createInvoice());
-                header.setHospitalId(currentUser.getHospital());
-                header.setResultEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                header.setHospitalId(masHospitalRepository.findById(userContext.getHospitalId()).orElseThrow(() -> new RuntimeException("Invalid hospital id")));
+                header.setResultEnteredBy(userContext.getUserFullName());
 //                Optional<DgOrderHd> dgOrderH=labHdRepository.findById(Math.toIntExact(request.getPatientId()));
 //                header.setOrderHd(dgOrderH.get());
                 // Optional<DgOrderHd> dgOrderH = labHdRepository.findByPatientId_IdAndOrderstatusN(request.getPatientId(),"n");
@@ -856,6 +855,15 @@ public class LabServiceImpl implements LabService {
                         detail = existingDetailOpt.get();
                         detail.setResult(subReq.getResult());
                         detail.setRemarks(subReq.getRemarks());
+                        detail.setResultFlag(
+                                subReq.getResultFlagId() != null
+                                        ? masResultFlagRepository.findById(subReq.getResultFlagId())
+                                        .orElseThrow(()-> new SDDException("Detect result flag",
+                                                HttpStatus.NOT_FOUND.value(),
+                                                "Invalid Result flag details")
+                                        )
+                                        : null
+                        );
                     } else {
                         // Create new
                         detail = new DgResultEntryDetail();
@@ -866,6 +874,15 @@ public class LabServiceImpl implements LabService {
                         detail.setResult(subReq.getResult());
                         detail.setRemarks(subReq.getRemarks());
                         detail.setResultType(subReq.getResultType());
+                        detail.setResultFlag(
+                                subReq.getResultFlagId() != null
+                                        ? masResultFlagRepository.findById(subReq.getResultFlagId())
+                                        .orElseThrow(()-> new SDDException("Detect result flag",
+                                                HttpStatus.NOT_FOUND.value(),
+                                                "Invalid Result flag details")
+                                        )
+                                        : null
+                        );
                         detail.setValidated("n");
                         detail.setSampleId(masSampleRepository.findById(subReq.getSampleId()).orElse(null));
                         detail.setChargeCodeId(mainChargeCodeRepository.findById(request.getMainChargeCodeId()).orElse(null));
@@ -898,7 +915,7 @@ public class LabServiceImpl implements LabService {
 
 
                     LabTurnAroundTime labTurnAroundTime=labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(dgOrderH.getId(),investigation.getInvestigationId(),patientId.getId(),false);
-                    labTurnAroundTime.setResultEnteredBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                    labTurnAroundTime.setResultEnteredBy(userContext.getUserFullName());
                     labTurnAroundTime.setResultEntryDateTime(LocalDateTime.now());
                     labTurnAroundTimeRepository.save( labTurnAroundTime);
                     dgResultEntryDetailRepository.save(detail);
@@ -1023,7 +1040,7 @@ public class LabServiceImpl implements LabService {
                 request.getResultEntryHeaderId());
 
         try {
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
 
             //For Date Time Formating
@@ -1058,6 +1075,13 @@ public class LabServiceImpl implements LabService {
                 // Update result and remarks
                 detail.setResult(validationReq.getResult());
                 detail.setRemarks(validationReq.getRemarks());
+                detail.setResultFlag(validationReq.getResultFlagId()!=null? masResultFlagRepository.findById(validationReq.getResultFlagId())
+                        .orElseThrow(()->new SDDException("Result flag",
+                                HttpStatus.NOT_FOUND.value(),
+                                "Invalid Result flag"
+                        ))
+                        :
+                        null);
                 if(AppConstants.STATUS_F.equalsIgnoreCase(validationReq.getComparisonType())){
                     detail.setFixedId(dgFixedValueRepository.findById(validationReq.getFixedId()).orElse(null));
                 }
@@ -1075,7 +1099,7 @@ public class LabServiceImpl implements LabService {
 
                 // Save each detail
                 LabTurnAroundTime labTurnAroundTime=labTurnAroundTimeRepository.findByOrderHd_IdAndInvestigation_InvestigationIdAndPatient_IdAndIsReject(header.getOrderHd().getId(),detail.getInvestigationId().getInvestigationId(),header.getHinId().getId(),false);
-                labTurnAroundTime.setResultValidatedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                labTurnAroundTime.setResultValidatedBy(userContext.getUserFullName());
                 labTurnAroundTime.setResultValidationTime(LocalDateTime.now());
                 labTurnAroundTimeRepository.save(labTurnAroundTime);
                 dgResultEntryDetailRepository.save(detail);
@@ -1093,7 +1117,7 @@ public class LabServiceImpl implements LabService {
                 // header.setVerified("y");
                 header.setVerifiedOn(LocalDate.now());
                 header.setVerifiedTime(LocalTime.now().format(formatter));
-                header.setResultVerifiedBy(Math.toIntExact(currentUser.getUserId()));
+                header.setResultVerifiedBy(Math.toIntExact(userContext.getUserId()));
                 // header.setResultUpdatedBy(currentUser.getUsername());
                 //  header.setUpdateOn(LocalDateTime.now());
                 dgResultEntryHeaderRepository.save(header);
@@ -1209,7 +1233,7 @@ public class LabServiceImpl implements LabService {
     public ApiResponse<String> updateResult(ResultUpdateRequest request) {
         log.info("Starting updateResult process for HeaderId={}", request.getResultEntryHeaderId());
         try {
-            User currentUser = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
 
             // Fetch header
@@ -1237,7 +1261,7 @@ public class LabServiceImpl implements LabService {
 
                 labResultAmendAudit.setPatient(header.getHinId());
                 labResultAmendAudit.setAmendmentType(masLabResultAmendmentType);
-                labResultAmendAudit.setAmendedBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
+                labResultAmendAudit.setAmendedBy(userContext.getUserFullName());
                 labResultAmendAudit.setNewResult(detailReq.getResult());
                 labResultAmendAudit.setOldResult(detailReq.getOldResult());
                 labResultAmendAudit.setAmendedDatetime(LocalDateTime.now());
@@ -1259,7 +1283,7 @@ public class LabServiceImpl implements LabService {
                 dgResultEntryDetailRepository.save(detail);
             }
             //  Update header audit fields
-            header.setResultUpdatedBy(Math.toIntExact(currentUser.getUserId()));  // Who updated
+            header.setResultUpdatedBy(Math.toIntExact(userContext.getUserId()));  // Who updated
             header.setUpdateOn(LocalDateTime.now());           // When updated
             dgResultEntryHeaderRepository.save(header);
             log.info("Result update completed successfully for HeaderId={}",
@@ -1281,8 +1305,10 @@ public class LabServiceImpl implements LabService {
             String mobileNo,
             String patientName,
             Long patientId,
+            boolean ipd,
             LocalDate fromDate,
             LocalDate toDate,
+            String investigationName,
             int page,
             int size
     ) {
@@ -1297,13 +1323,80 @@ public class LabServiceImpl implements LabService {
                     ? null
                     : "%" + patientName.trim().toLowerCase() + "%";
 
+            investigationName = (investigationName == null || investigationName.trim().isEmpty())
+                    ? null
+                    : "%" + investigationName.trim().toLowerCase() + "%";
 
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "resultEntryId.resultDate", "resultEntryId.resultTime"));
             Page<LabInvestigationsReportResponse> response =
-                    dgResultEntryDetailRepository.getLabInvestigationsReport(
+                    (ipd
+                            ? dgResultEntryDetailRepository.getIpdLabInvestigationsReport(
+                                    hospitalId,
+                                    mobileNo,
+                                    patientName,
+                                    patientId,
+                                    investigationName,
+                                    fromDate,
+                                    toDate,
+                                    AppConstants.STATUS_Y,
+                                    pageable
+                            )
+                            : dgResultEntryDetailRepository.getLabInvestigationsReport(
                             hospitalId,
                             mobileNo,
                             patientName,
+                            patientId,
+                            investigationName,
+                            fromDate,
+                            toDate,
+                            AppConstants.STATUS_Y,
+                            pageable
+                    ));
+
+            log.info("getAllInvestigationsReport method ended with mobileNo={}, patientName={}, fromDate={}, toDate={}", mobileNo, patientName, fromDate, toDate);
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+
+        } catch (Exception e) {
+            log.error("Error occurred in getAllLabReports()", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    "Internal Server Error",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<Page<LabInvestigationReportHeaderResponse>> getInvestigationReportHeaders(
+            Long hospitalId,
+            String mobileNo,
+            String patientName,
+            Long patientId,
+            LocalDate fromDate,
+            LocalDate toDate,
+            int page,
+            int size
+    ) {
+        try {
+            String mobileFilter = mobileNo == null || mobileNo.isBlank()
+                    ? null
+                    : "%" + mobileNo.trim() + "%";
+            String patientNameFilter = patientName == null || patientName.isBlank()
+                    ? null
+                    : "%" + patientName.trim().toLowerCase() + "%";
+
+            Pageable pageable = PageRequest.of(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.DESC, "resultDate", "resultTime")
+            );
+
+            Page<LabInvestigationReportHeaderResponse> response =
+                    dgResultEntryHeaderRepository.getInvestigationReportHeaders(
+                            hospitalId,
+                            mobileFilter,
+                            patientNameFilter,
                             patientId,
                             fromDate,
                             toDate,
@@ -1311,11 +1404,9 @@ public class LabServiceImpl implements LabService {
                             pageable
                     );
 
-            log.info("getAllInvestigationsReport method ended with mobileNo={}, patientName={}, fromDate={}, toDate={}", mobileNo, patientName, fromDate, toDate);
             return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
-
         } catch (Exception e) {
-            log.error("Error occurred in getAllLabReports()", e);
+            log.error("Error fetching lab investigation report headers", e);
             return ResponseUtils.createFailureResponse(
                     null,
                     new TypeReference<>() {},
@@ -1590,17 +1681,49 @@ public class LabServiceImpl implements LabService {
      }
 
     @Override
-    public ApiResponse<Page<OrderTrackingReportResponse>> getOrderTrackingDetailsByPatientId(Long hospitalId, Long patientId, int page, int size) {
+    public ApiResponse<Page<OrderTrackingReportResponse>> getOrderTrackingDetailsByPatientId(
+            Long hospitalId,
+            Long patientId,
+            Long inPatientId,
+            String resultType,
+            int page,
+            int size) {
         try {
-            log.info("getOrderTrackingReports method started with hospitalId={}, patientId={}", hospitalId, patientId);
+            if (inPatientId == null && patientId == null) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "Either patientId or inPatientId is required",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            String normalizedResultType = resultType == null ? null : resultType.trim().toUpperCase();
+            if (inPatientId == null
+                    && normalizedResultType != null
+                    && !normalizedResultType.equals("OPD")
+                    && !normalizedResultType.equals("IPD")) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "resultType must be OPD or IPD",
+                        HttpStatus.BAD_REQUEST.value()
+                );
+            }
+
+            log.info("getOrderTrackingReports method started with hospitalId={}, patientId={}, inPatientId={}, resultType={}",
+                    hospitalId, patientId, inPatientId, normalizedResultType);
             log.info("getOrderTrackingDetailsByPatientId() started...");
             Pageable pageable = PageRequest.of(page, size, Sort.by("orderHd.orderDate").descending());
             Page<OrderTrackingReportResponse> result = labOrderDtRepository.getOrderTrackingDetailsByPatientId(
                     hospitalId,
                     patientId,
+                    inPatientId,
+                    normalizedResultType,
                     pageable
             );
-            log.info("getOrderTrackingDetailsByPatientId method ended with hospitalId={}, patientId={}", hospitalId, patientId);
+            log.info("getOrderTrackingDetailsByPatientId method ended with hospitalId={}, patientId={}, inPatientId={}, resultType={}",
+                    hospitalId, patientId, inPatientId, normalizedResultType);
             return ResponseUtils.createSuccessResponse(result, new TypeReference<>() {});
 
         } catch (Exception e) {

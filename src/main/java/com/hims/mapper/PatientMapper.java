@@ -21,6 +21,8 @@ public class PatientMapper {
                         patient.getPatientGender().getId() : null)
                 .genderName(patient.getPatientGender() != null ?
                         patient.getPatientGender().getGenderName() : null)
+                .bloodGroupId(patient.getBloodGroup() != null ?
+                        patient.getBloodGroup().getBloodGroupId() : null)
 
                 .patientEmailId(patient.getPatientEmailId())
                 .patientMobileNumber(patient.getPatientMobileNumber())

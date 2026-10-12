@@ -2,12 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasOutputType;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasOutputTypeRepository;
 import com.hims.request.MasOutputTypeRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasOutputTypeResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasOutputTypeService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,9 @@ public class MasOutputTypeServiceImpl implements MasOutputTypeService {
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasOutputTypeResponse>> getAll(int flag) {
@@ -71,15 +75,15 @@ public class MasOutputTypeServiceImpl implements MasOutputTypeService {
     @Override
     public ApiResponse<MasOutputTypeResponse> create(MasOutputTypeRequest request) {
         try {
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasOutputType output = MasOutputType.builder()
                     .outputTypeName(request.getOutputTypeName())
                     .isMeasurable(request.getIsMeasurable())
                     .description(request.getDescription())
                     .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -105,12 +109,12 @@ public class MasOutputTypeServiceImpl implements MasOutputTypeService {
             if (output == null)
                 return ResponseUtils.createNotFoundResponse("Output Type ID not found!", 404);
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             output.setOutputTypeName(request.getOutputTypeName());
             output.setIsMeasurable(request.getIsMeasurable());
             output.setDescription(request.getDescription());
-            output.setLastUpdatedBy(user.getFirstName());
+            output.setLastUpdatedBy(userContext.getUserFullName());
             output.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(output);
@@ -143,10 +147,10 @@ public class MasOutputTypeServiceImpl implements MasOutputTypeService {
                         400
                 );
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             output.setStatus(status);
-            output.setLastUpdatedBy(user.getFirstName());
+            output.setLastUpdatedBy(userContext.getUserFullName());
             output.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(output);

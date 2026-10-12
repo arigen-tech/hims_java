@@ -1,13 +1,16 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.EntMasTmStatus;
 import com.hims.entity.User;
 import com.hims.entity.repository.EntMasTmStatusRepository;
 import com.hims.request.EntMasTmStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.EntMasTmStatusResponse;
+import com.hims.response.UserContext;
 import com.hims.service.EntMasTmStatusService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,8 @@ public class EntMasTmStatusServiceImpl
 
     @Autowired
     private AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<EntMasTmStatusResponse>> getAll(int flag) {
@@ -36,7 +41,7 @@ public class EntMasTmStatusServiceImpl
         try {
             List<EntMasTmStatus> list =
                     (flag == 1)
-                            ? repository.findByStatusIgnoreCaseOrderByTmStatusAsc("y")
+                            ? repository.findByStatusIgnoreCaseOrderByTmStatusAsc(AppConstants.STATUS_Y.toLowerCase())
                             : repository.findAllByOrderByStatusDescLastUpdateDateDesc();
 
             return ResponseUtils.createSuccessResponse(
@@ -72,8 +77,8 @@ public class EntMasTmStatusServiceImpl
             EntMasTmStatusRequest request) {
         log.info("Creating TM Status");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -81,9 +86,9 @@ public class EntMasTmStatusServiceImpl
 
             EntMasTmStatus entity = EntMasTmStatus.builder()
                     .tmStatus(request.getTmStatus())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -110,15 +115,15 @@ public class EntMasTmStatusServiceImpl
                         "TM Status not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setTmStatus(request.getTmStatus());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -151,15 +156,15 @@ public class EntMasTmStatusServiceImpl
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

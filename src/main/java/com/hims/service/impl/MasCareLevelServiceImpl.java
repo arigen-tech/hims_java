@@ -1,17 +1,21 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasCareLevel;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasCareLevelRepo;
 import com.hims.request.MasCareLevelRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasCareLevelResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasCareLevelService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +29,8 @@ public class MasCareLevelServiceImpl implements MasCareLevelService {
     private final MasCareLevelRepo masCareLevelRepo;
 
     private final AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
 
 
 
@@ -35,16 +41,16 @@ public class MasCareLevelServiceImpl implements MasCareLevelService {
 
             log.info("createCareLevel() method Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.NOT_FOUND.value());
             }
             MasCareLevel masCareLevel= new MasCareLevel();
             masCareLevel.setCareLevelName(request.getCareLevelName());
             masCareLevel.setDescription(request.getDescription());
-            masCareLevel.setCreatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
-            masCareLevel.setUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
-            masCareLevel.setStatus("y");
+            masCareLevel.setCreatedBy(userContext.getUserFullName());
+            masCareLevel.setUpdatedBy(userContext.getUserFullName());
+            masCareLevel.setStatus(AppConstants.STATUS_Y.toLowerCase());
             MasCareLevel save = masCareLevelRepo.save(masCareLevel);
             log.info("createCareLevel() method Ended...");
 
@@ -64,15 +70,15 @@ public class MasCareLevelServiceImpl implements MasCareLevelService {
 
             log.info("updateCareLevel() method Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.NOT_FOUND.value());
             }
 
             MasCareLevel masCareLevel= masCareLevelRepo.findById(careId).orElseThrow(()-> new RuntimeException("Invalid Care Id"));
             masCareLevel.setCareLevelName(request.getCareLevelName());
             masCareLevel.setDescription(request.getDescription());
-            masCareLevel.setUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+            masCareLevel.setUpdatedBy(userContext.getUserFullName());
             MasCareLevel save = masCareLevelRepo.save(masCareLevel);
             log.info("updateCareLevel() method Ended...");
 
@@ -91,13 +97,13 @@ public class MasCareLevelServiceImpl implements MasCareLevelService {
 
            log.info("changeActiveStatus() method Started...");
 
-           User currentUser = authUtil.getCurrentUser();
-           if(currentUser==null){
+           UserContext userContext = userContextService.getCurrentUserContext();
+           if(userContext==null){
                return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.NOT_FOUND.value());
            }
            MasCareLevel masCareLevel= masCareLevelRepo.findById(careId).orElseThrow(()-> new RuntimeException("Invalid Care Id"));
            masCareLevel.setStatus(status);
-           masCareLevel.setUpdatedBy(currentUser.getFirstName()+" "+currentUser.getLastName());
+           masCareLevel.setUpdatedBy(userContext.getUserFullName());
            MasCareLevel save = masCareLevelRepo.save(masCareLevel);
            log.info("changeActiveStatus() method Ended...");
 
@@ -115,8 +121,8 @@ public class MasCareLevelServiceImpl implements MasCareLevelService {
 
             log.info("getById() method Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.NOT_FOUND.value());
             }
 
@@ -136,15 +142,15 @@ public class MasCareLevelServiceImpl implements MasCareLevelService {
 
             log.info("getAll() method Started...");
 
-            User currentUser = authUtil.getCurrentUser();
-            if(currentUser==null){
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if(userContext==null){
                 return  ResponseUtils.createNotFoundResponse("Current User Not Found",HttpStatus.NOT_FOUND.value());
             }
             List<MasCareLevel> masCareLevels;
             if(flag==0){
                 masCareLevels=masCareLevelRepo.findAllByOrderByStatusDescLastUpdateDateDesc();
             } else if (flag==1) {
-                masCareLevels=masCareLevelRepo.findByStatusIgnoreCaseOrderByCareLevelNameAsc("y");
+                masCareLevels=masCareLevelRepo.findByStatusIgnoreCaseOrderByCareLevelNameAsc(AppConstants.STATUS_Y.toLowerCase());
             }else{
                 return  ResponseUtils.createFailureResponse(null, new TypeReference<>() {},"Invalid Flag Value , Provide flag as 0 or 1",HttpStatus.BAD_REQUEST.value());
             }

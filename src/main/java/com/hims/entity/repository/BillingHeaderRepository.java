@@ -3,14 +3,11 @@ package com.hims.entity.repository;
 import com.hims.entity.BillingHeader;
 import com.hims.entity.Visit;
 import com.hims.projection.*;
-import com.hims.response.BillingHeaderResponse;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -178,6 +175,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
               AND LOWER(bh.payment_status) IN 
                   (LOWER(:paymentStatusPending), LOWER(:paymentStatusPartial))
               AND bh.service_category_id = opd_cat.id
+                AND v.visit_date >= CURRENT_DATE
             
             ORDER BY v.visit_date DESC
             """, nativeQuery = true)
@@ -206,7 +204,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             r.relation_name AS relation,
             g.gender_name AS sex,
             d.department_name AS department,
-            CAST(bh.bill_date AS text) AS billDate,
+            bh.bill_date  AS billDate,
             bh.net_amount AS netAmount,
             sc.id AS serviceCategoryId,
             sc.service_cat_name AS serviceCategoryName,
@@ -220,6 +218,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
         LEFT JOIN mas_department d ON v.department_id = d.department_id
         LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
         WHERE bh.payment_status IN (:complete, :partial)
+        AND v.visit_status != :cancelledVisit
           AND (
                 :patientName IS NULL OR
                 LOWER(TRIM(
@@ -251,6 +250,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
         LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
 
         WHERE bh.payment_status IN (:complete, :partial)
+        AND v.visit_status != :cancelledVisit
           AND (
                 :patientName IS NULL OR
                 LOWER(TRIM(
@@ -281,6 +281,7 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             @Param("registrationNo") String registrationNo,
             @Param("complete") String complete,
             @Param("partial") String partial,
+            @Param("cancelledVisit") String cancelledVisit,
             Long serviceCategoryId,
             Pageable pageable
     );
@@ -449,4 +450,79 @@ public interface BillingHeaderRepository extends JpaRepository<BillingHeader, In
             @Param("notPaidStatus") String notPaidStatus,
             @Param("partialStatus") String partialStatus
     );
+
+        @Query(value = """
+            SELECT
+            v.visit_id AS visitId,
+            bh.bill_hd_id AS billinghdid,
+            bh.patient_id AS patientid,
+            bd.billing_dt_id AS billingdtId,
+
+            p.p_fn AS firstName,
+            p.p_mn AS middleName,
+            p.p_ln AS lastName,
+
+            p.p_mobile_number AS mobileNo,
+            p.p_dob AS dob,
+            p.uhid_no AS uhidNo,
+            g.gender_name AS gender,
+
+            r.relation_name AS relation,
+            sc.service_cat_name AS billingType,
+            d.department_name AS department,
+
+            CONCAT_WS(', ', p.p_address1, p.p_address2, p.p_city, p.p_pincode) AS address,
+
+            bh.total_amount AS billHdTotalAmount,
+            bh.payment_status AS billingStatus,
+
+            v.visit_date AS visitDate,
+            v.token_no AS tokenNo,
+
+            oh.orderhd_id AS orderhdid,
+            oh.payment_status AS orderhdPaymentStatus,
+
+            bd.item_name AS itemName,
+            bd.quantity,
+            bd.base_price AS basePrice,
+            bd.tariff,
+            bd.discount,
+            bd.amount_after_discount AS amountAfterDiscount,
+            bd.tax_percent AS taxPercent,
+            bd.tax_amount AS taxAmount,
+            bd.net_amount AS netAmount,
+            bd.payment_status AS detailPaymentStatus,
+
+            bd.investigation_id AS investigationId,
+            inv.investigation_name AS investigationName,
+
+            bd.package_id AS packageId,
+            pkg.name AS packageName,
+
+            COALESCE(oh.appointment_date, rod.appointment_date) AS appointmentDate
+
+            FROM billing_header bh
+            JOIN billing_details bd ON bh.bill_hd_id = bd.bill_hd_id
+            JOIN patient p ON bh.patient_id = p.patient_id
+
+            LEFT JOIN mas_gender g ON p.p_gender_id = g.id
+            LEFT JOIN mas_relation r ON p.p_relation_id = r.relation_id
+            LEFT JOIN mas_service_category sc ON bh.service_category_id = sc.id
+            LEFT JOIN visit v ON bh.visit_id = v.visit_id
+            LEFT JOIN mas_department d ON v.department_id = d.department_id
+            LEFT JOIN dg_orderhd oh ON bh.hdorder_id = oh.orderhd_id
+            LEFT JOIN dg_mas_investigation inv ON bd.investigation_id = inv.investigation_id
+            LEFT JOIN dg_investigation_package pkg ON bd.package_id = pkg.id
+            LEFT JOIN rad_orderhd rod ON bh.rad_order_hd_id = rod.rad_orderhd_id
+
+            WHERE bh.service_category_id = :categoryId
+            AND bh.bill_hd_id = :billinghdId
+
+            ORDER BY v.visit_date DESC
+            """,
+            nativeQuery = true)
+        List<LabRadioBillingDetailsProjection> getBillingDetailsByBillingHdId(
+            @Param("billinghdId") Long billinghdId,
+            @Param("categoryId") Long categoryId
+        );
 }

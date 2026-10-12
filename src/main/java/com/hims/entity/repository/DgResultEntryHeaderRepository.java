@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.DgResultEntryHeader;
 import com.hims.projection.ResultEntryHeaderForResultValidation;
+import com.hims.response.LabInvestigationReportHeaderResponse;
 import com.hims.response.SampleHeaderForResultValidationResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 @Repository
 public interface DgResultEntryHeaderRepository extends JpaRepository<DgResultEntryHeader,Long> {
@@ -50,6 +52,62 @@ Optional<DgResultEntryHeader> findBySampleCollectionHeaderId_SampleCollectionHea
 """)
     List<Long> findResultEntryIdsByOrderHdIds(@Param("orderHdIds") List<Long> orderHdIds,
                                               @Param("hospitalId") Long hospitalId);
+
+    @Query("""
+        SELECT new com.hims.response.LabInvestigationReportHeaderResponse(
+         h.resultEntryId,
+         oh.id,
+          h.resultDate,
+          h.resultNo,
+          h.remarks, 
+          TRIM(CONCAT(
+            COALESCE(p.patientFn, ''), ' ',
+            COALESCE(p.patientMn, ''), ' ',
+            COALESCE(p.patientLn, '')
+          )),
+          p.id,
+          p.patientMobileNumber,
+          g.genderName,
+          p.patientAge,
+          h.resultEnteredBy,
+          TRIM(CONCAT(
+            COALESCE(u.firstName, ''), ' ',
+            COALESCE(u.middleName, ''), ' ',
+            COALESCE(u.lastName, '')
+          ))
+        )
+        FROM DgResultEntryHeader h
+        LEFT JOIN h.orderHd oh
+        LEFT JOIN h.hinId p
+        LEFT JOIN p.patientGender g
+        LEFT JOIN User u ON u.userId = h.resultVerifiedBy
+        WHERE h.hospitalId.id = :hospitalId
+          AND (:patientId IS NULL OR p.id = :patientId)
+          AND (:fromDate IS NULL OR h.resultDate >= :fromDate)
+          AND (:toDate IS NULL OR h.resultDate <= :toDate)
+          AND (:mobileNo IS NULL OR p.patientMobileNumber LIKE :mobileNo)
+          AND (:patientName IS NULL OR LOWER(CONCAT(
+            COALESCE(p.patientFn, ''), ' ',
+            COALESCE(p.patientMn, ''), ' ',
+            COALESCE(p.patientLn, '')
+          )) LIKE :patientName)
+          AND EXISTS (
+            SELECT d.resultEntryDetailId
+            FROM DgResultEntryDetail d
+            WHERE d.resultEntryId = h
+              AND LOWER(d.validated) = LOWER(:resultValidationStatus)
+          )
+        """)
+    Page<LabInvestigationReportHeaderResponse> getInvestigationReportHeaders(
+        @Param("hospitalId") Long hospitalId,
+        @Param("mobileNo") String mobileNo,
+        @Param("patientName") String patientName,
+        @Param("patientId") Long patientId,
+        @Param("fromDate") LocalDate fromDate,
+        @Param("toDate") LocalDate toDate,
+        @Param("resultValidationStatus") String resultValidationStatus,
+        Pageable pageable
+    );
 
 
     @Query("""

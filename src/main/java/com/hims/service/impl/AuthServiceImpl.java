@@ -8,16 +8,16 @@ import com.hims.exception.SDDException;
 import com.hims.helperUtil.HelperUtils;
 import com.hims.helperUtil.ResponseUtils;
 import com.hims.jwt.*;
+import com.hims.request.RefreshTokenRequest;
 import com.hims.request.PasswordChangeReq;
 import com.hims.request.ResetPasswordReq;
 import com.hims.request.UserCreationReq;
 import com.hims.request.UserDetailsReq;
-import com.hims.response.ApiResponse;
-import com.hims.response.DefaultResponse;
-import com.hims.response.RoleInfoResp;
-import com.hims.response.UserProfileResponse;
+import com.hims.response.*;
 import com.hims.service.AuthService;
+import com.hims.service.UserContextService;
 import jakarta.servlet.http.HttpServletRequest;
+import io.jsonwebtoken.JwtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +47,12 @@ public class AuthServiceImpl implements AuthService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private PatientLoginRepository patientLoginRepository;
+
+    @Autowired
+    private PatientRepository patientRepository;
 
     @Autowired
     private MasHospitalRepository masHospitalRepository;
@@ -90,8 +96,11 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    private UserContextService userContextService;
+
     private boolean isValidStatus(String status) {
-        return "Y".equalsIgnoreCase(status) || "N".equalsIgnoreCase(status);
+        return AppConstants.STATUS_Y.equalsIgnoreCase(status) || AppConstants.STATUS_Y.equalsIgnoreCase(status);
     }
 
 
@@ -223,7 +232,7 @@ public class AuthServiceImpl implements AuthService {
             if (user == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "INVALID USERNAME!", 401);
             }
-            if (!"y".equalsIgnoreCase(user.getStatus())) {
+            if (!AppConstants.STATUS_Y.equalsIgnoreCase(user.getStatus())) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "ACTIVE USER NOT FOUND WITH THIS USERNAME", 400);
             }
             UsernamePasswordAuthenticationToken authentication =
@@ -257,6 +266,7 @@ public class AuthServiceImpl implements AuthService {
                     .departmentId(departmentId)
                     .departmentName(userDepartmentId.getDepartment().getDepartmentName())
                     .departmentCode(userDepartmentId.getDepartment().getDepartmentCode())
+                    .loggedInUserName(user.getFullName())
                     .build();
 
 
@@ -268,6 +278,131 @@ public class AuthServiceImpl implements AuthService {
         }
         return ResponseUtils.createSuccessResponse(response, new TypeReference<JwtResponce>() {});
     }
+
+    @Override
+    public ApiResponse<?> refreshToken(RefreshTokenRequest request) {
+        String refreshToken = request == null ? null : request.getRefreshToken();
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "REFRESH TOKEN CANNOT BE BLANK", 400);
+        }
+
+        if (tokenBlacklistService.isBlacklisted(refreshToken) || !helper.isRefreshToken(refreshToken)) {
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "INVALID OR EXPIRED REFRESH TOKEN", 401);
+        }
+
+        try {
+            String principalType = helper.getPrincipalTypeFromToken(refreshToken);
+            if ("PATIENT".equalsIgnoreCase(principalType)) {
+                return refreshPatientTokens(refreshToken);
+            }
+            if (principalType != null) {
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {}, "UNSUPPORTED REFRESH TOKEN", 401);
+            }
+
+            String username = helper.getUsernameFromToken(refreshToken);
+            User user = userRepo.findByUserName(username);
+            if (user == null || !AppConstants.STATUS_Y.equalsIgnoreCase(user.getStatus())) {
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {}, "ACTIVE USER NOT FOUND", 401);
+            }
+
+            Long departmentId = helper.getDepartmentIdFromToken(refreshToken);
+            if (departmentId == null) {
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {}, "REFRESH TOKEN HAS NO ACTIVE DEPARTMENT", 401);
+            }
+
+            Optional<UserDepartment> selectedDepartment = userDepartmentRepository
+                    .findByUser_UserIdAndStatus(user.getUserId(), AppConstants.STATUS_Y.toLowerCase())
+                    .stream()
+                    .filter(userDepartment -> userDepartment.getDepartment() != null
+                            && departmentId.equals(userDepartment.getDepartment().getId()))
+                    .findFirst();
+
+            if (selectedDepartment.isEmpty()) {
+                return ResponseUtils.createFailureResponse(
+                        null, new TypeReference<>() {}, "REFRESH TOKEN DEPARTMENT IS NO LONGER ASSIGNED", 403);
+            }
+
+            MasDepartment department = selectedDepartment.get().getDepartment();
+            TokenWithExpiry accessToken = helper.generateAccessTokenWithExpiry(user, departmentId);
+            TokenWithExpiry rotatedRefreshToken = helper.generateRefreshTokenWithExpiry(user, departmentId);
+
+                if (!tokenBlacklistService.blacklistIfNotBlacklisted(
+                    refreshToken, helper.getExpirationTime(refreshToken))) {
+                return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "REFRESH TOKEN HAS ALREADY BEEN USED", 401);
+                }
+
+            JwtResponce response = JwtResponce.builder()
+                    .jwtToken(accessToken.getToken())
+                    .jwtTokenExpiry(accessToken.getExpiryTime())
+                    .refreshToken(rotatedRefreshToken.getToken())
+                    .refreshTokenExpiry(rotatedRefreshToken.getExpiryTime())
+                    .username(user.getUsername())
+                    .userId(user.getUserId())
+                    .roleId(user.getRoleId())
+                    .hospitalId(user.getHospital().getId())
+                    .departmentId(department.getId())
+                    .departmentName(department.getDepartmentName())
+                    .departmentCode(department.getDepartmentCode())
+                    .loggedInUserName(user.getFullName())
+                    .build();
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<JwtResponce>() {});
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "INVALID OR EXPIRED REFRESH TOKEN", 401);
+        } catch (Exception e) {
+            logger.error("An error occurred while refreshing user tokens", e);
+            return ResponseUtils.createFailureResponse(
+                    null, new TypeReference<>() {}, "Unable to refresh tokens", 500);
+        }
+    }
+
+        private ApiResponse<AuthResponse> refreshPatientTokens(String refreshToken) {
+        Long patientId = helper.getPatientIdFromToken(refreshToken);
+        String mobileNo = helper.getMobileNoFromToken(refreshToken);
+        if (patientId == null || mobileNo == null || mobileNo.isBlank()
+            || !patientLoginRepository.existsByMobileNoAndPatientId(mobileNo, patientId)) {
+            return ResponseUtils.createFailureResponse(
+                null, new TypeReference<>() {}, "PATIENT IS NOT LINKED TO THIS MOBILE NUMBER", 401);
+        }
+
+        Patient patient = patientRepository.findById(patientId).orElse(null);
+        if (patient == null) {
+            return ResponseUtils.createFailureResponse(
+                null, new TypeReference<>() {}, "PATIENT NOT FOUND", 401);
+        }
+
+        String accessToken = helper.mobileGenerateToken(mobileNo, patientId);
+        String rotatedRefreshToken = helper.mobileGenerateRefreshToken(mobileNo, patientId);
+        if (!tokenBlacklistService.blacklistIfNotBlacklisted(
+            refreshToken, helper.getExpirationTime(refreshToken))) {
+            return ResponseUtils.createFailureResponse(
+                null, new TypeReference<>() {}, "REFRESH TOKEN HAS ALREADY BEEN USED", 401);
+        }
+
+        PatientIdResponse patientDetails = new PatientIdResponse();
+        patientDetails.setPatientId(patient.getId());
+        patientDetails.setPatientName(patient.getFullName());
+        patientDetails.setAge(patient.getPatientAge());
+        patientDetails.setGender(patient.getPatientGender() != null
+            ? patient.getPatientGender().getGenderName() : null);
+        patientDetails.setPatientPhoneNumber(patient.getPatientMobileNumber());
+        patientDetails.setRelation(patient.getPatientRelation() != null
+            ? patient.getPatientRelation().getRelationName() : null);
+
+        AuthResponse response = new AuthResponse();
+        response.setToken(accessToken);
+        response.setRefreshToken(rotatedRefreshToken);
+        response.setPatientIdResponseList(List.of(patientDetails));
+        response.setMessage("Tokens refreshed successfully");
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        }
 
     @Transactional(rollbackFor = {Exception.class})
     @Override
@@ -911,8 +1046,8 @@ public class AuthServiceImpl implements AuthService {
                     "Invalid status. Status should be 'y' or 'n'", 400);
         }
 
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return com.hims.utils.ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -922,7 +1057,7 @@ public class AuthServiceImpl implements AuthService {
             User user = userOpt.get();
             user.setStatus(status);
             user.setLastChangeDate(Instant.now());
-            user.setLastChangedBy(currentUser.getUsername());
+            user.setLastChangedBy(userContext.getUserFullName());
             userRepo.save(user);
             return ResponseUtils.createSuccessResponse(
                     "User status updated to '" + status + "'", new TypeReference<>() {});
@@ -934,8 +1069,8 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     @Override
     public ApiResponse<String> updateUserRoles(Long id, String roles) {
-        User currentUser = getCurrentUser();
-        if (currentUser == null) {
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "Current user not found", HttpStatus.UNAUTHORIZED.value());
         }
@@ -954,7 +1089,7 @@ public class AuthServiceImpl implements AuthService {
 
         user.setRoleId(roles);
         user.setLastChangeDate(Instant.now());
-        user.setLastChangedBy(currentUser.getUsername());
+        user.setLastChangedBy(userContext.getUserFullName());
 
         userRepo.save(user);
 

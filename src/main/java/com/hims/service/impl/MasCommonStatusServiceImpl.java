@@ -2,13 +2,14 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasCommonStatus;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasCommonStatusRepository;
 import com.hims.request.MasCommonStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.EntityNameResponse;
 import com.hims.response.MasCommonStatusResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasCommonStatusService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import jakarta.persistence.Column;
@@ -36,6 +37,8 @@ public class MasCommonStatusServiceImpl implements MasCommonStatusService {
 
     @Autowired
     private MasCommonStatusRepository masCommonStatusRepository;
+    @Autowired
+    private UserContextService userContextService;
 
     @Autowired
     private AuthUtil authUtil;
@@ -43,17 +46,11 @@ public class MasCommonStatusServiceImpl implements MasCommonStatusService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    private User getCurrentUser(){
-        User currentUser = authUtil.getCurrentUser();
-        if(currentUser !=null){
-            return currentUser;
-        }
-        throw  new RuntimeException("Current user not found");
-    }
 
     @Override
     public ApiResponse<MasCommonStatusResponse> createCommonStatus(MasCommonStatusRequest request) {
         try {
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             log.info("MasCommonStatus method started...");
             MasCommonStatus entity= new MasCommonStatus();
@@ -64,7 +61,7 @@ public class MasCommonStatusServiceImpl implements MasCommonStatusService {
             entity.setStatusName(request.getStatusName());
             entity.setStatusDesc(request.getStatusDesc());
             entity.setRemarks(request.getRemarks());
-            entity.setUpdatedBy(getCurrentUser().getFirstName()+" "+getCurrentUser().getLastName());
+            entity.setUpdatedBy(userContext.getUserFullName());
             MasCommonStatus save = masCommonStatusRepository.save(entity);
             log.info("MasCommonStatus method ended...");
             return ResponseUtils.createSuccessResponse(mapToResponse(save), new TypeReference<>() {});
@@ -78,6 +75,7 @@ public class MasCommonStatusServiceImpl implements MasCommonStatusService {
     public ApiResponse<MasCommonStatusResponse> updateCommonStatusById(Long statusId, MasCommonStatusRequest request) {
 
         try {
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             log.info("updateCommonStatusById method started...");
             Optional<MasCommonStatus> byId = masCommonStatusRepository.findById(statusId);
@@ -93,7 +91,7 @@ public class MasCommonStatusServiceImpl implements MasCommonStatusService {
             entity.setStatusName(request.getStatusName());
             entity.setStatusDesc(request.getStatusDesc());
             entity.setRemarks(request.getRemarks());
-            entity.setUpdatedBy(getCurrentUser().getFirstName()+" "+getCurrentUser().getLastName());
+            entity.setUpdatedBy(userContext.getUserFullName());
             MasCommonStatus save = masCommonStatusRepository.save(entity);
             log.info("updateCommonStatusById method ended...");
             return  ResponseUtils.createSuccessResponse(mapToResponse(save), new TypeReference<>() {});

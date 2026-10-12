@@ -2,12 +2,13 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasOtScheduleChangeReason;
-import com.hims.entity.User;
 import com.hims.entity.repository.MasOtScheduleChangeReasonRepository;
 import com.hims.request.MasOtScheduleChangeReasonRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasOtScheduleChangeReasonResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasOtScheduleChangeReasonService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,9 @@ public class MasOtScheduleChangeReasonServiceImpl implements MasOtScheduleChange
 
     @Autowired
     private AuthUtil authUtil;
+
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasOtScheduleChangeReasonResponse>> getAll(int flag) {
@@ -74,13 +78,13 @@ public class MasOtScheduleChangeReasonServiceImpl implements MasOtScheduleChange
                 return invalidApplicableForResponse();
             }
 
-            User user = authUtil.getCurrentUser();
+            UserContext userContext = userContextService.getCurrentUserContext();
 
             MasOtScheduleChangeReason data = MasOtScheduleChangeReason.builder()
                     .reason(request.getReason())
                     .applicableFor(applicableFor)
                     .status(STATUS_Y)
-                    .lastChgBy(user.getFirstName())
+                    .lastChgBy(userContext.getUserFullName())
                     .lastChgDate(LocalDateTime.now())
                     .build();
 
@@ -96,6 +100,9 @@ public class MasOtScheduleChangeReasonServiceImpl implements MasOtScheduleChange
     @Override
     public ApiResponse<MasOtScheduleChangeReasonResponse> update(Long id, MasOtScheduleChangeReasonRequest request) {
         try {
+
+            UserContext userContext = userContextService.getCurrentUserContext();
+
             MasOtScheduleChangeReason data = repository.findById(id).orElse(null);
 
             if (data == null)
@@ -106,11 +113,10 @@ public class MasOtScheduleChangeReasonServiceImpl implements MasOtScheduleChange
                 return invalidApplicableForResponse();
             }
 
-            User user = authUtil.getCurrentUser();
 
             data.setReason(request.getReason());
             data.setApplicableFor(applicableFor);
-            data.setLastChgBy(user.getFirstName());
+            data.setLastChgBy(userContext.getUserFullName());
             data.setLastChgDate(LocalDateTime.now());
 
             repository.save(data);
@@ -125,6 +131,8 @@ public class MasOtScheduleChangeReasonServiceImpl implements MasOtScheduleChange
     @Override
     public ApiResponse<MasOtScheduleChangeReasonResponse> changeStatus(Long id, String status) {
         try {
+            UserContext userContext = userContextService.getCurrentUserContext();
+
             MasOtScheduleChangeReason data = repository.findById(id).orElse(null);
 
             if (data == null)
@@ -134,10 +142,9 @@ public class MasOtScheduleChangeReasonServiceImpl implements MasOtScheduleChange
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid Status!", HttpStatus.BAD_REQUEST.value());
 
-            User user = authUtil.getCurrentUser();
 
             data.setStatus(status.toUpperCase());
-            data.setLastChgBy(user.getFirstName());
+            data.setLastChgBy(userContext.getUserFullName());
             data.setLastChgDate(LocalDateTime.now());
 
             repository.save(data);

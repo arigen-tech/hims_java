@@ -2,6 +2,7 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
+import com.hims.constants.SMSTemplate;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.RecordNotFoundException;
@@ -11,6 +12,7 @@ import com.hims.exception.patientRegistrationException.TokenAlreadyBookedExcepti
 import com.hims.helperUtil.HelperUtils;
 import com.hims.mapper.OpdPatientDetailMapper;
 import com.hims.mapper.PatientMapper;
+import com.hims.mapper.RazorpayPrefillPatientMapper;
 import com.hims.mapper.VisitMapper;
 import com.hims.projection.CancelledAppointmentProjection;
 import com.hims.projection.OpdPreConsultationProjection;
@@ -20,7 +22,10 @@ import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.*;
 import com.hims.utils.AuthUtil;
+import com.hims.utils.HMISUtil;
 import com.hims.utils.ResponseUtils;
+import com.hims.utils.SMSUtility;
+import jakarta.persistence.EntityNotFoundException;
 import kong.unirest.HttpStatus;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -55,6 +60,8 @@ public class PatientServiceImpl implements PatientService {
     BillingService billingService;
     @Autowired
     MasGenderRepository masGenderRepository;
+    @Autowired
+    MasBloodGroupRepository masBloodGroupRepository;
     @Autowired
     MasRelationRepository masRelationRepository;
     @Autowired
@@ -98,6 +105,12 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     HelperUtils helperUtils;
 
+    @Autowired
+    private RazorpayPrefillPatientMapper razorpayPrefillPatientMapper;
+
+    @Autowired
+    private SMSUtility smsUtility;
+
 
     @Value("${upload.image.path}")
     private String baseUrl;
@@ -133,6 +146,9 @@ public class PatientServiceImpl implements PatientService {
     @Autowired
     private RestClient.Builder builder;
 
+    @Autowired
+    private UserContextService userContextService;
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -160,7 +176,7 @@ public class PatientServiceImpl implements PatientService {
             List<Visit> savedVisits = new ArrayList<>();
             if (!visit.isEmpty()) {
                 for (VisitRequest v : visit) {
-                    Instant today = v.getVisitDate();
+                    LocalDateTime today = v.getVisitDate();
                     String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
                     v.setVisitType(visitType);
                     Visit saved = createSingleAppointment(v, patient);
@@ -186,6 +202,42 @@ public class PatientServiceImpl implements PatientService {
     }
 
 
+
+    @Override
+    public ApiResponse<PatientRegFollowUpResp> registerFamilyMember(PatientFamilyMemberRegistrationRequest request) {
+        masRelationRepository.findById(request.getPatientRelationId())
+                .orElseThrow(() -> new EntityNotFoundException("patient relation not found"));
+
+        PatientRequest patientRequest = new PatientRequest();
+        patientRequest.setPatientFn(request.getPatientFn());
+        patientRequest.setPatientMn(request.getPatientMn());
+        patientRequest.setPatientLn(request.getPatientLn());
+        patientRequest.setPatientDob(request.getPatientDob());
+        patientRequest.setPatientAge(request.getPatientAge());
+        patientRequest.setPatientGenderId(request.getPatientGenderId());
+        patientRequest.setBloodGroupId(request.getBloodGroupId());
+        patientRequest.setPatientEmailId(request.getPatientEmailId());
+        patientRequest.setPatientMobileNumber(request.getPatientMobileNumber());
+        patientRequest.setPatientRelationId(request.getPatientRelationId());
+        patientRequest.setPatientMaritalStatusId(request.getPatientMaritalStatusId());
+        patientRequest.setEmerFn(request.getEmerFn());
+        patientRequest.setEmerLn(request.getEmerLn());
+        patientRequest.setEmerMobile(request.getEmerMobile());
+        patientRequest.setPatientAddress1(request.getPatientAddress1());
+        patientRequest.setPatientAddress2(request.getPatientAddress2());
+        patientRequest.setPatientCountryId(request.getPatientCountryId());
+        patientRequest.setPatientStateId(request.getPatientStateId());
+        patientRequest.setPatientDistrictId(request.getPatientDistrictId());
+        patientRequest.setPatientPincode(request.getPatientPincode());
+        patientRequest.setPatientCity(request.getPatientCity());
+
+        Patient patient = savePatientForPatientPortal(patientRequest);
+        patientLoginService.savePatientLogin(patient);
+
+        PatientRegFollowUpResp response = new PatientRegFollowUpResp();
+        response.setPatient(PatientMapper.mapToDTO(patient));
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+    }
 
     public OPDBillingPatientResponse buildFinalResponse(Patient patient, List<Visit> savedVisits) {
         OPDBillingPatientResponse response = new OPDBillingPatientResponse();
@@ -260,6 +312,7 @@ public class PatientServiceImpl implements PatientService {
     @Override
     @Transactional
     public ApiResponse<PaymentResponse> paymentStatusReq(PaymentUpdateRequest request) {
+        UserContext userContext = userContextService.getCurrentUserContext();
         PaymentResponse res = new PaymentResponse();
         BillingHeader header;
         List<PaymentUpdateRequest.OpdBillPayment> opdPayments = request.getOpdBillPayments();
@@ -297,7 +350,7 @@ public class PatientServiceImpl implements PatientService {
             paymentDetail.setPaymentReferenceNo(request.getPaymentReferenceNo());
             paymentDetail.setPaymentDate(Instant.now());
             paymentDetail.setAmount(netAmount);
-            paymentDetail.setCreatedBy(authUtil.getCurrentUser().getFirstName());
+            paymentDetail.setCreatedBy(userContext.getUserFullName());
             paymentDetail.setCreatedAt(Instant.now());
             paymentDetail.setUpdatedAt(Instant.now());
             paymentDetail.setBillingHd(header);
@@ -372,7 +425,7 @@ public class PatientServiceImpl implements PatientService {
                         v.setHospitalId(patient.getPatientHospital().getId());
                     }
                     if (v.getVisitDate() == null) {
-                        v.setVisitDate(Instant.now());
+                        v.setVisitDate(HMISUtil.getCurrentLocalDateTime());
                     }
                     if (v.getVisitType() == null) {
                         v.setVisitType("F");
@@ -417,7 +470,6 @@ public class PatientServiceImpl implements PatientService {
         log.info("Updating existing visit ID: {} for patient: {}",
                 existingVisit.getId(), patient.getId());
 
-        existingVisit.setLastChgDate(Instant.now());
         existingVisit.setPriority(visit.getPriority());
         existingVisit.setVisitType(visit.getVisitType());
 
@@ -446,8 +498,8 @@ public class PatientServiceImpl implements PatientService {
     }
 
     public Patient updatePatientDetails(PatientRequest request, boolean followUp) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null) {
+        String userContext = userContextService.getCurrentUserFullNameFromToken();
+        if (userContext == null) {
             log.info("current user not found");
             throw new RuntimeException("Current user not found");
         }
@@ -456,9 +508,7 @@ public class PatientServiceImpl implements PatientService {
 
         patient.setUpdatedOn(Instant.now());
         patient.setUhidNo(patient.getUhidNo());
-        patient.setLastChgBy(currentUser.getFirstName() + " " +
-                currentUser.getMiddleName() + " " +
-                currentUser.getLastName());
+        patient.setLastChgBy(userContext);
         patient.setPatientFn(request.getPatientFn());
         patient.setPatientMn(request.getPatientMn());
         patient.setPatientLn(request.getPatientLn());
@@ -490,6 +540,11 @@ public class PatientServiceImpl implements PatientService {
         Optional.ofNullable(request.getPatientGenderId())
                 .flatMap(masGenderRepository::findById)
                 .ifPresent(patient::setPatientGender);
+
+        if (request.getBloodGroupId() != null) {
+            patient.setBloodGroup(masBloodGroupRepository.findById(request.getBloodGroupId())
+                    .orElseThrow(() -> new EntityNotFoundException("blood group not found")));
+        }
 
         Optional.ofNullable(request.getPatientRelationId())
                 .flatMap(masRelationRepository::findById)
@@ -671,10 +726,28 @@ public class PatientServiceImpl implements PatientService {
     }
 
     public Patient savePatient(PatientRequest request, boolean followUp) {
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null){
-            log.info("current users not found");
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null) {
+            throw new IllegalStateException("Current user context not found");
         }
+        MasHospital hospital = masHospitalRepository.findById(userContext.getHospitalId())
+                .orElseThrow(() -> new EntityNotFoundException("hospital not found"));
+        return savePatient(request, followUp, userContext.getUserFullName(), hospital);
+    }
+
+    private Patient savePatientForPatientPortal(PatientRequest request) {
+        String userFullName = userContextService.getCurrentUserFullNameFromToken();
+        if (userFullName == null || userFullName.isBlank()) {
+            throw new IllegalStateException("Current patient name not found in token");
+        }
+        return savePatient(request, false, userFullName, null);
+    }
+
+    private Patient savePatient(
+            PatientRequest request,
+            boolean followUp,
+            String createdBy,
+            MasHospital hospital) {
 
         Patient patient = new Patient();
 
@@ -707,14 +780,19 @@ public class PatientServiceImpl implements PatientService {
         patient.setRegDate(request.getRegDate());
         patient.setCreatedOn(Instant.now());
         patient.setUpdatedOn(Instant.now());
-        patient.setLastChgBy(currentUser.getFirstName()+" "+currentUser.getMiddleName()+" "+currentUser.getLastName());
-        patient.setPatientHospital(currentUser.getHospital());
+        patient.setLastChgBy(createdBy);
+        patient.setPatientHospital(hospital);
         patient.setPatientAbhaId(request.getPatientAbhaId());
 
 
         Optional.ofNullable(request.getPatientGenderId())
                 .flatMap(masGenderRepository::findById)
                 .ifPresent(patient::setPatientGender);
+
+        if (request.getBloodGroupId() != null) {
+            patient.setBloodGroup(masBloodGroupRepository.findById(request.getBloodGroupId())
+                    .orElseThrow(() -> new EntityNotFoundException("blood group not found")));
+        }
 
         Optional.ofNullable(request.getPatientRelationId())
                 .flatMap(masRelationRepository::findById)
@@ -768,6 +846,15 @@ public class PatientServiceImpl implements PatientService {
             patient.setUhidNo(generateUhid(patient));
         }
         patient = patientRepository.save(patient);
+
+        Map<String, String> variables = new HashMap<>();
+
+        variables.put("var1", patient.getFullName());
+        variables.put("var2", patient.getId().toString());
+
+        smsUtility.sendSMS(patient.getPatientMobileNumber(), SMSTemplate.REGISTRATION, variables);
+
+        log.info("Lab Booking confirmation SMS sent for patient : {}", patient.getFullName());
         return patient;
     }
 
@@ -821,8 +908,12 @@ public class PatientServiceImpl implements PatientService {
     private Visit createSingleAppointment(VisitRequest visit, Patient patient) {
         LocalDate date = visit.getVisitDate().atOffset(ZoneOffset.UTC).toLocalDate();
 
-        Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+//        Instant startOfDay = date.atStartOfDay(ZoneOffset.UTC).toInstant();
+//        Instant endOfDay = date.plusDays(1).atStartOfDay(ZoneOffset.UTC).minusNanos(1).toInstant();
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1)
+                .atStartOfDay()
+                .minusNanos(1);
         boolean alreadyExists =
                 visitRepository.existsByDepartment_IdAndDoctor_UserIdAndVisitDateBetweenAndSession_IdAndTokenNoAndVisitStatusNot(
                         visit.getDepartmentId(),
@@ -859,7 +950,6 @@ public class PatientServiceImpl implements PatientService {
         newVisit.setEndTime(visit.getTokenEndTime());
         newVisit.setTokenNo(visit.getTokenNo());
         newVisit.setVisitDate(visit.getVisitDate());
-        newVisit.setLastChgDate(Instant.now());
         newVisit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase());
         newVisit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS);
         newVisit.setPriority(visit.getPriority());
@@ -891,7 +981,7 @@ public class PatientServiceImpl implements PatientService {
         }
 
         if (visit.getIniDoctorId() != null) {
-            authUtil.getCurrentUser().getUserId();
+            userContextService.getCurrentUserContext().getUserId();
         }
 
         if (visit.getSessionId() != null) {
@@ -1014,8 +1104,8 @@ public class PatientServiceImpl implements PatientService {
             } else if (AppConstants.STATUS_N.equalsIgnoreCase(v.getVisitStatus())) {
                 appt.setVisitStatus("Pending");
             }
-            appt.setTokenStartTime(HelperUtils.extractTimeFromInstant(v.getStartTime()));
-            appt.setTokenEndTime(HelperUtils.extractTimeFromInstant(v.getEndTime()));
+            appt.setTokenStartTime(HelperUtils.extractTimeWithSecondsFromLocalDateTime(v.getStartTime()));
+            appt.setTokenEndTime(HelperUtils.extractTimeWithSecondsFromLocalDateTime(v.getEndTime()));
             appointmentList.add(appt);
         }
 
@@ -1042,14 +1132,14 @@ public class PatientServiceImpl implements PatientService {
             return new ApiResponse<>(HttpStatus.NOT_FOUND, "Billing not found for appointment ID: " + request.getVisitId());
         }
         // Get current user
-        User currentUser = authUtil.getCurrentUser();
-        if (currentUser == null || currentUser.getFirstName() == null) {
-            throw new SDDException(500,"User authentication failed or user has no first name");
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null || userContext.getUserFullName() == null) {
+            throw new SDDException(500,"User authentication failed or user has no name");
         }
         // Update visit
         visit.setVisitStatus(AppConstants.VISIT_STATUS_CANCELLED.toLowerCase());
-        visit.setCancelledBy(currentUser.getFirstName());
-        visit.setCancelledDateTime(Instant.now());
+        visit.setCancelledBy(userContext.getUserFullName());
+        visit.setCancelledDateTime(HMISUtil.getCurrentLocalDateTime());
         if (request.getCancelReasonId() != null) {
             MasAppointmentChangeReason reason = changeReasonRepository.findById(request.getCancelReasonId())
                     .orElseThrow(() -> new SDDException(500,"Cancel reason not found with ID: "));
@@ -1104,29 +1194,29 @@ public class PatientServiceImpl implements PatientService {
                 ? request.getTokenNumber()
                 : v.getTokenNo();
 
-        Instant resolvedStartTime = isOpdAppointment
-                ? request.getAppointmentStartTime()
+        LocalDateTime resolvedStartTime = isOpdAppointment
+                ? HelperUtils.instantToLocalDateTime(request.getAppointmentStartTime())
                 : v.getStartTime();
 
-        Instant resolvedEndTime = isOpdAppointment
-                ? request.getAppointmentEndTime()
+        LocalDateTime resolvedEndTime = isOpdAppointment
+                ? HelperUtils.instantToLocalDateTime(request.getAppointmentEndTime())
                 : v.getEndTime();
 
         VisitRescheduleHistory history = new VisitRescheduleHistory();
         history.setVisitId(v);
-        history.setRescheduleDatetime(request.getVisitDate());
-        history.setRescheduleBy(authUtil.getCurrentUser().getFirstName());
+        history.setRescheduleDatetime(HelperUtils.instantToLocalDateTime(request.getVisitDate()));
+        history.setRescheduleBy(userContextService.getCurrentUserContext().getUserFullName());
         history.setNewTokenNo(resolvedTokenNumber);
         history.setOldTokenNo(v.getTokenNo());
         history.setNewVisitDatetime(
-                isOpdAppointment ? request.getAppointmentStartTime() : request.getVisitDate()
+                isOpdAppointment ? HelperUtils.instantToLocalDateTime(request.getAppointmentStartTime()) :HelperUtils.instantToLocalDateTime( request.getVisitDate())
         );
         history.setOldVisitDatetime(v.getVisitDate());
-        history.setRescheduleDatetime(Instant.now());
+        history.setRescheduleDatetime(HMISUtil.getCurrentLocalDateTime());
         history.setRescheduleReason("");
         historyRepository.save(history);
 
-        v.setVisitDate(request.getVisitDate());
+        v.setVisitDate(HelperUtils.instantToLocalDateTime(request.getVisitDate()));
         if (isOpdAppointment) {
             v.setStartTime(resolvedStartTime);
             v.setEndTime(resolvedEndTime);
@@ -1136,13 +1226,12 @@ public class PatientServiceImpl implements PatientService {
             // Keep the existing token and time values intact.
             v.setTokenNo(resolvedTokenNumber);
             if (request.getAppointmentStartTime() != null) {
-                v.setStartTime(request.getAppointmentStartTime());
+                v.setStartTime(HelperUtils.instantToLocalDateTime(request.getAppointmentStartTime()));
             }
             if (request.getAppointmentEndTime() != null) {
-                v.setEndTime(request.getAppointmentEndTime());
+                v.setEndTime(HelperUtils.instantToLocalDateTime(request.getAppointmentEndTime()));
             }
         }
-        v.setLastChgDate(Instant.now());
 
         visitRepository.save(v);
         return new ApiResponse<>(HttpStatus.OK, "Success");
@@ -1161,7 +1250,7 @@ public class PatientServiceImpl implements PatientService {
 
             if (visitReq!=null) {
 
-                Instant date = visitReq.getVisitDate();
+                LocalDateTime date = visitReq.getVisitDate();
                 String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
                 visitReq.setVisitType(visitType);
                 Visit saved = createSingleAppointment(visitReq, patient);
@@ -1206,7 +1295,7 @@ public class PatientServiceImpl implements PatientService {
 
 
             List<CancelledAppointmentProjection> projectionList = visitRepository.findCancelledAppointments(
-                    hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId
+                    hospitalId, departmentId, doctorId, fromDate, toDate, cancellationReasonId, null
             );
 
             // Map projections to response DTOs
@@ -1330,6 +1419,38 @@ public class PatientServiceImpl implements PatientService {
                 startTime, endTime, timeTakenMin, occupiedTokens,flag);
 
         return ResponseUtils.createSuccessResponse(list, new TypeReference<List<AvailableTokenSlotResponse>>() {});
+    }
+
+    @Override
+    public ApiResponse<RazorpayPrefillPatientResponse> getRazorpayPrefillDetails(Long patientId) {
+
+        try {
+            log.info("getRazorpayPrefillDetails method started for patient id :: {}",patientId);
+            RazorpayPrefillPatientResponse razorpayPrefillPatientResponse = patientRepository.findRazorpayPrefillByPatientId(patientId)
+                    .map(razorpayPrefillPatientMapper::toResponse)
+                    .orElseThrow(() -> new SDDException("Patient Id",
+                            HttpStatus.NOT_FOUND,
+                            "Patient not found")
+                    );
+            log.info("getRazorpayPrefillDetails method ended for patient id :: {}",patientId);
+            return  ResponseUtils.createSuccessResponse(razorpayPrefillPatientResponse, new TypeReference<>() {});
+        }catch (SDDException e){
+            log.error("getRazorpayPrefillDetails method error :: ",e);
+            return  ResponseUtils.createFailureResponse(null,
+                    new TypeReference<>() {},
+                    e.getMessage(),
+                    e.getStatus()
+            );
+        }catch (Exception e){
+            log.error("getRazorpayPrefillDetails method error :: ",e);
+            return  ResponseUtils.createFailureResponse(null,
+                    new TypeReference<>() {},
+                    e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+
+
     }
 
     public static List<AvailableTokenSlotResponse> generateSlotsWithAvailability(int tokenStart,int tokenInterval, int totalTokens, String dayStartTime, String dayEndTime, int timeTakenMin, Set<Long> occupiedTokenNumbers, int flag) {

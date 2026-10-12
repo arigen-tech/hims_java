@@ -35,4 +35,12 @@ public class DashboardController {
     ) {
         return ResponseEntity.ok(dashboardService.getBillingFinanceDashboardData(fromDate, toDate));
     }
+
+    @GetMapping("/inpatient-summary")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getInpatientSummaryData(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
+    ) {
+        return ResponseEntity.ok(dashboardService.getInpatientSummaryData(fromDate, toDate));
+    }
 }

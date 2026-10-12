@@ -11,4 +11,6 @@ public interface MasToothConditionRepository   extends JpaRepository<MasToothCon
     List<MasToothCondition> findByStatusIgnoreCaseOrderByConditionNameAsc(String y);
 
     List<MasToothCondition> findAllByOrderByStatusDescLastUpdateDateDesc();
+
+
 }

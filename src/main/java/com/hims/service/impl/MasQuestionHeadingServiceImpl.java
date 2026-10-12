@@ -1,17 +1,21 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.constants.AppConstants;
 import com.hims.entity.MasQuestionHeading;
 import com.hims.entity.User;
 import com.hims.entity.repository.MasQuestionHeadingRepository;
 import com.hims.request.MasQuestionHeadingRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasQuestionHeadingResponse;
+import com.hims.response.UserContext;
 import com.hims.service.MasQuestionHeadingService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -24,6 +28,8 @@ public class MasQuestionHeadingServiceImpl
 
     private final MasQuestionHeadingRepository repository;
     private final AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
 
     @Override
     public ApiResponse<List<MasQuestionHeadingResponse>> getAll(int flag) {
@@ -67,8 +73,8 @@ public class MasQuestionHeadingServiceImpl
             MasQuestionHeadingRequest request) {
         log.info("Creating Question Heading");
         try {
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -77,9 +83,9 @@ public class MasQuestionHeadingServiceImpl
             MasQuestionHeading entity = MasQuestionHeading.builder()
                     .questionHeadingCode(request.getQuestionHeadingCode())
                     .questionHeadingName(request.getQuestionHeadingName())
-                    .status("y")
-                    .createdBy(user.getFirstName())
-                    .lastUpdatedBy(user.getFirstName())
+                    .status(AppConstants.STATUS_Y.toLowerCase())
+                    .createdBy(userContext.getUserFullName())
+                    .lastUpdatedBy(userContext.getUserFullName())
                     .lastUpdateDate(LocalDateTime.now())
                     .build();
 
@@ -106,8 +112,8 @@ public class MasQuestionHeadingServiceImpl
                         "Question Heading not found", 404);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -115,7 +121,7 @@ public class MasQuestionHeadingServiceImpl
 
             entity.setQuestionHeadingCode(request.getQuestionHeadingCode());
             entity.setQuestionHeadingName(request.getQuestionHeadingName());
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);
@@ -148,15 +154,15 @@ public class MasQuestionHeadingServiceImpl
                         "Invalid status", 400);
             }
 
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
             }
 
             entity.setStatus(status);
-            entity.setLastUpdatedBy(user.getFirstName());
+            entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
 
             repository.save(entity);

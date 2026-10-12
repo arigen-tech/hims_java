@@ -7,11 +7,14 @@ import com.hims.entity.repository.LabOrderTrackingStatusRepository;
 import com.hims.request.LabOrderTrackingStatusRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.LabOrderTrackingStatusResponse;
+import com.hims.response.UserContext;
 import com.hims.service.LabOrderTrackingStatusService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -23,14 +26,16 @@ public class LabOrderTrackingStatusServiceImpl implements LabOrderTrackingStatus
     private  final LabOrderTrackingStatusRepository orderTrackingStatusRepository;
 
     private final AuthUtil authUtil;
+    @Autowired
+    private UserContextService userContextService;
 
 
     @Override
     public ApiResponse<LabOrderTrackingStatusResponse> create(LabOrderTrackingStatusRequest request) {
         try {
             log.info("labOrderStatusCreate() started..");
-            User user = authUtil.getCurrentUser();
-            if (user == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(
                         null, new TypeReference<>() {},
                         "Current user not found", 404);
@@ -40,8 +45,8 @@ public class LabOrderTrackingStatusServiceImpl implements LabOrderTrackingStatus
             entity.setOrderStatusName(request.getOrderStatusName());
             entity.setDescription(request.getDescription());
             entity.setStatus("y");
-            entity.setCreatedBy(user.getFirstName()+" "+user.getMiddleName()+" "+user.getLastName());
-            entity.setUpdatedBy(user.getFirstName()+" "+user.getMiddleName()+" "+user.getLastName());
+            entity.setCreatedBy(userContext.getUserFullName());
+            entity.setUpdatedBy(userContext.getUserFullName());
             LabOrderTrackingStatus save = orderTrackingStatusRepository.save(entity);
             log.info("labOrderStatusCreate() ended..");
             return ResponseUtils.createSuccessResponse(mapToResponse(save), new TypeReference<>() {});

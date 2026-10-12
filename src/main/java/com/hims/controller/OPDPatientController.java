@@ -292,12 +292,24 @@ public class OPDPatientController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String mobileNo,
             @RequestParam(required = false) String patientName,
-            @RequestParam(required = false) Long hospitalId
+            @RequestParam(required = false) Long hospitalId,
+            @RequestParam(required = false) Long patientId,
+            @RequestParam(required = false) Long departmentId
     ) {
 
-        log.info("Received request to fetch OPD reports. Filters - mobileNo: {}, patientName: {}, hospitalId: {}, page: {}, size: {}", mobileNo, patientName, hospitalId, page, size);
+        log.info("Received request to fetch OPD reports. Filters - mobileNo: {}, patientName: {}, hospitalId: {}, patientId: {}, departmentId: {}, page: {}, size: {}",
+                mobileNo, patientName, hospitalId, patientId, departmentId, page, size);
         Pageable pageable = PageRequest.of(page, size);
-        return opdPatientDetailService.getOpdReportsList(pageable, mobileNo, patientName, hospitalId);
+        return opdPatientDetailService.getOpdReportsList(pageable, mobileNo, patientName, hospitalId, patientId, departmentId);
+    }
+
+    @GetMapping("/getOpdReportDepartmentList")
+    public ApiResponse<List<OpdReportDepartmentResponse>> getOpdReportDepartmentList(
+            @RequestParam Long patientId,
+            @RequestParam(required = false) Long hospitalId
+    ) {
+        log.info("Received request to fetch OPD report departments. patientId: {}, hospitalId: {}", patientId, hospitalId);
+        return opdPatientDetailService.getOpdReportDepartmentList(patientId, hospitalId);
     }
 
     @GetMapping("otDayAllocation/checkAvailability")

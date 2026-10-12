@@ -8,7 +8,9 @@ import com.hims.request.IndentTRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.IndentResponse;
 import com.hims.response.IndentTResponse;
+import com.hims.response.UserContext;
 import com.hims.service.IndentService;
+import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
 import com.hims.utils.RandomNumGenerator;
 import com.hims.utils.ResponseUtils;
@@ -38,7 +40,8 @@ public class IndentServiceImpl implements IndentService {
     @Autowired
     private MasStoreItemRepository masStoreItemRepository;
     @Autowired
-    AuthUtil authUtil;
+    private UserContextService userContextService;
+
 
     private final RandomNumGenerator randomNumGenerator;
 
@@ -54,8 +57,8 @@ public class IndentServiceImpl implements IndentService {
     @Transactional
     public ApiResponse<String> createIndent(IndentRequest indentRequest) {
         try {
-            User currentUser = authUtil.getCurrentUser();
-            if (currentUser == null) {
+            UserContext userContext = userContextService.getCurrentUserContext();
+            if (userContext == null) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {
                         },
                         "current user not found", HttpStatus.UNAUTHORIZED.value());
@@ -66,7 +69,7 @@ public class IndentServiceImpl implements IndentService {
             indentM.setFromDeptId(depObj);
             indentM.setToDeptId(depObj2);
             indentM.setIndentDate(LocalDateTime.now());
-            indentM.setCreatedBy(currentUser.getCreatedBy());
+            indentM.setCreatedBy(userContext.getUserFullName());
             indentM.setCreatedDate(LocalDateTime.now());
             indentM.setIndentNo(createInvoice());
             //       indentM.setTotalCost();

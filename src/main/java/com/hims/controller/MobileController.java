@@ -6,10 +6,14 @@ import com.hims.entity.PatientLogin;
 import com.hims.entity.repository.PatientLoginRepository;
 import com.hims.entity.repository.PatientRepository;
 import com.hims.jwt.JwtHelper;
+import com.hims.projection.PatientVisitStatusCountProjection;
 import com.hims.request.LoginRequest;
 import com.hims.request.OtpRequest;
+import com.hims.request.RefreshTokenRequest;
 import com.hims.response.*;
 import com.hims.service.MasEmployeeService;
+import com.hims.service.BillingService;
+import com.hims.service.AuthService;
 import com.hims.service.MobileLoginService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,22 +41,33 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class MobileController {
 
-    @Autowired
-    MobileLoginService mobileLoginService;
-    @Autowired
-    private JwtHelper jwtUtil;
-    @Autowired
-    private MasEmployeeService masEmployeeService;
-    @Autowired
-    private PatientLoginRepository patientLoginRepository;
-    @Autowired
-    private PatientRepository patientRepository;
+    
+    private final MobileLoginService mobileLoginService;
+    
+    private final JwtHelper jwtUtil;
+    
+    private final MasEmployeeService masEmployeeService;
+    
+    private final BillingService billingService;
+
+    private final AuthService authService;
+    
+    private final PatientLoginRepository patientLoginRepository;
+    private final PatientRepository patientRepository;
+
 
 
 
     @PostMapping("/mLogin")
     public ResponseEntity<ApiResponse> loginResponse(@RequestBody LoginRequest request) {
         return new ResponseEntity<>(mobileLoginService.loginRequest(request), HttpStatus.OK);
+    }
+
+    @PostMapping("/switchPatient")
+    public ApiResponse<AuthResponse> switchPatient(
+            @RequestParam Long patientId,
+            @RequestParam String mobileNumber) {
+        return mobileLoginService.switchPatient(patientId, mobileNumber);
     }
 
     @PostMapping("/verifyOtp")
@@ -80,36 +96,24 @@ public class MobileController {
             }
 
             // OTP verified generate JWT
-            String token = jwtUtil.mobileGenerateToken(
-                    otpRequest.getMobileNo()
-            );
+                Long patientId = patientLoginList.stream()
+                    .map(PatientLogin::getPatientId)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Patient not found for mobile number"));
+                String token = jwtUtil.mobileGenerateToken(otpRequest.getMobileNo(), patientId);
+                String refreshToken = jwtUtil.mobileGenerateRefreshToken(otpRequest.getMobileNo(), patientId);
 
             AuthResponse authResponse = new AuthResponse();
             List<PatientIdResponse> patientIdList = patientLoginList.stream()
                     .map(pl -> {
                         Patient patient = patientRepository.findById(pl.getPatientId()).orElse(null);
                         if (patient == null) return null;
-
-                        PatientIdResponse pid = new PatientIdResponse();
-                        pid.setPatientId(patient.getId());
-                        String fullName = Stream.of(
-                                        patient.getPatientFn(),
-                                        patient.getPatientMn(),
-                                        patient.getPatientLn()
-                                ).filter(Objects::nonNull)
-                                .filter(s -> !s.trim().isEmpty())
-                                .collect(Collectors.joining(" "));
-
-                        pid.setPatientName(fullName.isEmpty() ? null : fullName);
-                        pid.setAge(patient.getPatientAge());
-                        pid.setGender(patient.getPatientGender() != null ? patient.getPatientGender().getGenderName() : null);
-                        pid.setPatientPhoneNumber(patient.getPatientMobileNumber());
-                        pid.setRelation(patient.getPatientRelation() != null ? patient.getPatientRelation().getRelationName() : null);
-                        return pid;
+                    return toPatientIdResponse(patient);
                     })
                     .toList();
             authResponse.setPatientIdResponseList(patientIdList);
             authResponse.setToken(token);
+            authResponse.setRefreshToken(refreshToken);
             authResponse.setMessage("OTP verified successfully");
             return ResponseUtils.createSuccessResponse( authResponse, new TypeReference<>() {});
 
@@ -120,6 +124,28 @@ public class MobileController {
             );
         }
     }
+
+    @PostMapping("/refreshToken")
+    public ApiResponse<?> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
+        return authService.refreshToken(request);
+    }
+
+    private PatientIdResponse toPatientIdResponse(Patient patient) {
+            PatientIdResponse patientResponse = new PatientIdResponse();
+            patientResponse.setPatientId(patient.getId());
+            String fullName = Stream.of(patient.getPatientFn(), patient.getPatientMn(), patient.getPatientLn())
+                .filter(Objects::nonNull)
+                .filter(name -> !name.trim().isEmpty())
+                .collect(Collectors.joining(" "));
+            patientResponse.setPatientName(fullName.isEmpty() ? null : fullName);
+            patientResponse.setAge(patient.getPatientAge());
+            patientResponse.setGender(patient.getPatientGender() != null
+                ? patient.getPatientGender().getGenderName() : null);
+            patientResponse.setPatientPhoneNumber(patient.getPatientMobileNumber());
+            patientResponse.setRelation(patient.getPatientRelation() != null
+                ? patient.getPatientRelation().getRelationName() : null);
+            return patientResponse;
+            }
     private ResponseEntity<ApiResponse> createErrorResponse(String message) {
         return ResponseEntity.badRequest().body(new ApiResponse("error", message, null));
     }
@@ -145,20 +171,43 @@ public class MobileController {
      * @param mobileNo Mobile number (optional if patientId provided)
      * @param deptTypeCode Department type code(s), comma-separated when multiple types are needed
      * @param includeAllHistory true (default) = all appointments (past + future), false = only future appointments
+    * @param visitStatus Visit status code(s): c (cancelled), y (completed), n (pending), x (closed); comma-separated
      * @return Appointment history based on flag
      */
     @GetMapping("/getAppointmentHistoryList")
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> getAppointmentHistoryList(
-            @RequestParam(required = true) Long hospitalId,
+            @RequestParam Long hospitalId,
             @RequestParam(required = false) String patientName,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) Long patientId,
             @RequestParam(required = false) String mobileNo,
             @RequestParam(required = false) String deptTypeCode,
-            @RequestParam(required = false, defaultValue = "true") Boolean includeAllHistory
+            @RequestParam(required = false, defaultValue = "true") Boolean includeAllHistory,
+            @RequestParam(required = false) String payment,
+            @RequestParam(required = false) String visitStatus
     ) {
         String resolvedPatientName = patientName != null ? patientName : name;
-        return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, resolvedPatientName, deptTypeCode, includeAllHistory);
+        return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, resolvedPatientName, deptTypeCode, includeAllHistory, payment, visitStatus);
+    }
+
+    @GetMapping("/getPatientVisitStatusCounts")
+    public ApiResponse<PatientVisitStatusCountProjection> getPatientVisitStatusCounts(
+            @RequestParam Long hospitalId,
+            @RequestParam Long patientId) {
+        return masEmployeeService.getPatientVisitStatusCounts(hospitalId, patientId);
+    }
+
+    @GetMapping("/getCancelledRefundAppointments")
+    public ApiResponse<Page<MobileCancelledRefundResponse>> getCancelledRefundAppointments(
+            @RequestParam Long hospitalId,
+            @RequestParam String departmentType,
+            @RequestParam Long patientId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        log.info("Fetching cancelled refund appointments: hospitalId={}, departmentType={}, patientId={}, page={}, size={}",
+                hospitalId, departmentType, patientId, page, size);
+        return billingService.getMobileCancelledRefundAppointments(
+                hospitalId, departmentType, patientId, page, size);
     }
 
 }
