@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -22,7 +24,7 @@ public class OpdReportListResponse {
     private String diagnosis;
     private String doctorName;
     private String nisNo;
-    private String visitDateTime;
+    private LocalDateTime visitDateTime;
     private Long prescriptionHdId;
     private String prescriptionStatus;
 }
