@@ -1595,7 +1595,7 @@ public class LabServiceImpl implements LabService {
                     ? null
                     : "%" + patientName.trim().toLowerCase() + "%";
 
-            Pageable pageable = PageRequest.of(page, size, Sort.by("orderHd.orderDate").descending());
+            Pageable pageable = PageRequest.of(page, size, Sort.by("orderHd.orderTime").descending());
 
             Page<OrderTrackingReportResponse> result =
                     labOrderDtRepository.getOrderTrackingReport(

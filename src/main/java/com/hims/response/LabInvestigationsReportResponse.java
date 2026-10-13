@@ -27,11 +27,10 @@ public class LabInvestigationsReportResponse {
     private String range;
     private String resultEnteredBy;
     private String resultValidatedBy;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate investigationDate;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate orderDate;
     private Long resultFlagId;
     private String resultFlagName;
+    private String investigationType;
 
 }

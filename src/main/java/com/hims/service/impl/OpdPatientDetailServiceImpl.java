@@ -2438,12 +2438,11 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             name = name == null ? "" : name.trim();
             mobile = mobile == null ? "" : mobile.trim();
             boolean dateFilter = visitDate != null;
-            Instant startDate = null;
-            Instant endDate = null;
-
+            LocalDateTime startDate = null;
+            LocalDateTime endDate = null;
             if (dateFilter) {
-                startDate = visitDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-                endDate = visitDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+                startDate = visitDate.atStartOfDay();
+                endDate = visitDate.plusDays(1).atStartOfDay();
             }
             Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
             Page<OpdRecallVisitProjection> projectionPage = visitRepository.getOpdRecallVisit(name, mobile, dateFilter, startDate, endDate, departmentId, AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), pageable);
@@ -2805,7 +2804,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             response.setDiagnosis(projection.getDiagnosis());
             response.setDoctorName(projection.getDoctorName());
             response.setNisNo(projection.getNisNo());
-            response.setVisitDateTime(DateTimeUtil.formatDateTime(projection.getVisitDateTime()));
+            response.setVisitDateTime(projection.getVisitDateTime());
             response.setPrescriptionHdId(projection.getPrescriptionHdId());
             response.setPrescriptionStatus(projection.getPrescriptionStatus());
 

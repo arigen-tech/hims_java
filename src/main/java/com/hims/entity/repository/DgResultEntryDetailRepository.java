@@ -193,11 +193,13 @@ SELECT new com.hims.response.LabInvestigationsReportResponse(
     ),
     h.resultDate,
     oh.orderDate,
-    d.resultFlag.resultFlagId,
-    d.resultFlag.flagName
+    r.resultFlagId,
+    r.flagName,
+    inv.investigationType
 )
 FROM DgResultEntryDetail d
 JOIN d.resultEntryId h
+LEFT JOIN d.resultFlag r
 LEFT JOIN h.hinId p
 LEFT JOIN p.patientGender g
 LEFT JOIN d.investigationId inv
@@ -257,13 +259,15 @@ SELECT new com.hims.response.LabInvestigationsReportResponse(
     ),
     h.resultDate,
     oh.orderDate,
-    d.resultFlag.resultFlagId,
-    d.resultFlag.flagName
+    r.resultFlagId,
+    r.flagName,
+    inv.investigationType
 )
 FROM DgResultEntryDetail d
 JOIN d.resultEntryId h
 JOIN h.inpatient inpatient
 JOIN inpatient.patient p
+LEFT JOIN d.resultFlag r
 LEFT JOIN p.patientGender g
 LEFT JOIN d.investigationId inv
 LEFT JOIN d.uomId uom
@@ -314,11 +318,18 @@ AND (:investigationName IS NULL OR LOWER(COALESCE(inv.investigationName, '')) LI
             d.normalRange,
             h.resultEnteredBy,
             CAST(h.resultVerifiedBy AS string),
-            h.resultDate
+            h.resultDate,
+            oh.orderDate,
+            r.resultFlagId,
+            r.flagName,
+            i.investigationType
+            
         )
         FROM DgResultEntryDetail d
 
         JOIN d.resultEntryId h
+        
+        LEFT JOIN d.resultFlag r
         
         LEFT JOIN h.orderHd oh
 

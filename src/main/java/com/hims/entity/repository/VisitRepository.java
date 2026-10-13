@@ -1233,8 +1233,8 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("name") String name,
             @Param("mobile") String mobile,
             @Param("dateFilter") Boolean dateFilter,
-            @Param("startDate") Instant startDate,
-            @Param("endDate") Instant endDate,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
             @Param("departmentId") Long departmentId,
             @Param("visitStatus") String visitStatus,
             Pageable pageable);
