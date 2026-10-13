@@ -32,5 +32,6 @@ public class LabInvestigationsReportResponse {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate orderDate;
     private Long resultFlagId;
+    private String resultFlagName;
 
 }

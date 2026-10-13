@@ -12,6 +12,7 @@ public interface OpdReportListProjection {
     String getGender();
     String getAge();
     String getSpecialty();
+    String getDiagnosis();
     String getDoctorName();
     String getNisNo();
     LocalDateTime getVisitDateTime();

@@ -1477,6 +1477,11 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
         g.genderName AS gender,
         p.patientAge AS age,
         d.departmentName AS specialty,
+        CASE
+            WHEN opd.icdDiag IS NOT NULL AND opd.workingDiag IS NOT NULL
+                THEN CONCAT(opd.icdDiag, ', ', opd.workingDiag)
+            ELSE COALESCE(opd.icdDiag, opd.workingDiag, '')
+        END AS diagnosis,
         ph.prescriptionHdId AS prescriptionHdId,
         ph.status AS prescriptionStatus,
         ph.nisNo AS nisNo,
@@ -1494,6 +1499,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     LEFT JOIN p.patientGender g
     LEFT JOIN d.departmentType dt
     LEFT JOIN PatientPrescriptionHd ph ON ph.visit.id = v.id
+    LEFT JOIN OpdPatientDetail opd ON opd.visit.id = v.id
     WHERE v.visitStatus = :visitStatus
       AND dt.departmentTypeCode = :departmentTypeCode
       AND (

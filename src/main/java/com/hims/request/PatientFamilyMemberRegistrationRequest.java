@@ -12,6 +12,8 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class PatientFamilyMemberRegistrationRequest {
+    @NotNull
+    private Long hospitalId;
     @NotBlank
     @Size(max = 50)
     private String patientFn;

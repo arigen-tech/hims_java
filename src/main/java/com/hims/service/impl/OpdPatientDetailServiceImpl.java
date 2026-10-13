@@ -2802,6 +2802,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
             response.setGender(projection.getGender());
             response.setAge(projection.getAge());
             response.setSpecialty(projection.getSpecialty());
+            response.setDiagnosis(projection.getDiagnosis());
             response.setDoctorName(projection.getDoctorName());
             response.setNisNo(projection.getNisNo());
             response.setVisitDateTime(DateTimeUtil.formatDateTime(projection.getVisitDateTime()));
