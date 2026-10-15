@@ -2,6 +2,7 @@ package com.hims.entity.repository;
 
 import com.hims.entity.*;
 import com.hims.projection.*;
+import com.hims.response.PatientVisitQueueResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -1585,6 +1586,81 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("hospitalId") Long hospitalId,
             @Param("patientId") Long patientId
         );
+
+
+    @Query("""
+        SELECT
+            d.userId               AS doctorId,
+            v.doctorName           AS doctorName,
+            dept.id                AS departmentId,
+            dept.departmentName    AS departmentName,
+            COUNT(v.id)            AS totalVisits,
+            SUM(CASE WHEN LOWER(v.visitStatus) = LOWER('Y') THEN 1 ELSE 0 END) AS completedCount,
+            SUM(CASE WHEN LOWER(v.visitStatus)= LOWER('N') THEN 1 ELSE 0 END) AS waitingCount,
+            SUM(CASE WHEN LOWER(v.visitStatus) = LOWER('C') THEN 1 ELSE 0 END) AS cancelledCount,
+            SUM(CASE WHEN LOWER(v.visitStatus) = LOWER('I') THEN 1 ELSE 0 END) AS inProgressCount
+        FROM Visit v
+        LEFT JOIN v.doctor d
+        LEFT JOIN v.department dept
+        LEFT JOIN v.hospital h
+        WHERE
+          LOWER(v.billingStatus)= LOWER('Y')
+          AND (:hospitalId   IS NULL OR h.id   = :hospitalId)
+          AND (:doctorId     IS NULL OR d.userId     = :doctorId)
+          AND (:departmentId IS NULL OR dept.id = :departmentId)
+          AND v.visitDate    >= :fromDate
+          AND v.visitDate    <= :toDate
+        GROUP BY d.userId, v.doctorName, dept.id, dept.departmentName
+    """)
+    List<VisitSummaryProjection> getVisitSummary(
+            @Param("hospitalId")   Long hospitalId,
+            @Param("doctorId")     Long doctorId,
+            @Param("departmentId") Long departmentId,
+            @Param("fromDate")     LocalDateTime fromDate,
+            @Param("toDate")       LocalDateTime toDate
+    );
+
+    @Query("""
+        SELECT new com.hims.response.PatientVisitQueueResponse(
+            v.id,
+            p.id,
+            v.startTime,
+            v.endTime,
+            v.visitStatus,
+            CONCAT(
+                COALESCE(p.patientFn, ''),
+                ' ',
+                COALESCE(p.patientMn, ''),
+                ' ',
+                COALESCE(p.patientLn, '')
+            ),
+            p.patientAge,
+            g.genderName,
+            p.patientMobileNumber
+        )
+        FROM Visit v
+        JOIN v.patient p
+        LEFT JOIN p.patientGender g
+        LEFT JOIN v.doctor d
+        LEFT JOIN v.department dept
+        LEFT JOIN dept.hospital h
+        JOIN v.billingHd bh
+        WHERE v.billingStatus = 'y'
+          AND v.visitDate >= :startOfDay
+          AND v.visitDate < :startOfNextDay
+          AND d.userId = :doctorId
+          AND dept.id = :departmentId
+          AND h.id = :hospitalId
+        ORDER BY v.tokenNo ASC
+    """)
+    Page<PatientVisitQueueResponse> getPatientVisitQueue(
+            @Param("hospitalId") Long hospitalId,
+            @Param("doctorId") Long doctorId,
+            @Param("departmentId") Long departmentId,
+            @Param("startOfDay") LocalDateTime startOfDay,
+            @Param("startOfNextDay") LocalDateTime startOfNextDay,
+            Pageable pageable
+    );
 
 
     }
