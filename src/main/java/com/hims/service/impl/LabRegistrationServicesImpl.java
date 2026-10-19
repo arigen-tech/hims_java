@@ -371,8 +371,14 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
     }
 
     private Visit createVisitForLabRadio(Patient patient, Long department, MasHospital hospital) {
+        return createVisitForLabRadio(patient, department, hospital, null);
+    }
+
+    private Visit createVisitForLabRadio(Patient patient, Long department, MasHospital hospital, LocalDate visitDate) {
         MasDepartment dept = masDepartmentRepository.findById(department).orElseThrow(() -> new RuntimeException("Invalid department"));
-        Long token = visitRepository.countTokensForToday(hospital.getId(), dept.getId());
+        Long token = visitDate == null
+                ? visitRepository.countTokensForToday(hospital.getId(), dept.getId())
+                : visitRepository.countTokensForDate(hospital.getId(), dept.getId(), visitDate);
         Visit visit = new Visit();
         visit.setPatient(patient);
         visit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase());
@@ -380,7 +386,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
         visit.setHospital(hospital);
         visit.setTokenNo(token + 1);
         visit.setDepartment(dept);
-        visit.setVisitDate(HMISUtil.getCurrentLocalDateTime());
+        visit.setVisitDate(visitDate == null
+                ? HMISUtil.getCurrentLocalDateTime()
+                : visitDate.atStartOfDay());
         visit.setLastChgDate(HMISUtil.getCurrentLocalDateTime());
         visit.setDisplayPatientStatus(AppConstants.DISPLAY_PATIENT_STATUS);
         String visitType = helperUtils.getVisitTypeForFollowUpOrNew(patient.getId());
@@ -503,19 +511,23 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
                 UserContext bookingContext = new UserContext(null, null, null, resolvedHospitalId, null, username);
             boolean labBillingEnabled = AppConstants.STATUS_Y.equalsIgnoreCase(hospital.getLabBilling());
 
-            Visit savedVisit = createVisitForLabRadio(patient, laboratoryDepartment, hospital);
-
             List<LabRadioInvestigationRequest> invList = labReq.getInvestigationReq();
 
             if (invList == null || invList.isEmpty()) {
                 throw new SDDException("investigation", 400, "Investigation list cannot be empty");
             }
 
-            invList.forEach(inv -> {
-                if (inv.getAppointmentDate() == null) {
-                    throw new SDDException("appointmentDate", 400, "Appointment date required for investigationId: " + inv.getId());
-                }
-            });
+            if (invList.stream().anyMatch(inv -> inv == null || inv.getAppointmentDate() == null)) {
+                throw new SDDException("appointmentDate", 400, "Appointment date is required for every investigation");
+            }
+
+            LocalDate visitDate = invList.stream()
+                    .map(LabRadioInvestigationRequest::getAppointmentDate)
+                    .min(LocalDate::compareTo)
+                    .orElseThrow(() -> new SDDException("appointmentDate", 400,
+                            "Appointment date is required for every investigation"));
+
+            Visit savedVisit = createVisitForLabRadio(patient, laboratoryDepartment, hospital, visitDate);
 
             Map<LocalDate, List<LabRadioInvestigationRequest>> grouped =
                     invList.stream().collect(Collectors.groupingBy(LabRadioInvestigationRequest::getAppointmentDate));
@@ -630,6 +642,9 @@ public class LabRegistrationServicesImpl implements LabRegistrationServices {
 
             return ResponseUtils.createSuccessResponse(res, new TypeReference<>() {});
 
+        } catch (SDDException e) {
+            log.error("Business error while updating lab booking: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             log.error("Unexpected error", e);
             throw new SDDException("system", 500, "Error while updating lab booking");
