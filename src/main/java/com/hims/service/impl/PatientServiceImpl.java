@@ -879,7 +879,7 @@ public class PatientServiceImpl implements PatientService {
         opdPatientDetail.setFollowUpDays(opdPatientDetailRequest.getFollowUpDays());
         opdPatientDetail.setPastMedicalHistory(opdPatientDetailRequest.getPastMedicalHistory());
         opdPatientDetail.setPresentComplaints(opdPatientDetailRequest.getPresentComplaints());
-        opdPatientDetail.setFamilyHistory(opdPatientDetailRequest.getFamilyHistory());
+        opdPatientDetail.setPresentHistory(opdPatientDetailRequest.getFamilyHistory());
         opdPatientDetail.setTreatmentAdvice(opdPatientDetailRequest.getTreatmentAdvice());
         opdPatientDetail.setSosFlag(opdPatientDetailRequest.getSosFlag());
         opdPatientDetail.setRecmmdMedAdvice(opdPatientDetailRequest.getRecmmdMedAdvice());

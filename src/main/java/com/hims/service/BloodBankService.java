@@ -4,6 +4,7 @@ import com.hims.request.*;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -70,4 +71,6 @@ public interface BloodBankService {
    ApiResponse<String> updateBloodIssueAndTrackingStatus(BloodIssueStatusRequest request);
 
    ApiResponse<String> acknowledgeBloodRequest(BloodAcknowledgementRequest request);
+
+    ApiResponse<Boolean> isCrossMatchFailedPreviously(Long patientId, Long bloodInventoryId);
 }

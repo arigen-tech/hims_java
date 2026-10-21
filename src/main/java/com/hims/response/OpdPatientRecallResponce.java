@@ -35,7 +35,7 @@ public class OpdPatientRecallResponce {
 
                 //=============clinic===========
     private String pastMedicalHistory;
-    private String familyHistory;
+    private String presentHistory;
     private String patientSignsSymptoms;
     private String clinicalExamination;
                //=============Vital===============

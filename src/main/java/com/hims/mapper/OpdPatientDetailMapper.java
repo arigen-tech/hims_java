@@ -134,7 +134,7 @@ public class OpdPatientDetailMapper {
 
     public void mapClinicalDetails(OpdPatientDetail opd, OpdPatientDetailCreateRequest request) {
         opd.setPastMedicalHistory(request.getPastMedicalHistory());
-        opd.setFamilyHistory(request.getFamilyHistory());
+        opd.setPresentHistory(request.getPresentHistory());
         opd.setClinicalExamination(request.getClinicalExamination());
         opd.setPatientSignsSymptoms(request.getPatientSignsSymptoms());
         opd.setWorkingDiag(request.getWorkingDiagnosis());

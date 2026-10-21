@@ -48,7 +48,7 @@ public class OpdPatientDetailCreateRequest {
 
     // ======================== Clinical History =================
     private String pastMedicalHistory;
-    private String familyHistory;
+    private String presentHistory;
     private String presentComplaints;
     private String patientSignsSymptoms;
     private String clinicalExamination;

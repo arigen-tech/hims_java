@@ -24,7 +24,7 @@ public class RecallOpdPatientDetailRequest {
     private String patientSignsSymptoms;
     private String clinicalExamination;
     private String pastMedicalHistory;
-    private String familyHistory;
+    private String presentHistory;
     private String mlcFlag;
     private String workingDiagnosis;
     private List<IcdDiagnosis> icdDiagnosisList;
