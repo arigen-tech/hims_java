@@ -383,4 +383,12 @@ public class BloodBankController {
         return bloodBankService.acknowledgeBloodRequest(request);
     }
 
+    @GetMapping("/validate/cross-match/{patientId}/{bloodInventoryId}")
+    public ResponseEntity<?> acknowledgeBloodRequest(
+            @PathVariable Long patientId,
+            @PathVariable Long bloodInventoryId
+            ) {
+        return ResponseEntity.ok(bloodBankService.isCrossMatchFailedPreviously(patientId, bloodInventoryId));
+    }
+
 }

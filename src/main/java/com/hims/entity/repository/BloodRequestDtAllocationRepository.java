@@ -21,11 +21,31 @@ public interface BloodRequestDtAllocationRepository
     );
 
     @Query("""
+    SELECT CASE WHEN COUNT(b) > 0 THEN true ELSE false END
+    FROM BloodRequestDtAllocation b
+    LEFT JOIN b.inventory inv
+    LEFT JOIN b.trackingStatus bloodTrackingStatus
+    WHERE b.bloodRequestDt = :bloodRequestDt
+      AND inv = :inventory
+      AND bloodTrackingStatus.statusId  IN :availableStatusIds
+""")
+    boolean existsByBloodRequestDtAndInventoryAndTrackingStatusIn(
+            @Param("bloodRequestDt") BloodRequestDt bloodRequestDt,
+            @Param("inventory") BloodComponentInventory inventory,
+            @Param("availableStatusIds") List<Long> availableStatusIds
+    );
+
+    @Query("""
     SELECT COALESCE(SUM(a.allocatedUnits), 0)
     FROM BloodRequestDtAllocation a
+    LEFT JOIN  a.inventory inv
+    LEFT JOIN inv.inventoryStatus invStatus
     WHERE a.bloodRequestDt = :requestDt
 """)
-    int getAllocatedUnits(@Param("requestDt") BloodRequestDt requestDt);
+    int getAllocatedUnits(
+            @Param("requestDt") BloodRequestDt requestDt
+//            , @Param("availableStatusId") Long availableStatusId
+    );
 
 
     @Query(value = """
@@ -128,4 +148,32 @@ AND (
             Pageable pageable);
 
     List<BloodRequestDtAllocation> findByBloodRequestDt(BloodRequestDt bloodRequestDt );
+
+
+    @Query("""
+    SELECT COALESCE(SUM(a.allocatedUnits), 0)
+    FROM BloodRequestDtAllocation a
+    WHERE a.bloodRequestDt = :requestDt
+      AND (
+          a.trackingStatus IS NULL
+          OR a.trackingStatus.statusId IN :excludedStatusIds
+      )
+""")
+    Long getAllocatedUnits(
+            @Param("requestDt") BloodRequestDt requestDt,
+            @Param("excludedStatusIds") List<Long> excludedStatusIds
+    );
+
+    @Query("""
+    SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END
+    FROM BloodRequestDtAllocation a
+    WHERE a.bloodRequestDt = :requestDt
+      AND a.inventory = :inventory
+      AND a.trackingStatus.statusId NOT IN :trackingStatusIds
+""")
+    boolean existsByRequestDtAndInventoryAndTrackingStatus(
+            @Param("requestDt") BloodRequestDt requestDt,
+            @Param("inventory") BloodComponentInventory inventory,
+            @Param("trackingStatusIds") List<Long> trackingStatusIds
+    );
 }

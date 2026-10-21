@@ -893,7 +893,6 @@ public class BloodBankServiceImpl implements BloodBankService {
         bloodDonorRepository.save(donor);
     }
 
-    @Transactional
     private void createInventoryEntries(BloodDonationHdr hdr) {
 
         List<BloodDonationDt> components = bloodDonationDtRepository.findByDonationHdId(hdr);
@@ -1185,6 +1184,10 @@ public class BloodBankServiceImpl implements BloodBankService {
                     masBloodInventoryStatusRepository.findById(inventoryStatusAllocated)
                             .orElseThrow(() -> new RecordNotFoundException(
                                     "Allocated inventory status not found"));
+            MasBloodInventoryStatus availableInventoryStatus =
+                    masBloodInventoryStatusRepository.findById(inventoryStatusAvailable)
+                            .orElseThrow(() -> new RecordNotFoundException(
+                                    "Allocated inventory status not found"));
 
             BloodTrackingStatusMaster allocatedTrackingStatus =
                     bloodTrackingStatusMasterRepository.findById(allocatedStatusId)
@@ -1195,6 +1198,9 @@ public class BloodBankServiceImpl implements BloodBankService {
                     bloodTrackingStatusMasterRepository.findById(partiallyAllocatedStatusId)
                             .orElseThrow(() -> new RecordNotFoundException(
                                     "Partially allocated tracking status not found"));
+
+            List<Long> excludedStatusIds =
+                    List.of(8L, 11L, 15L, 7L, 18L, 19L);
 
             for (BloodRequestDetailAllocationRequest detailRequest : request.getDetails()) {
 
@@ -1208,10 +1214,10 @@ public class BloodBankServiceImpl implements BloodBankService {
                         ? 0
                         : requestDt.getUnitsRequired();
 
-                int allocatedUnits =
-                        bloodRequestDtAllocationRepository.getAllocatedUnits(requestDt);
+                Long allocatedUnits =
+                        bloodRequestDtAllocationRepository.getAllocatedUnits(requestDt,excludedStatusIds);
 
-                int remainingUnits = requiredUnits - allocatedUnits;
+                int remainingUnits = requiredUnits - allocatedUnits.intValue();
 
                 if (remainingUnits <= 0) {
                     throw new IllegalArgumentException(
@@ -1260,9 +1266,11 @@ public class BloodBankServiceImpl implements BloodBankService {
 
                     boolean alreadyAllocated =
                             bloodRequestDtAllocationRepository
-                                    .existsByBloodRequestDtAndInventory(
+                                    .existsByBloodRequestDtAndInventoryAndTrackingStatusIn(
                                             requestDt,
-                                            inventory);
+                                            inventory,
+                                            excludedStatusIds
+                                    );
 
                     if (alreadyAllocated) {
                         throw new IllegalArgumentException(
@@ -1293,7 +1301,7 @@ public class BloodBankServiceImpl implements BloodBankService {
                     totalAllocated++;
                 }
 
-                int newAllocatedUnits = allocatedUnits + allocatedForDetail;
+                int newAllocatedUnits = allocatedUnits.intValue() + allocatedForDetail;
 
                 if (newAllocatedUnits >= requiredUnits) {
                     requestDt.setTrackingStatus(allocatedTrackingStatus);
@@ -1598,6 +1606,7 @@ public class BloodBankServiceImpl implements BloodBankService {
                     bloodCrossmatchFailedHistoryRepository.save(failedHistory);
 
                     allocation.setTrackingStatus(crossmatchFailedStatus);
+//                    allocation.setAllocatedUnits(allocation.getAllocatedUnits() - 1);
                     bloodRequestDtAllocationRepository.save(allocation);
 
                     incompatibleCount++;
@@ -1882,5 +1891,28 @@ public class BloodBankServiceImpl implements BloodBankService {
                     "Failed to acknowledge blood request: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+
+    @Override
+    public ApiResponse<Boolean> isCrossMatchFailedPreviously(Long patientId, Long bloodInventoryId) {
+       try {
+           log.info("isCrossMatchFailedPreviously method started for patientId: {} and bloodInventoryId: {}", patientId, bloodInventoryId);
+
+           Boolean isCrossMatchFailedPreviously
+                   = bloodCrossmatchFailedHistoryRepository.existsByPatientIdAndInventoryId(patientId, bloodInventoryId);
+           log.info("isCrossMatchFailedPreviously method ended for patientId: {} and bloodInventoryId: {}", patientId, bloodInventoryId);
+
+           return  ResponseUtils.createSuccessResponse(isCrossMatchFailedPreviously, new TypeReference<>() {});
+       } catch (Exception e) {
+           log.error("isCrossMatchFailedPreviously method error for patientId: {} and bloodInventoryId: {}", patientId, bloodInventoryId);
+           return ResponseUtils.createFailureResponse(
+                   null,
+                   "Failed to acknowledge blood request: " + e.getMessage(),
+                   HttpStatus.INTERNAL_SERVER_ERROR.value());
+       }
+    }
+
+    private List<BloodTrackingStatusMaster> getTrackingStatusByStatusCodeIn(List<String> statusCodes) {
+        return bloodTrackingStatusMasterRepository.findByStatusCodeInIgnoreCase(statusCodes);
     }
 }

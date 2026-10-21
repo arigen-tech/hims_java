@@ -1085,7 +1085,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         opd.setPatientSignsSymptoms(request.getPatientSignsSymptoms());
         opd.setClinicalExamination(request.getClinicalExamination());
         opd.setPastMedicalHistory(request.getPastMedicalHistory());
-        opd.setFamilyHistory(request.getFamilyHistory());
+        opd.setPresentHistory(request.getPresentHistory());
         opd.setWorkingDiag(request.getWorkingDiagnosis());
         opd.setFinalMedicalAdvice(request.getDoctorRemarks());
         opd.setTreatmentAdvice(request.getTreatmentAdvice());
@@ -1848,7 +1848,7 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
         response.setOpdPatientId(opd.getOpdPatientDetailsId());
         response.setOpdDate(opd.getOpdDate());
         response.setPastMedicalHistory(opd.getPastMedicalHistory());
-        response.setFamilyHistory(opd.getFamilyHistory());
+        response.setPresentHistory(opd.getPresentHistory());
         response.setPatientSignsSymptoms(opd.getPatientSignsSymptoms());
         response.setClinicalExamination(opd.getClinicalExamination());
         response.setHeight(opd.getHeight());

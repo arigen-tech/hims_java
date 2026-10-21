@@ -84,8 +84,8 @@ public class OpdPatientDetail {
     @Column(name = "present_complaints", length = Integer.MAX_VALUE)
     private String presentComplaints;
 
-    @Column(name = "family_history", length = Integer.MAX_VALUE)
-    private String familyHistory;
+    @Column(name = "present_history", length = Integer.MAX_VALUE)
+    private String presentHistory;
 
     @Column(name = "patient_signs_symptoms", length = Integer.MAX_VALUE)
     private String patientSignsSymptoms;
