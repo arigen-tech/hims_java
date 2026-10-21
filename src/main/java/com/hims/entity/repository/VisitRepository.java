@@ -288,6 +288,15 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             nativeQuery = true)
     Long countTokensForToday(@Param("hospitalId") Long hospitalId,
                              @Param("departmentId") Long departmentId);
+
+    @Query(value = "SELECT COUNT(v.token_no) FROM visit v " +
+            "WHERE v.hospital_id = :hospitalId " +
+            "AND v.department_id = :departmentId " +
+            "AND DATE(v.visit_date) = :visitDate",
+            nativeQuery = true)
+    Long countTokensForDate(@Param("hospitalId") Long hospitalId,
+                            @Param("departmentId") Long departmentId,
+                            @Param("visitDate") LocalDate visitDate);
 //    @Query("SELECT COUNT(v.tokenNo) FROM Visit v " +
 //            "WHERE v.hospital.id = :hospitalId " +
 //            "AND v.department.id = :departmentId " +

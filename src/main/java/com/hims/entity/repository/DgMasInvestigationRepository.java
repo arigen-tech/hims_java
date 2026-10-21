@@ -24,7 +24,7 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
         d.gender_applicable,
         d.discount_applicable,
         d.discount,
-        COALESCE(ipd.price, 0),
+        COALESCE(CASE WHEN :ipd = TRUE THEN ipd.ipd_price ELSE ipd.price END, 0),
         d.main_chargecode_id,
         mmc.main_chargecode_name,
         dms.sample_description,
@@ -48,11 +48,13 @@ public interface DgMasInvestigationRepository extends JpaRepository<DgMasInvesti
         AND (d.gender_applicable = :genderApplicable 
         OR d.gender_applicable = 'c')
         AND d.main_chargecode_id = :mainChargecodeId
-        AND ipd.price > 0
+        AND CASE WHEN :ipd = TRUE THEN ipd.ipd_price ELSE ipd.price END IS NOT NULL
+        AND CASE WHEN :ipd = TRUE THEN ipd.ipd_price ELSE ipd.price END > 0
 """, nativeQuery = true)
     List<Object[]> findByPriceDetails(
             @Param("genderApplicable") String genderApplicable,
-            @Param("mainChargecodeId") Long mainChargecodeId
+            @Param("mainChargecodeId") Long mainChargecodeId,
+            @Param("ipd") boolean ipd
     );
 
 

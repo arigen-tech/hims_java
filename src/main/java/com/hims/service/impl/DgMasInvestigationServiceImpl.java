@@ -88,12 +88,12 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
 
 
     @Override
-    public ApiResponse<List<DgMasInvestigationPriceDetailsResponse>> getPriceDetails(String genderApplicable,Boolean radioFlag) {
+    public ApiResponse<List<DgMasInvestigationPriceDetailsResponse>> getPriceDetails(String genderApplicable, Boolean radioFlag, boolean ipd) {
         List<Object[]> results=new ArrayList<>();
         if(radioFlag)
-             results = dgMasInvestigationRepo.findByPriceDetails(genderApplicable, radMainChargeCodeId);
+             results = dgMasInvestigationRepo.findByPriceDetails(genderApplicable, radMainChargeCodeId, ipd);
         else
-         results = dgMasInvestigationRepo.findByPriceDetails(genderApplicable, mainChargecodeId);
+         results = dgMasInvestigationRepo.findByPriceDetails(genderApplicable, mainChargecodeId, ipd);
 
         List<DgMasInvestigationPriceDetailsResponse> response = results.stream().map(obj -> {
             DgMasInvestigationPriceDetailsResponse dto = new DgMasInvestigationPriceDetailsResponse();
@@ -103,7 +103,7 @@ public class DgMasInvestigationServiceImpl implements DgMasInvestigationService 
             dto.setGenderApplicable(obj[3] != null ? obj[3].toString() : null);
             dto.setDiscountApplicable(obj[4] != null ? obj[4].toString() : null);
             dto.setDiscount(obj[5] != null ? obj[5].toString() : null);
-            dto.setPrice(obj[6] != null ? ((Number) obj[6]).doubleValue() : 0.0);
+            dto.setPrice(((Number) obj[6]).doubleValue());
             dto.setMainChargeCodeId(obj[7] != null ? ((Number) obj[7]).longValue() : null);
             dto.setMainChargeCodeName(obj[8] != null ? obj[8].toString() : null);
             dto.setSampleName(obj[9] != null ? obj[9].toString() : null);

@@ -594,8 +594,14 @@ public class RadiologyServiceImpl implements RadiologyService {
     }
 
     private Visit createVisitForLabRadio(Patient patient, Long department, MasHospital hospital) {
+        return createVisitForLabRadio(patient, department, hospital, null);
+    }
+
+    private Visit createVisitForLabRadio(Patient patient, Long department, MasHospital hospital, LocalDate visitDate) {
         MasDepartment dept = masDepartmentRepository.findById(department).orElseThrow(() -> new RuntimeException("Invalid department"));
-        Long token = visitRepository.countTokensForToday(hospital.getId(), dept.getId());
+        Long token = visitDate == null
+                ? visitRepository.countTokensForToday(hospital.getId(), dept.getId())
+                : visitRepository.countTokensForDate(hospital.getId(), dept.getId(), visitDate);
         Visit visit = new Visit();
         visit.setPatient(patient);
         visit.setVisitStatus(AppConstants.VISIT_STATUS_PENDING.toLowerCase());
@@ -603,7 +609,9 @@ public class RadiologyServiceImpl implements RadiologyService {
         visit.setHospital(hospital);
         visit.setTokenNo(token + 1);
         visit.setDepartment(dept);
-        visit.setVisitDate(HMISUtil.getCurrentLocalDateTime());
+        visit.setVisitDate(visitDate == null
+                ? HMISUtil.getCurrentLocalDateTime()
+                : visitDate.atStartOfDay());
         visit.setLastChgDate(HMISUtil.getCurrentLocalDateTime());
         visit.setDisplayPatientStatus("wp");
 
@@ -819,6 +827,16 @@ public class RadiologyServiceImpl implements RadiologyService {
             return new LabRadioUpdateResponse(null, null, "Patient updated successfully");
         }
 
+        if (investigations.stream().anyMatch(inv -> inv == null || inv.getAppointmentDate() == null)) {
+            throw new SDDException("appointmentDate", 400,
+                    "Appointment date is required for every investigation");
+        }
+        LocalDate visitDate = investigations.stream()
+                .map(LabRadioInvestigationRequest::getAppointmentDate)
+                .min(LocalDate::compareTo)
+                .orElseThrow(() -> new SDDException("appointmentDate", 400,
+                        "Appointment date is required for every investigation"));
+
         Long hospitalId = request.getPatient() != null ? request.getPatient().getPatientHospitalId() : null;
         if (hospitalId == null && patient.getPatientHospital() != null) {
             hospitalId = patient.getPatientHospital().getId();
@@ -837,7 +855,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         }
         UserContext bookingContext = new UserContext(null, null, null, resolvedHospitalId, null, userName);
 
-        Visit visit = createVisitForLabRadio(patient, radiologyDepartment, hospital);
+        Visit visit = createVisitForLabRadio(patient, radiologyDepartment, hospital, visitDate);
 
         MasServiceCategory serviceCategory = masServiceCategoryRepository.findByServiceCateCode(serviceCategoryRad);
 
@@ -1363,7 +1381,7 @@ public class RadiologyServiceImpl implements RadiologyService {
         hd.setPaymentStatus(billingEnabled
                 ? AppConstants.PAYMENT_NOT_PAID.toLowerCase()
                 : AppConstants.PAYMENT_PAID.toLowerCase());
-        hd.setOrderDate(LocalDate.now());
+        hd.setOrderDate(date != null ? date : LocalDate.now());
         hd.setOrderTime(HMISUtil.getCurrentLocalDateTime());
         hd.setPatient(patient);
         hd.setVisit(visit);

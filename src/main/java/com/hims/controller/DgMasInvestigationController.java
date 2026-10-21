@@ -28,12 +28,14 @@ public class DgMasInvestigationController {
 
     @GetMapping("/price-details")
     public ApiResponse<List<DgMasInvestigationPriceDetailsResponse>> getInvestigationPriceDetails(
-            @RequestParam String genderApplicable,@RequestParam(required = false) Boolean radioFlag
+            @RequestParam String genderApplicable,
+            @RequestParam(required = false) Boolean radioFlag,
+            @RequestParam(defaultValue = "false") boolean ipd
            // @RequestParam String investigationName
     ) {
         if (radioFlag == null)
             radioFlag=false;
-        return dgMasInvestigationService.getPriceDetails(genderApplicable,radioFlag);
+        return dgMasInvestigationService.getPriceDetails(genderApplicable, radioFlag, ipd);
     }
     @GetMapping("/getAll/{flag}")
     public ApiResponse<List<DgMasInvestigationResponse>> getAllInvestigations(

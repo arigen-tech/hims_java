@@ -3479,7 +3479,7 @@ public class IPDPatientServiceImpl implements IPDPatientService {
                     "Invalid inpatient or investigation data for billing");
         }
 
-        BigDecimal rate = resolveInvestigationRate(investigation);
+        BigDecimal rate = resolveIpdInvestigationRate(investigation);
         BigDecimal quantity = BigDecimal.ONE;
         BigDecimal discountAmount = BigDecimal.ZERO;
         BigDecimal amount = rate.multiply(quantity).setScale(2, RoundingMode.HALF_UP);
@@ -3509,23 +3509,19 @@ public class IPDPatientServiceImpl implements IPDPatientService {
         );
     }
 
-    private BigDecimal resolveInvestigationRate(DgMasInvestigation investigation) {
+    private BigDecimal resolveIpdInvestigationRate(DgMasInvestigation investigation) {
         LocalDate today = LocalDate.now();
 
         Optional<MasInvestigationPriceDetails> activePrice = masInvestigationPriceDetailsRepository
                 .findActivePriceByInvestigationAndDate(investigation, today);
-        if (activePrice.isPresent() && activePrice.get().getPrice() != null) {
-            return activePrice.get().getPrice().setScale(2, RoundingMode.HALF_UP);
+        if (activePrice.isPresent() && activePrice.get().getIpdPrice() != null) {
+            return activePrice.get().getIpdPrice().setScale(2, RoundingMode.HALF_UP);
         }
 
         Optional<MasInvestigationPriceDetails> latestPrice = masInvestigationPriceDetailsRepository
                 .findTopByInvestigationOrderByFromDateDesc(investigation);
-        if (latestPrice.isPresent() && latestPrice.get().getPrice() != null) {
-            return latestPrice.get().getPrice().setScale(2, RoundingMode.HALF_UP);
-        }
-
-        if (investigation.getPrice() != null) {
-            return BigDecimal.valueOf(investigation.getPrice()).setScale(2, RoundingMode.HALF_UP);
+        if (latestPrice.isPresent() && latestPrice.get().getIpdPrice() != null) {
+            return latestPrice.get().getIpdPrice().setScale(2, RoundingMode.HALF_UP);
         }
 
         throw new SDDException(HttpStatus.BAD_REQUEST.value(),
