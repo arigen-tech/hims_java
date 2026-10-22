@@ -4,6 +4,7 @@ package com.hims.exception;
 
 import com.hims.response.ApiResponse;
 import com.hims.request.DietOrderRequest;
+import com.hims.utils.ResponseUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -42,7 +43,12 @@ public class SDDExceptionHandler extends ResponseEntityExceptionHandler {
                     .map(error -> error.getDefaultMessage())
                     .findFirst()
                     .orElse("Invalid diet order request");
-            return ResponseEntity.badRequest().body(message);
+            ApiResponse<Object> errorResponse = ResponseUtils.createFailureResponse(
+                    null,
+                    message,
+                    HttpStatus.BAD_REQUEST.value());
+            errorResponse.setProduction(false);
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         return super.handleMethodArgumentNotValid(ex, headers, status, request);
