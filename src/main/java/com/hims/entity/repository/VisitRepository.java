@@ -1630,23 +1630,23 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     );
 
     @Query("""
-        SELECT new com.hims.response.PatientVisitQueueResponse(
-            v.id,
-            p.id,
-            v.startTime,
-            v.endTime,
-            v.visitStatus,
+        SELECT
+            v.id AS visitId,
+            p.id AS patientId,
+            v.startTime AS appointmentStartTime,
+            v.endTime AS appointmentEndTime,
+            v.visitStatus AS visitStatus,
             CONCAT(
                 COALESCE(p.patientFn, ''),
                 ' ',
                 COALESCE(p.patientMn, ''),
                 ' ',
                 COALESCE(p.patientLn, '')
-            ),
-            p.patientAge,
-            g.genderName,
-            p.patientMobileNumber
-        )
+            ) AS patientName,
+            p.patientAge AS age,
+            g.genderName AS gender,
+            p.patientMobileNumber AS mobileNumber
+       
         FROM Visit v
         JOIN v.patient p
         LEFT JOIN p.patientGender g
@@ -1662,7 +1662,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
           AND h.id = :hospitalId
         ORDER BY v.tokenNo ASC
     """)
-    Page<PatientVisitQueueResponse> getPatientVisitQueue(
+    Page<PatientVisitQueueProjection> getPatientVisitQueue(
             @Param("hospitalId") Long hospitalId,
             @Param("doctorId") Long doctorId,
             @Param("departmentId") Long departmentId,
@@ -1672,4 +1672,5 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     );
 
 
-    }
+    boolean existsByPatient_IdAndIdNot(Long patientId, Long visitId);
+}

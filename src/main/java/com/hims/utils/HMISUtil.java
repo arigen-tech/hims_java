@@ -1,5 +1,8 @@
 package com.hims.utils;
 
+import com.hims.exception.SDDException;
+import org.springframework.http.HttpStatus;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -34,5 +37,24 @@ public final class HMISUtil {
 
     public  static LocalDate getCurrentLocalDate(){
         return  LocalDate.now();
+    }
+
+    public static String getMaskedMobileNumber(String mobileNumber) {
+        if (mobileNumber == null ) {
+            throw  new SDDException("mobileNumber",
+                    HttpStatus.BAD_REQUEST.value(),
+                    "Mobile number cannot be null"
+            );
+        } else if ( mobileNumber.length() != 10) {
+            throw  new SDDException("mobileNumber",
+                    HttpStatus.BAD_REQUEST.value(),
+                    "Mobile number must be 10 digits long"
+            );
+
+        }
+
+        return mobileNumber.substring(0, 2)
+                + "*****"
+                + mobileNumber.substring(7);
     }
 }
