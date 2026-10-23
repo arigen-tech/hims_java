@@ -4,12 +4,14 @@ import com.hims.entity.OpdPatientDetail;
 import com.hims.entity.Patient;
 import com.hims.projection.IPDPatientWaitingListProjection;
 import com.hims.projection.PatientVitalsProjection;
+import com.hims.projection.PrevClinicalNotesAndHistoryProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface OpdPatientDetailRepository extends JpaRepository<OpdPatientDetail, Long> {
@@ -133,6 +135,24 @@ public interface OpdPatientDetailRepository extends JpaRepository<OpdPatientDeta
             @Param("patientName") String patientName,
             @Param("mobileNo") String mobileNo,
             Pageable pageable
+    );
+
+    @Query(value = """
+    SELECT
+        opd.past_medical_history AS "pastMedicalHistory",
+        opd.clinical_examination AS "clinicalExamination"
+    FROM opd_patient_details opd
+    WHERE opd.patient_id = :patientId
+      AND opd.visit_id <> :visitId
+    ORDER BY
+        CASE WHEN opd.opd_date IS NULL THEN 1 ELSE 0 END,
+        opd.opd_date DESC,
+        opd.opd_patient_details_id DESC
+    LIMIT 1
+    """, nativeQuery = true)
+    Optional<PrevClinicalNotesAndHistoryProjection> findLatestPreviousOpdHistory(
+            @Param("patientId") Long patientId,
+            @Param("visitId") Long visitId
     );
 
 
