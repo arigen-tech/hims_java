@@ -3,7 +3,9 @@ package com.hims.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.MasOperationTheatre;
+import com.hims.entity.MasOtType;
 import com.hims.entity.repository.MasOperationTheatreRepository;
+import com.hims.entity.repository.MasOtTypeRepository;
 import com.hims.request.OperationTheatreRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OperationTheatreResponse;
@@ -29,6 +31,9 @@ public class MasOperationTheatreServiceImpl implements MasOperationTheatreServic
     private MasOperationTheatreRepository masOperationTheatreRepository;
 
     @Autowired
+    private MasOtTypeRepository masOtTypeRepository;
+
+    @Autowired
     private AuthUtil authUtil;
 
     @Autowired
@@ -40,13 +45,31 @@ public class MasOperationTheatreServiceImpl implements MasOperationTheatreServic
 
         try {
 
+            if (request.getOtTypeId() == null) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "OT Type ID is required",
+                        HttpStatus.BAD_REQUEST
+                );
+            }
+
+            MasOtType masOtType = masOtTypeRepository.findById(request.getOtTypeId()).orElse(null);
+            if (masOtType == null) {
+                return ResponseUtils.createNotFoundResponse(
+                        "OT Type not found with id: " + request.getOtTypeId(),
+                        HttpStatus.NOT_FOUND
+                );
+            }
+
             UserContext userContext = userContextService.getCurrentUserContext();
 
             MasOperationTheatre entity = new MasOperationTheatre();
 
             entity.setOtCode(request.getOtCode());
             entity.setOtName(request.getOtName());
-            entity.setOtType(request.getOtType());
+            entity.setMasOtType(masOtType);
+            entity.setOtType(masOtType.getOtTypeName());
             entity.setLocation(request.getLocation());
             entity.setStatus(AppConstants.STATUS_Y.toLowerCase());
             entity.setLastChgBy(userContext.getUserFullName());
@@ -181,14 +204,12 @@ public class MasOperationTheatreServiceImpl implements MasOperationTheatreServic
 
 
     @Override
-
     public ApiResponse<String> updateOperationTheatre(
             Long id,
             OperationTheatreRequest request) {
 
         try {
 
-            UserContext userContext = userContextService.getCurrentUserContext();
             MasOperationTheatre entity = masOperationTheatreRepository.findById(id).orElse(null);
 
             if (entity == null) {
@@ -197,9 +218,29 @@ public class MasOperationTheatreServiceImpl implements MasOperationTheatreServic
                 );
             }
 
+            if (request.getOtTypeId() == null) {
+                return ResponseUtils.createFailureResponse(
+                        null,
+                        new TypeReference<>() {},
+                        "OT Type ID is required",
+                        HttpStatus.BAD_REQUEST
+                );
+            }
+
+            MasOtType masOtType = masOtTypeRepository.findById(request.getOtTypeId()).orElse(null);
+            if (masOtType == null) {
+                return ResponseUtils.createNotFoundResponse(
+                        "OT Type not found with id: " + request.getOtTypeId(),
+                        HttpStatus.NOT_FOUND
+                );
+            }
+
+            UserContext userContext = userContextService.getCurrentUserContext();
+
             entity.setOtCode(request.getOtCode());
             entity.setOtName(request.getOtName());
-            entity.setOtType(request.getOtType());
+            entity.setMasOtType(masOtType);
+            entity.setOtType(masOtType.getOtTypeName());
             entity.setLocation(request.getLocation());
 
             entity.setLastChgBy(userContext.getUserFullName());
@@ -232,7 +273,12 @@ public class MasOperationTheatreServiceImpl implements MasOperationTheatreServic
         response.setOtId(entity.getOtId());
         response.setOtCode(entity.getOtCode());
         response.setOtName(entity.getOtName());
-        response.setOtType(entity.getOtType());
+        if (entity.getMasOtType() != null) {
+            response.setOtTypeId(entity.getMasOtType().getOtTypeId());
+            response.setOtTypeName(entity.getMasOtType().getOtTypeName());
+            response.setOtTypeCode(entity.getMasOtType().getOtTypeCode());
+        }
+        response.setOtType(entity.getOtType() != null ? entity.getOtType() : (entity.getMasOtType() != null ? entity.getMasOtType().getOtTypeName() : null));
         response.setLocation(entity.getLocation());
         response.setStatus(entity.getStatus());
         response.setLastChgBy(entity.getLastChgBy());
