@@ -347,6 +347,8 @@ public class MasterController {
     @Autowired
     MasOperationTheatreService masOperationTheatreService;
     @Autowired
+    private MasOtTypeService masOtTypeService;
+    @Autowired
     private MasAnaesthesiaTypeService masAnaesthesiaTypeService;
     @Autowired
     private MasAnaesthesiaInstructionService masAnaesthesiaInstructionService;
@@ -5666,7 +5668,7 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
 
     @PostMapping("/operationTheatre/create")
     public ResponseEntity<ApiResponse<String>> saveOperationTheatre(
-            @RequestBody OperationTheatreRequest request) {
+            @Valid @RequestBody OperationTheatreRequest request) {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(masOperationTheatreService.saveOperationTheatre(request));
     }
@@ -5701,9 +5703,24 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
     @PutMapping("/operationTheatre/update/{id}")
     public ResponseEntity<ApiResponse<String>> updateOperationTheatre(
             @PathVariable Long id,
-            @RequestBody OperationTheatreRequest request) {
+            @Valid @RequestBody OperationTheatreRequest request) {
 
         return ResponseEntity.ok(masOperationTheatreService.updateOperationTheatre(id, request));
+    }
+
+    //======================================= Mas OT Type ====================================================
+
+    // Get All OT Types
+    // flag = 1 -> Active records only
+    // flag = 0 -> All records
+    @GetMapping(value = {"/otType/getAll/{flag}", "/masOtType/getAll/{flag}"})
+    public ResponseEntity<ApiResponse<List<MasOtTypeResponse>>> getAllOtTypes(@PathVariable int flag) {
+        return ResponseEntity.ok(masOtTypeService.getAllOtTypes(flag));
+    }
+
+    @GetMapping(value = {"/otType/getById/{id}", "/masOtType/getById/{id}"})
+    public ResponseEntity<ApiResponse<MasOtTypeResponse>> getOtTypeById(@PathVariable Long id) {
+        return ResponseEntity.ok(masOtTypeService.getById(id));
     }
 
     //=======================================Ot Day Allocation ====================================================

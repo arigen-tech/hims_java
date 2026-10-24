@@ -25,8 +25,12 @@ public class MasOperationTheatre {
     @Column(name = "ot_name", nullable = false, length = 100)
     private String otName;
 
-    @Column(name = "ot_type", nullable = false, length = 30)
+    @Column(name = "ot_type", length = 30)
     private String otType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ot_type_id")
+    private MasOtType masOtType;
 
     @Column(name = "location", length = 100)
     private String location;

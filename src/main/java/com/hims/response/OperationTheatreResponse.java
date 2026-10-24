@@ -17,6 +17,12 @@ public class OperationTheatreResponse {
 
     private String otName;
 
+    private Long otTypeId;
+
+    private String otTypeName;
+
+    private String otTypeCode;
+
     private String otType;
 
     private String location;
