@@ -38,4 +38,13 @@ public class VisitController {
         return ResponseEntity.ok(
                 visitService.getPatientVisitQueue(hospitalId,doctorId,departmentId,page,size));
     }
+
+    @GetMapping("/{visitId}/past-history-and-notes")
+    public ResponseEntity<?> getPreviousVisitPastHistoryAndClinicalNotes(
+            @PathVariable Long visitId
+    ) {
+
+        return ResponseEntity.ok(
+                visitService.getPreviousVisitPastHistoryAndClinicalNotes(visitId));
+    }
 }

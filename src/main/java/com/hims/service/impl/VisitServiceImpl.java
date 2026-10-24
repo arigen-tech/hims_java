@@ -1,9 +1,14 @@
 package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.hims.entity.Visit;
+import com.hims.entity.repository.OpdPatientDetailRepository;
 import com.hims.entity.repository.VisitRepository;
+import com.hims.exception.SDDException;
+import com.hims.mapper.PatientVisitQueueMapper;
 import com.hims.response.ApiResponse;
 import com.hims.response.PatientVisitQueueResponse;
+import com.hims.response.PrevClinicalNotesAndHistoryResponse;
 import com.hims.service.VisitService;
 import com.hims.utils.HMISUtil;
 import com.hims.utils.ResponseUtils;
@@ -25,6 +30,10 @@ import java.util.List;
 public class VisitServiceImpl implements VisitService {
 
     private final VisitRepository visitRepository;
+
+    private final PatientVisitQueueMapper patientVisitQueueMapper;
+
+    private final OpdPatientDetailRepository opdPatientDetailRepository;
     @Override
     public ApiResponse<String> changeVisitStatus(Long visitId, String visitStatus) {
         try {
@@ -66,7 +75,8 @@ public class VisitServiceImpl implements VisitService {
                             startDate,
                             endDate,
                             pageable
-                    );
+                    )
+                            .map(patientVisitQueueMapper::mapToResponse);
             return ResponseUtils.createSuccessResponse(queue,
                     new TypeReference<>() {
                     }
@@ -78,6 +88,48 @@ public class VisitServiceImpl implements VisitService {
                     },
                     "Failed to get patient visit queue: " + e.getMessage(),
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+        }
+    }
+
+    @Override
+    public ApiResponse<PrevClinicalNotesAndHistoryResponse> getPreviousVisitPastHistoryAndClinicalNotes(Long visitId) {
+        
+        try {
+
+            Visit visit = visitRepository.findById(visitId).orElseThrow(() -> new SDDException("visit",
+                    HttpStatus.NOT_FOUND.value(),
+                    "Visit not found for visitId: " + visitId)
+            );
+            Long patientId = visit.getPatient().getId();
+            boolean previouslyVisited =
+                    visitRepository.existsByPatient_IdAndIdNot(
+                            patientId, visitId
+                    );
+            PrevClinicalNotesAndHistoryResponse response = new PrevClinicalNotesAndHistoryResponse();
+
+            if(previouslyVisited){
+                response.setIsPreviouslyVisited(true);
+            }else{
+                response.setIsPreviouslyVisited(false);
+            }
+
+            opdPatientDetailRepository.findLatestPreviousOpdHistory(patientId,visitId)
+                    .ifPresent(opdPatientDetail -> {
+                response.setPreviousVisitPastHistory(opdPatientDetail.getPastMedicalHistory());
+                response.setPreviousVisitClinicalNotes(opdPatientDetail.getClinicalExamination());
+            });
+
+            return  ResponseUtils.createSuccessResponse(response,
+                    new TypeReference<>() {}
+            );
+
+        }catch (SDDException e) {
+            log.error("Error occurred getPreviousVisitPastHistoryAndClinicalNotes method for visitId: {}. Error: {}", visitId, e.getMessage());
+            return ResponseUtils.createFailureResponse(null,
+                    new TypeReference<>() {},
+                     e.getMessage(),
+                    e.getStatus()
             );
         }
     }
