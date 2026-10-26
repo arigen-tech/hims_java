@@ -15,5 +15,7 @@ public interface MasProcedureProjection {
     String getOpdAllowed();
     String getIpdAllowed();
     String getIsNursing();
+    Long getProcedureTypeId();
+    String getProcedureTypeName();
 
 }
