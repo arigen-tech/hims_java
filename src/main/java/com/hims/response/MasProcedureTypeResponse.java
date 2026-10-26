@@ -20,4 +20,6 @@ public class MasProcedureTypeResponse {
     private String createdBy;
     private String lastUpdatedBy;
     private String procedureTypeCode;
+    private Long departmentId;
+    private String departmentName;
 }

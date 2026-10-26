@@ -2175,13 +2175,13 @@ public class MasterController {
     }
 
     @PostMapping("masProcedureType/create")
-    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> createProcedure(@RequestBody MasProcedureTypeRequest request) {
+    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> createProcedure(@Valid @RequestBody MasProcedureTypeRequest request) {
         return new ResponseEntity<>(masProcedureTypeService.addProcedureType(request), HttpStatus.CREATED);
     }
 
     @PutMapping("masProcedureType/update/{id}")
     public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> updateProcedure(
-            @PathVariable Long id, @RequestBody MasProcedureTypeRequest request) {
+            @PathVariable Long id, @Valid @RequestBody MasProcedureTypeRequest request) {
 
         return ResponseEntity.ok(masProcedureTypeService.update(id, request));
     }
