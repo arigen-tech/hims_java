@@ -12,12 +12,13 @@ import com.hims.request.MasStateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasStateResponse;
 import com.hims.response.UserContext;
+import com.hims.service.LgdStateAndDistrictLookupService;
 import com.hims.service.MasStateService;
 import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -30,21 +31,21 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class MasStateServiceImpl implements MasStateService {
 
     private static final Logger log = LoggerFactory.getLogger(MasStateServiceImpl.class);
 
-    @Autowired
-    private MasStateRepository masStateRepository;
+    private final MasStateRepository masStateRepository;
 
-    @Autowired
-    private MasCountryRepository masCountryRepository;
+    private final MasCountryRepository masCountryRepository;
 
-    @Autowired
-    private UserContextService userContextService;
+    private final UserContextService userContextService;
 
-    @Autowired
-    private UserRepo userRepo;
+    private final UserRepo userRepo;
+
+
+    private final LgdStateAndDistrictLookupService lgdStateAndDistrictLookupService;
 
     private String getCurrentTimeFormatted() {
         return LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
@@ -80,6 +81,10 @@ public class MasStateServiceImpl implements MasStateService {
             state.setLastChgDate(Instant.now());
             state.setLastChgTime(getCurrentTimeFormatted());
             state.setCountry(countryOpt.get());
+            state.setLgdStateCode(
+                    lgdStateAndDistrictLookupService.getLgdStateCode(
+                            request.getStateName()
+                    ));
 
             MasState savedState = masStateRepository.save(state);
             return ResponseUtils.createSuccessResponse(mapToResponse(savedState), new TypeReference<>() {
@@ -145,6 +150,11 @@ public class MasStateServiceImpl implements MasStateService {
                     }
                 }
 
+                state.setLgdStateCode(
+                        lgdStateAndDistrictLookupService.getLgdStateCode(
+                                request.getStateName()
+                        ));
+
                 masStateRepository.save(state);
                 return ResponseUtils.createSuccessResponse(mapToResponse(state), new TypeReference<>() {
                 });
@@ -197,6 +207,7 @@ public class MasStateServiceImpl implements MasStateService {
         response.setId(state.getId());
         response.setStateCode(state.getStateCode());
         response.setStateName(state.getStateName());
+        response.setLgdStateCode(state.getLgdStateCode());
         response.setStatus(state.getStatus());
         response.setLastChgBy(state.getLastChgBy());
         response.setLastChgDate(state.getLastChgDate());

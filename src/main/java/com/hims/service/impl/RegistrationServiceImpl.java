@@ -166,6 +166,9 @@ public class RegistrationServiceImpl implements RegistrationService {
     @Autowired
     private ApplicationEventPublisher eventPublisher;
 
+    @Autowired
+    private PatientAbhaMappingRepository patientAbhaMappingRepository;
+
 
     @Value("${sms.enabled}")
     private Boolean shouldSendSMS;
@@ -191,6 +194,9 @@ public class RegistrationServiceImpl implements RegistrationService {
                     "Patient already Registered", 500);
         }
         Patient patientObj = savePatient(patient,false);
+        if(patient.getIsRegisterThroughAbha()){
+            saveAbhaDetails(patientObj,patient);
+        }
         patientLoginService.savePatientLogin(patientObj);
         resp.setPatient(PatientMapper.mapToDTO(patientObj));
         OpdPatientDetail newOpd=new OpdPatientDetail();
@@ -1774,6 +1780,30 @@ public class RegistrationServiceImpl implements RegistrationService {
                 exists
         );
         return exists;
+    }
+
+    @Override
+    public Boolean saveAbhaDetails(Patient patient,PatientRequest patientRequest){
+        try {
+            PatientAbhaMapping patientAbhaMapping;
+            Optional<PatientAbhaMapping> patientAbhaMappingOpt = patientAbhaMappingRepository.findByPatient(patient);
+            if(patientAbhaMappingOpt.isPresent()){
+                patientAbhaMapping=patientAbhaMappingOpt.get();
+            }else{
+                patientAbhaMapping = new PatientAbhaMapping();
+            }
+            patientAbhaMapping.setPatient(patient);
+            patientAbhaMapping.setAbhaNumber(patientRequest.getPatientAbhaId());
+            patientAbhaMapping.setAbhaAddress(patientRequest.getAbhaAddress());
+            patientAbhaMapping.setAbhaProfilePhoto(patientRequest.getAbhaProfilePhotoPath());
+            patientAbhaMapping.setPatientHospitalId(patient.getPatientHospital());
+
+            patientAbhaMappingRepository.save(patientAbhaMapping);
+            return true;
+        } catch (Exception e) {
+            log.error("Error saving ABHA details for patient  {}: {}", patient.getFullName(), e.getMessage());
+            throw new SDDException("ABHA",HttpStatus.INTERNAL_SERVER_ERROR,e.getMessage());
+        }
     }
 
 }

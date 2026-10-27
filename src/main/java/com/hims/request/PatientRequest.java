@@ -55,5 +55,10 @@ public class PatientRequest {
     private LocalDate regDate;
     private String lastChgBy;
     private Long patientHospitalId;
+    private Boolean isRegisterThroughAbha;
     private String patientAbhaId;
+    private String abhaAddress;
+    private String abhaProfilePhotoPath;
+    private String xToken;
+
 }

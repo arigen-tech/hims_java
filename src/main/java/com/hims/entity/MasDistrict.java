@@ -42,4 +42,7 @@ public class MasDistrict {
     @JoinColumn(name = "state_id")
     private MasState state;
 
+    @Column(name = "lgd_district_code", length = 20)
+    private String lgdDistrictCode;
+
 }
