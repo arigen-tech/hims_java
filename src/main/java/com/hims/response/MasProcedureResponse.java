@@ -21,5 +21,7 @@ public class MasProcedureResponse {
     private String ipdAllowed;
     private String isNursing;
     private String procedureLevel;
+    private Long procedureTypeId;
+    private String procedureTypeName;
 
 }

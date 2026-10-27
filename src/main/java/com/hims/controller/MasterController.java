@@ -2175,13 +2175,13 @@ public class MasterController {
     }
 
     @PostMapping("masProcedureType/create")
-    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> createProcedure(@RequestBody MasProcedureTypeRequest request) {
+    public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> createProcedure(@Valid @RequestBody MasProcedureTypeRequest request) {
         return new ResponseEntity<>(masProcedureTypeService.addProcedureType(request), HttpStatus.CREATED);
     }
 
     @PutMapping("masProcedureType/update/{id}")
     public ResponseEntity<ApiResponse<MasProcedureTypeResponse>> updateProcedure(
-            @PathVariable Long id, @RequestBody MasProcedureTypeRequest request) {
+            @PathVariable Long id, @Valid @RequestBody MasProcedureTypeRequest request) {
 
         return ResponseEntity.ok(masProcedureTypeService.update(id, request));
     }
@@ -2224,7 +2224,7 @@ public class MasterController {
 
     @PostMapping("masProcedure/create")
     public ResponseEntity<ApiResponse<MasProcedureResponse>> createProcedure(
-            @RequestBody MasProcedureRequest request) {
+            @Valid @RequestBody MasProcedureRequest request) {
 
         log.info("Create MasProcedure request={}", request);
         return new ResponseEntity<>(masProcedureService.addMasProcedure(request), HttpStatus.CREATED);
@@ -2234,7 +2234,7 @@ public class MasterController {
     @PutMapping("masProcedure/update/{id}")
     public ResponseEntity<ApiResponse<MasProcedureResponse>> updateProcedure(
             @PathVariable Long id,
-            @RequestBody MasProcedureRequest request) {
+            @Valid @RequestBody MasProcedureRequest request) {
 
         log.info("Update MasProcedure id={}, request={}", id, request);
         return ResponseEntity.ok(masProcedureService.updateMasProcedure(id, request));

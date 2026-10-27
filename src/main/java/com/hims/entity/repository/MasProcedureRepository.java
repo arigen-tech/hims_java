@@ -14,6 +14,49 @@ import java.util.List;
 
 @Repository
 public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long> {
+    @Query(value = "SELECT p.procedure_id AS procedureId, p.procedure_code AS procedureCode, " +
+            "p.procedure_name AS procedureName, p.status AS status, p.last_chg_by AS lastChgBy, " +
+            "p.last_chg_date AS lastChgDate, p.opd_allowed AS opdAllowed, p.ipd_allowed AS ipdAllowed, " +
+            "p.is_nursing AS isNursing, p.procedure_type_id AS procedureTypeId, " +
+            "pt.procedure_type_name AS procedureTypeName " +
+            "FROM mas_procedure p LEFT JOIN mas_procedure_type pt ON pt.procedure_type_id = p.procedure_type_id " +
+            "WHERE (:flag = 0 OR LOWER(p.status) = :status) ORDER BY p.last_chg_date DESC", nativeQuery = true)
+    List<MasProcedureProjection> findAllMasProcedure(@Param("flag") int flag, @Param("status") String status);
+
+    @Query(value = "SELECT p.procedure_id AS procedureId, p.procedure_code AS procedureCode, " +
+            "p.procedure_name AS procedureName, p.status AS status, p.last_chg_by AS lastChgBy, " +
+            "p.last_chg_date AS lastChgDate, p.opd_allowed AS opdAllowed, p.ipd_allowed AS ipdAllowed, " +
+            "p.is_nursing AS isNursing, p.procedure_type_id AS procedureTypeId, " +
+            "pt.procedure_type_name AS procedureTypeName " +
+            "FROM mas_procedure p LEFT JOIN mas_procedure_type pt ON pt.procedure_type_id = p.procedure_type_id " +
+            "WHERE p.procedure_id = :id", nativeQuery = true)
+    java.util.Optional<MasProcedureProjection> findProcedureViewById(@Param("id") Long id);
+
+    @Query(value = "SELECT p.procedure_id AS procedureId, p.procedure_code AS procedureCode, " +
+            "p.procedure_name AS procedureName, p.status AS status, p.last_chg_by AS lastChgBy, " +
+            "p.last_chg_date AS lastChgDate, p.opd_allowed AS opdAllowed, p.ipd_allowed AS ipdAllowed, " +
+            "p.is_nursing AS isNursing, p.procedure_type_id AS procedureTypeId, " +
+            "pt.procedure_type_name AS procedureTypeName " +
+            "FROM mas_procedure p LEFT JOIN mas_procedure_type pt ON pt.procedure_type_id = p.procedure_type_id " +
+            "WHERE (LOWER(p.status) IN (:statuses)) " +
+            "AND (CAST(:nursingStatus AS text) IS NULL OR LOWER(p.is_nursing) = LOWER(:nursingStatus)) " +
+            "AND (CAST(:opdStatus AS text) IS NULL OR LOWER(p.opd_allowed) = LOWER(:opdStatus)) " +
+            "AND (CAST(:ipdStatus AS text) IS NULL OR LOWER(p.ipd_allowed) = LOWER(:ipdStatus)) " +
+            "AND (CAST(:search AS text) IS NULL OR LOWER(p.procedure_code) LIKE :search OR LOWER(p.procedure_name) LIKE :search) " +
+            "ORDER BY p.last_chg_date DESC",
+            countQuery = "SELECT COUNT(*) FROM mas_procedure p WHERE (LOWER(p.status) IN (:statuses)) " +
+                    "AND (CAST(:nursingStatus AS text) IS NULL OR LOWER(p.is_nursing) = LOWER(:nursingStatus)) " +
+                    "AND (CAST(:opdStatus AS text) IS NULL OR LOWER(p.opd_allowed) = LOWER(:opdStatus)) " +
+                    "AND (CAST(:ipdStatus AS text) IS NULL OR LOWER(p.ipd_allowed) = LOWER(:ipdStatus)) " +
+                    "AND (CAST(:search AS text) IS NULL OR LOWER(p.procedure_code) LIKE :search OR LOWER(p.procedure_name) LIKE :search) " +
+                    "", nativeQuery = true)
+    Page<MasProcedureProjection> findProcedureViewsWithFilters(
+            @Param("statuses") List<String> statuses,
+            @Param("nursingStatus") String nursingStatus,
+            @Param("opdStatus") String opdStatus,
+            @Param("ipdStatus") String ipdStatus,
+            @Param("search") String search,
+            Pageable pageable);
    // List<MasProcedure> findByStatusIgnoreCaseOrderByLastChangedDateDesc(String y);
 
 //    List<MasProcedure> findByStatusIgnoreCaseOrderByLastChangedDateDesc(String y);
@@ -129,26 +172,6 @@ public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long
 
     Page<MasProcedure> findByStatusInIgnoreCase(List<String> statusList, Pageable pageable);
 
-
-    @Query("""
-    SELECT 
-        p.procedureId AS procedureId,
-        p.procedureCode AS procedureCode,
-        p.procedureName AS procedureName,
-        p.status AS status,
-        p.lastChgBy AS lastChgBy,
-        p.lastChgDate AS lastChgDate,
-        p.opdAllowed AS opdAllowed,
-        p.ipdAllowed AS ipdAllowed,
-        p.isNursing AS isNursing
-    
-    FROM MasProcedure p
-   
-    WHERE (:flag = 0 OR LOWER(p.status) = :status)
-    ORDER BY  p.lastChgDate DESC
-""")
-    List<MasProcedureProjection> findAllMasProcedure(@Param("flag") int flag,
-                                                     @Param("status") String status);
 
 
     @Query("""

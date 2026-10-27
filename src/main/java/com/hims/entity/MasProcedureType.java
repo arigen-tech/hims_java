@@ -43,4 +43,8 @@ public class MasProcedureType {
 
     @Column(name = "procedure_type_code", length = 10)
     private String procedureTypeCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id", nullable = false)
+    private MasDepartment department;
 }

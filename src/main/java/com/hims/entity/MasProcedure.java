@@ -34,10 +34,6 @@ public class MasProcedure {
     @Column(name = "last_chg_date")
     private LocalDateTime lastChgDate;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "department_id")
-//    private MasDepartment department;
-
     @Column(name = "opd_allowed", length = 1)
     private String opdAllowed;
 

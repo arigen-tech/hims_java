@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import jakarta.validation.constraints.NotNull;
 
 @Getter
 @Setter
@@ -16,5 +17,6 @@ public class MasProcedureRequest {
     private String ipdAllowed;
     private String isNursing ;
     private String procedureLevel;
-    private Long departmentId;
+    @NotNull(message = "Procedure type ID is required")
+    private Long procedureTypeId;
 }

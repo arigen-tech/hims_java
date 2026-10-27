@@ -2,6 +2,8 @@ package com.hims.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.MasProcedureType;
+import com.hims.entity.MasDepartment;
+import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasProcedureTypeRepository;
 import com.hims.request.MasProcedureTypeRequest;
 import com.hims.response.ApiResponse;
@@ -19,7 +21,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -36,29 +37,24 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
     @Autowired
     private MasProcedureTypeRepository repository;
 
+    @Autowired
+    private MasDepartmentRepository departmentRepository;
+
 
     @Override
     public ApiResponse<List<MasProcedureTypeResponse>> getAllProcedureType(int flag) {
         log.info("MasProcedureType: Fetch All Start | flag={}", flag);
 
         try {
-            List<MasProcedureType> list;
-
-            if (flag == 1) {
-                log.info("Fetching only active records...");
-                list = repository.findByStatusIgnoreCaseOrderByProcedureTypeNameAsc("y");
-            } else if (flag == 0) {
-                log.info("Fetching all records...");
-                list = repository.findAllByOrderByStatusDescLastUpdateDateDesc();
-            } else {
+            if (flag != 0 && flag != 1) {
                 log.warn("Invalid flag received: {}", flag);
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Invalid flag value. Use 0 or 1.", 400);
             }
 
-            List<MasProcedureTypeResponse> responses = list.stream()
+            List<MasProcedureTypeResponse> responses = repository.findAllWithDepartment(flag == 1).stream()
                     .map(this::convertToResponse)
-                    .collect(Collectors.toList());
+                    .toList();
 
             log.info("MasProcedureType: Fetch All Success | Records: {}", responses.size());
             return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
@@ -75,7 +71,7 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
     public ApiResponse<MasProcedureTypeResponse> findById(Long id) {
         log.info("MasProcedureType: Find By ID Start | id={}", id);
 
-        Optional<MasProcedureType> procedure = repository.findById(id);
+        Optional<MasProcedureTypeRepository.ProcedureTypeView> procedure = repository.findViewById(id);
 
         if (procedure.isEmpty()) {
             log.warn("MasProcedureType: ID not found | id={}", id);
@@ -91,6 +87,11 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
     public ApiResponse<MasProcedureTypeResponse> addProcedureType(MasProcedureTypeRequest request) {
         log.info("MasProcedureType: Create Start | Data={}", request);
 
+        Optional<MasDepartment> department = findDepartment(request.getDepartmentId());
+        if (department.isEmpty()) {
+            return invalidDepartmentResponse(request.getDepartmentId());
+        }
+
         UserContext userContext = userContextService.getCurrentUserContext();
         if (userContext == null) {
             log.error("Create failed: current user not found");
@@ -102,6 +103,7 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
                 .procedureTypeName(request.getProcedureTypeName())
                 .description(request.getDescription())
                 .procedureTypeCode(request.getProcedureTypeCode())
+                .department(department.get())
                 .status("y")
                 .createdBy(userContext.getUserFullName())
                 .lastUpdatedBy(userContext.getUserFullName())
@@ -111,7 +113,7 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
         MasProcedureType saved = repository.save(type);
 
         log.info("MasProcedureType: Create Success | ID={}", saved.getProcedureTypeId());
-        return ResponseUtils.createSuccessResponse(convertToResponse(saved), new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(convertToResponse(repository.findViewById(saved.getProcedureTypeId()).orElseThrow()), new TypeReference<>() {});
     }
 
 
@@ -133,9 +135,14 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
         }
 
         MasProcedureType procedure = procedureOpt.get();
+        Optional<MasDepartment> department = findDepartment(request.getDepartmentId());
+        if (department.isEmpty()) {
+            return invalidDepartmentResponse(request.getDepartmentId());
+        }
         procedure.setProcedureTypeName(request.getProcedureTypeName());
         procedure.setDescription(request.getDescription());
         procedure.setProcedureTypeCode(request.getProcedureTypeCode());
+        procedure.setDepartment(department.get());
         procedure.setStatus("y");
         procedure.setLastUpdatedBy(userContext.getUserFullName());
         procedure.setLastUpdateDate(LocalDateTime.now());
@@ -143,7 +150,7 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
         MasProcedureType saved = repository.save(procedure);
 
         log.info("MasProcedureType: Update Success | id={}", saved.getProcedureTypeId());
-        return ResponseUtils.createSuccessResponse(convertToResponse(saved), new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(convertToResponse(repository.findViewById(saved.getProcedureTypeId()).orElseThrow()), new TypeReference<>() {});
     }
 
 
@@ -180,11 +187,11 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
         log.info("MasProcedureType: Change Status Success | id={} | newStatus={}",
                 saved.getProcedureTypeId(), saved.getStatus());
 
-        return ResponseUtils.createSuccessResponse(convertToResponse(saved), new TypeReference<>() {});
+        return ResponseUtils.createSuccessResponse(convertToResponse(repository.findViewById(saved.getProcedureTypeId()).orElseThrow()), new TypeReference<>() {});
     }
 
 
-    private MasProcedureTypeResponse convertToResponse(MasProcedureType type) {
+    private MasProcedureTypeResponse convertToResponse(MasProcedureTypeRepository.ProcedureTypeView type) {
         return new MasProcedureTypeResponse(
                 type.getProcedureTypeId(),
                 type.getProcedureTypeName(),
@@ -193,8 +200,23 @@ public class MasProcedureTypeServiceImpl implements MasProcedureTypeService {
                 type.getLastUpdateDate(),
                 type.getCreatedBy(),
                 type.getLastUpdatedBy(),
-                type.getProcedureTypeCode()
+                type.getProcedureTypeCode(),
+                type.getDepartmentId(),
+                type.getDepartmentName()
         );
+    }
+
+    private Optional<MasDepartment> findDepartment(Long departmentId) {
+        if (departmentId == null) {
+            return Optional.empty();
+        }
+        return departmentRepository.findById(departmentId);
+    }
+
+    private ApiResponse<MasProcedureTypeResponse> invalidDepartmentResponse(Long departmentId) {
+        return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                departmentId == null ? "Department ID is required" : "Department not found: " + departmentId,
+                HttpStatus.BAD_REQUEST.value());
     }
 
 }
