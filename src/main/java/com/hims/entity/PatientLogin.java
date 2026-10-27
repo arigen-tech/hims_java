@@ -28,6 +28,9 @@ public class PatientLogin {
     @Column(name = "email", length = 100)
     private String email;
 
+    @Column(name = "password", length = 100)
+    private String password;
+
     @Column(name = "last_login")
     private Instant lastLogin;
 

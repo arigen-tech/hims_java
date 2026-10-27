@@ -9,12 +9,16 @@ import com.hims.jwt.JwtHelper;
 import com.hims.projection.PatientVisitStatusCountProjection;
 import com.hims.request.LoginRequest;
 import com.hims.request.OtpRequest;
+import com.hims.request.ForgotPatientPasswordRequest;
+import com.hims.request.PatientPasswordLoginRequest;
+import com.hims.request.ResetPatientPasswordRequest;
 import com.hims.request.RefreshTokenRequest;
 import com.hims.response.*;
 import com.hims.service.MasEmployeeService;
 import com.hims.service.BillingService;
 import com.hims.service.AuthService;
 import com.hims.service.MobileLoginService;
+import com.hims.service.PatientPasswordService;
 import com.hims.utils.ResponseUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -54,6 +58,7 @@ public class MobileController {
     
     private final PatientLoginRepository patientLoginRepository;
     private final PatientRepository patientRepository;
+    private final PatientPasswordService patientPasswordService;
 
 
 
@@ -61,6 +66,24 @@ public class MobileController {
     @PostMapping("/mLogin")
     public ResponseEntity<ApiResponse> loginResponse(@RequestBody LoginRequest request) {
         return new ResponseEntity<>(mobileLoginService.loginRequest(request), HttpStatus.OK);
+    }
+
+    @PostMapping("/patientPasswordLogin")
+    public ApiResponse<AuthResponse> patientPasswordLogin(
+            @RequestBody @Valid PatientPasswordLoginRequest request) {
+        return patientPasswordService.login(request);
+    }
+
+    @PostMapping("/forgotPatientPassword")
+    public ApiResponse<MobileLoginResponce> forgotPatientPassword(
+            @RequestBody @Valid ForgotPatientPasswordRequest request) {
+        return patientPasswordService.requestPasswordReset(request);
+    }
+
+    @PostMapping("/resetPatientPassword")
+    public ApiResponse<String> resetPatientPassword(
+            @RequestBody @Valid ResetPatientPasswordRequest request) {
+        return patientPasswordService.resetPassword(request);
     }
 
     @PostMapping("/switchPatient")
