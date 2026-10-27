@@ -1,5 +1,6 @@
 package com.hims.service;
 
+import com.hims.entity.Patient;
 import com.hims.projection.PatientProjection;
 import com.hims.request.*;
 import com.hims.response.*;
@@ -39,6 +40,8 @@ public interface RegistrationService {
     ApiResponse<List<?>> getAppointmentSummaryReport(Long hospitalId, Long departmentId, Long doctorId, LocalDate fromDate, LocalDate toDate,Integer flag);
 
     boolean checkDuplicatePatient(String firstName,  LocalDate dob, Long gender, String mobile, Long relation);
+
+    Boolean saveAbhaDetails(Patient patient, PatientRequest patientRequest);
 
 }
 

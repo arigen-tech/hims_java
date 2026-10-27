@@ -255,4 +255,5 @@ public class AppConstants {
 
     public static final String COMPATIBLE = "compatible";
     public static final String INCOMPATIBLE = "incompatible";
+    public static final String STATUS_I = "I";
 }

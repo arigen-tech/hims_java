@@ -12,9 +12,11 @@ import com.hims.request.MasDistrictRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasDistrictResponse;
 import com.hims.response.UserContext;
+import com.hims.service.LgdStateAndDistrictLookupService;
 import com.hims.service.MasDistrictService;
 import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,21 +30,21 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class MasDistrictServiceImpl implements MasDistrictService {
 
     private static final Logger log = LoggerFactory.getLogger(MasDistrictServiceImpl.class);
 
-    @Autowired
-    private MasDistrictRepository masDistrictRepository;
 
-    @Autowired
-    private MasStateRepository masStateRepository;
+    private final MasDistrictRepository masDistrictRepository;
 
-    @Autowired
-    private UserContextService userContextService;
+    private final MasStateRepository masStateRepository;
 
-    @Autowired
-    private UserRepo userRepo;
+    private final UserContextService userContextService;
+
+    private final UserRepo userRepo;
+
+    private final LgdStateAndDistrictLookupService lgdStateAndDistrictLookupService;
 
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -73,6 +75,12 @@ public class MasDistrictServiceImpl implements MasDistrictService {
             district.setLasChBy(String.valueOf(userContext.getUserId()));
             district.setLastChgDate(Instant.now());
             district.setState(state);
+            district.setLgdDistrictCode(
+                    lgdStateAndDistrictLookupService.getLgdDistrictCode(
+                            request.getDistrictName(),
+                            state.getLgdStateCode()
+                    )
+            );
 
             MasDistrict savedDistrict = masDistrictRepository.save(district);
             return ResponseUtils.createSuccessResponse(mapToResponse(savedDistrict), new TypeReference<>() {
@@ -132,6 +140,12 @@ public class MasDistrictServiceImpl implements MasDistrictService {
                 district.setLasChBy(String.valueOf(userContext.getUserId()));
                 district.setLastChgDate(Instant.now());
                 district.setState(newState);
+                district.setLgdDistrictCode(
+                        lgdStateAndDistrictLookupService.getLgdDistrictCode(
+                                request.getDistrictName(),
+                                newState.getLgdStateCode()
+                        )
+                );
                 masDistrictRepository.save(district);
                 return ResponseUtils.createSuccessResponse(mapToResponse(district), new TypeReference<>() {
                 });
@@ -194,6 +208,7 @@ public class MasDistrictServiceImpl implements MasDistrictService {
         response.setLasChBy(district.getLasChBy());
         response.setLastChgDate(district.getLastChgDate());
         response.setStateId(district.getState().getId());
+        response.setLgdDistrictCode(district.getLgdDistrictCode());
         return response;
     }
 }

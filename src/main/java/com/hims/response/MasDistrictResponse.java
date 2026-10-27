@@ -15,4 +15,5 @@ public class MasDistrictResponse {
     private String lasChBy;
     private Instant lastChgDate;
     private Long stateId;
+    private String lgdDistrictCode;
 }

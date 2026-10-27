@@ -46,4 +46,7 @@ public class MasState {
     @JoinColumn(name = "country_id")
     private MasCountry country;
 
+    @Column(name = "lgd_state_code", length = 20)
+    private String lgdStateCode;
+
 }

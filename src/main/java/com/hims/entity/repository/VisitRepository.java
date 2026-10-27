@@ -1091,7 +1091,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
         AND v.department_id = :departmentId
           AND DATE(v.visit_date) = CURRENT_DATE
         AND v.billing_status = :billingStatus
-        AND v.visit_status = :visitStatus
+        AND v.visit_status IN ( :visitStatuses)
 
         AND (
             :patientName IS NULL OR :patientName = '' OR
@@ -1125,7 +1125,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
         WHERE v.hospital_id = :hospitalId
         AND v.department_id = :departmentId
         AND v.billing_status = :billingStatus
-        AND v.visit_status = :visitStatus
+        AND v.visit_status IN ( :visitStatuses)
 
         AND (
             :patientName IS NULL OR :patientName = '' OR
@@ -1154,7 +1154,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
             @Param("hospitalId") Long hospitalId,
             @Param("departmentId") Long departmentId,
             @Param("billingStatus") String billingStatus,
-            @Param("visitStatus") String visitStatus,
+            @Param("visitStatuses") List<String> visitStatuses,
             @Param("patientName") String patientName,
             @Param("mobileNumber") String mobileNumber,
             @Param("doctorId") Long doctorId,

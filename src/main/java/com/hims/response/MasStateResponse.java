@@ -15,4 +15,5 @@ public class MasStateResponse {
     private Instant lastChgDate;
     private String lastChgTime;
     private Long countryId;
+    private String lgdStateCode;
 }
