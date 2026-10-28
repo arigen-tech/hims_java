@@ -1,0 +1,566 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Billing_refund_details" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="9af9c93e-9e9f-4bdb-83f5-884e9862c06d">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<parameter name="patientName" class="java.lang.String"/>
+	<parameter name="mobileNo" class="java.lang.String"/>
+	<parameter name="billingService" class="java.lang.String"/>
+	<parameter name="refundStatus" class="java.lang.String"/>
+	<parameter name="paymentModeId" class="java.lang.Integer"/>
+	<parameter name="path" class="java.lang.String">
+		<defaultValueExpression><![CDATA["D:\\hims_java\\src\\main\\resources\\Assets\\arigen_health.png"]]></defaultValueExpression>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[SELECT
+    v.visit_id AS visitId,
+    bh.patient_id AS patientId,
+    bh.bill_hd_id AS billingHeaderId,
+    TRIM(CONCAT(
+        COALESCE(p.p_fn, ''), ' ',
+        COALESCE(p.p_mn, ''), ' ',
+        COALESCE(p.p_ln, '')
+    )) AS patientName,
+    p.p_mobile_number AS mobileNo,
+    p.p_mobile_number AS mobileNumber,
+    p.p_age AS age,
+    g.gender_name AS gender,
+    v.doctor_id AS doctorId,
+    v.doctor_name AS doctorName,
+    v.department_id AS departmentId,
+    DATE(v.visit_date) AS appointmentDate,
+    CONCAT(
+        TO_CHAR(v.start_time, 'HH24:MI'),
+        ' to ',
+        TO_CHAR(v.end_time, 'HH24:MI')
+    ) AS appointmentTime,
+    v.cancelled_datetime AS cancellationDateTime,
+    v.cancelled_by AS cancelledBy,
+    r.reason_name AS cancellationReason,
+    dt.department_type_name AS billingType,
+    v.visit_date AS date,
+    bh.bill_date AS billDate,
+    v.cancelled_datetime AS cancelledDate,
+    CAST(COALESCE(bh.net_amount, 0) AS BIGINT) AS billingAmount,
+    pd.payment_id AS paymentId,
+    pr.refund_id AS refundId,
+    pr.refund_amount AS refundAmount,
+    pr.refund_reference_no AS refundReferenceNo,
+    pr.refund_reason AS refundReason,
+    pr.gateway_refund_id AS gatewayRefundId,
+    pr.refund_processed_at AS refundDate,
+    CASE
+        WHEN mps.payment_status_code = 'REFUNDED' THEN
+            CASE
+                WHEN pr.gateway_reference_type IS NULL
+                     OR pr.gateway_reference_no IS NULL
+                THEN 'PROCESSED'
+                ELSE 'REFUNDED'
+            END
+        ELSE 'PENDING'
+    END AS refundStatus,
+    mpm.payment_mode_id AS paymentModeId,
+    mpm.mode_code AS paymentModeCode,
+    mpm.mode_name AS paymentModeName,
+    d.department_name AS departmentName
+FROM payment_refund pr
+INNER JOIN payment_details_v2 pd
+    ON pd.payment_id = pr.payment_id
+INNER JOIN billing_header bh
+    ON bh.bill_hd_id = pd.billing_hd_id
+INNER JOIN patient p
+    ON p.patient_id = bh.patient_id
+INNER JOIN visit v
+    ON v.visit_id = bh.visit_id
+LEFT JOIN mas_gender g
+    ON g.id = p.p_gender_id
+LEFT JOIN mas_department d
+    ON d.department_id = v.department_id
+LEFT JOIN mas_department_type dt
+    ON dt.department_type_id = d.department_type_id
+LEFT JOIN mas_payment_mode mpm
+    ON mpm.payment_mode_id = pr.refund_mode_id
+LEFT JOIN mas_payment_status mps
+    ON mps.payment_status_id = pr.refund_status_id
+LEFT JOIN mas_appointment_change_reason r
+    ON r.reason_id = v.cancelled_reason_id
+WHERE LOWER(v.visit_status) = 'c'
+    AND LOWER(v.billing_status) = 'y'
+    AND COALESCE(bh.net_amount, 0) > 0
+    AND (
+        $P{patientName} IS NULL
+        OR $P{patientName} = ''
+        OR LOWER(CONCAT(
+            COALESCE(p.p_fn, ''), ' ',
+            COALESCE(p.p_mn, ''), ' ',
+            COALESCE(p.p_ln, '')
+        )) ILIKE LOWER(CONCAT('%', $P{patientName}, '%'))
+    )
+    AND (
+        $P{mobileNo} IS NULL
+        OR $P{mobileNo} = ''
+        OR p.p_mobile_number LIKE CONCAT('%', $P{mobileNo}, '%')
+    )
+    AND (
+        $P{billingService} IS NULL
+        OR $P{billingService} = ''
+        OR LOWER(COALESCE(dt.department_type_code, ''))
+            LIKE LOWER(CONCAT('%', $P{billingService}, '%'))
+    )
+    AND (
+        $P{refundStatus} IS NULL
+        OR $P{refundStatus} = ''
+        OR (
+            CASE
+                WHEN mps.payment_status_code = 'REFUNDED' THEN
+                    CASE
+                        WHEN pr.gateway_reference_type IS NULL
+                             OR pr.gateway_reference_no IS NULL
+                        THEN 'PROCESSED'
+                        ELSE 'REFUNDED'
+                    END
+                ELSE 'PENDING'
+            END
+        ) = $P{refundStatus}
+    )
+    AND (
+        $P{paymentModeId} IS NULL
+        OR pr.refund_mode_id = $P{paymentModeId}
+    )
+ORDER BY pr.refund_requested_at DESC]]>
+	</queryString>
+	<field name="visitid" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="visitid"/>
+		<property name="com.jaspersoft.studio.field.label" value="visitid"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="visit"/>
+	</field>
+	<field name="patientid" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="patientid"/>
+		<property name="com.jaspersoft.studio.field.label" value="patientid"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="billingheaderid" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="billingheaderid"/>
+		<property name="com.jaspersoft.studio.field.label" value="billingheaderid"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="patientname" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patientname"/>
+		<property name="com.jaspersoft.studio.field.label" value="patientname"/>
+	</field>
+	<field name="mobileno" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="mobileno"/>
+		<property name="com.jaspersoft.studio.field.label" value="mobileno"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="mobilenumber" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="mobilenumber"/>
+		<property name="com.jaspersoft.studio.field.label" value="mobilenumber"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="age" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="age"/>
+		<property name="com.jaspersoft.studio.field.label" value="age"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="gender" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gender"/>
+		<property name="com.jaspersoft.studio.field.label" value="gender"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_gender"/>
+	</field>
+	<field name="doctorid" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="doctorid"/>
+		<property name="com.jaspersoft.studio.field.label" value="doctorid"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="visit"/>
+	</field>
+	<field name="doctorname" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="doctorname"/>
+		<property name="com.jaspersoft.studio.field.label" value="doctorname"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="visit"/>
+	</field>
+	<field name="departmentid" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="departmentid"/>
+		<property name="com.jaspersoft.studio.field.label" value="departmentid"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="visit"/>
+	</field>
+	<field name="appointmentdate" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="appointmentdate"/>
+		<property name="com.jaspersoft.studio.field.label" value="appointmentdate"/>
+	</field>
+	<field name="appointmenttime" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="appointmenttime"/>
+		<property name="com.jaspersoft.studio.field.label" value="appointmenttime"/>
+	</field>
+	<field name="cancellationdatetime" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="cancellationdatetime"/>
+		<property name="com.jaspersoft.studio.field.label" value="cancellationdatetime"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="visit"/>
+	</field>
+	<field name="cancelledby" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="cancelledby"/>
+		<property name="com.jaspersoft.studio.field.label" value="cancelledby"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="visit"/>
+	</field>
+	<field name="cancellationreason" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="cancellationreason"/>
+		<property name="com.jaspersoft.studio.field.label" value="cancellationreason"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_appointment_change_reason"/>
+	</field>
+	<field name="billingtype" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="billingtype"/>
+		<property name="com.jaspersoft.studio.field.label" value="billingtype"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_department_type"/>
+	</field>
+	<field name="date" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="date"/>
+		<property name="com.jaspersoft.studio.field.label" value="date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="visit"/>
+	</field>
+	<field name="billdate" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="billdate"/>
+		<property name="com.jaspersoft.studio.field.label" value="billdate"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="billing_header"/>
+	</field>
+	<field name="cancelleddate" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="cancelleddate"/>
+		<property name="com.jaspersoft.studio.field.label" value="cancelleddate"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="visit"/>
+	</field>
+	<field name="billingamount" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="billingamount"/>
+		<property name="com.jaspersoft.studio.field.label" value="billingamount"/>
+	</field>
+	<field name="paymentid" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="paymentid"/>
+		<property name="com.jaspersoft.studio.field.label" value="paymentid"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_details_v2"/>
+	</field>
+	<field name="refundid" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="refundid"/>
+		<property name="com.jaspersoft.studio.field.label" value="refundid"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_refund"/>
+	</field>
+	<field name="refundamount" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="refundamount"/>
+		<property name="com.jaspersoft.studio.field.label" value="refundamount"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_refund"/>
+	</field>
+	<field name="refundreferenceno" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="refundreferenceno"/>
+		<property name="com.jaspersoft.studio.field.label" value="refundreferenceno"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_refund"/>
+	</field>
+	<field name="refundreason" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="refundreason"/>
+		<property name="com.jaspersoft.studio.field.label" value="refundreason"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_refund"/>
+	</field>
+	<field name="gatewayrefundid" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gatewayrefundid"/>
+		<property name="com.jaspersoft.studio.field.label" value="gatewayrefundid"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_refund"/>
+	</field>
+	<field name="refunddate" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="refunddate"/>
+		<property name="com.jaspersoft.studio.field.label" value="refunddate"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="payment_refund"/>
+	</field>
+	<field name="refundstatus" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="refundstatus"/>
+		<property name="com.jaspersoft.studio.field.label" value="refundstatus"/>
+	</field>
+	<field name="paymentmodeid" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="paymentmodeid"/>
+		<property name="com.jaspersoft.studio.field.label" value="paymentmodeid"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_payment_mode"/>
+	</field>
+	<field name="paymentmodecode" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="paymentmodecode"/>
+		<property name="com.jaspersoft.studio.field.label" value="paymentmodecode"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_payment_mode"/>
+	</field>
+	<field name="paymentmodename" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="paymentmodename"/>
+		<property name="com.jaspersoft.studio.field.label" value="paymentmodename"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_payment_mode"/>
+	</field>
+	<field name="departmentname" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="departmentname"/>
+		<property name="com.jaspersoft.studio.field.label" value="departmentname"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_department"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="80" splitType="Stretch">
+			<image>
+				<reportElement x="15" y="9" width="180" height="69" uuid="8db76fa0-bb4c-4eb4-9a72-f2c7375fb3c7"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="0" y="34" width="802" height="23" uuid="2827b272-29b4-4bf7-ace1-6c7050bcc9da"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Billing Refund Details]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="9" width="802" height="23" uuid="e8c03028-3328-4516-91bd-5ed73642f779"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="16" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Arigen Hospital]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="586" y="67" width="89" height="13" uuid="4c8f37cd-fa71-4a3c-ab18-19d804d5dcfa"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Generated on :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="680" y="67" width="112" height="13" uuid="0379e986-c79d-49c3-819b-0405a74ae45a"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new Date()]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="40" splitType="Stretch">
+			<line>
+				<reportElement key="line-35" x="543" y="7" width="1" height="33" uuid="10eb22e2-c992-46d9-99cd-cd52d21343cc"/>
+			</line>
+			<staticText>
+				<reportElement x="379" y="11" width="59" height="24" uuid="a275bd78-d91e-49a8-8fb6-52305dfe2faa">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Billing Amount]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="93" y="7" width="1" height="33" uuid="5af0473a-3583-4a51-94df-56edd6ae107f"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="442" y="7" width="1" height="33" uuid="11a10fb3-9e89-4e31-8701-669fe0980839"/>
+			</line>
+			<staticText>
+				<reportElement x="177" y="11" width="51" height="24" uuid="4c45b29f-79ef-480a-ad0b-85a50143f36b">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Age / Gender]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-1" x="0" y="7" width="1" height="33" uuid="78c636d1-3f19-4455-bbd7-f87718e5d6a8"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="173" y="7" width="1" height="33" uuid="8a9225b1-3b4d-43b7-93b0-c59958281352"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="374" y="7" width="1" height="33" uuid="1b37ed6e-fdf8-43f8-a5c9-f28351701c36"/>
+			</line>
+			<staticText>
+				<reportElement x="745" y="11" width="47" height="24" uuid="6503b561-0db7-4f93-86eb-3e2769158554"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Refund Status]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="237" y="11" width="72" height="13" uuid="55ec7132-893b-4c52-8bf8-5ac399219e45"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Billing Type]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="546" y="11" width="94" height="24" uuid="2c6ee5a9-6d10-4b86-b22c-95251ce79b66">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cancelled Date]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="313" y="7" width="1" height="33" uuid="6daa8749-dc54-4494-bb52-9baa410c61b2"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="642" y="7" width="1" height="33" uuid="a0e50ea5-5708-4fce-af8e-e9d683ac0e6d"/>
+			</line>
+			<staticText>
+				<reportElement x="98" y="11" width="70" height="13" uuid="561cef9e-ad1b-4a7d-a260-9d7c7f948d88"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Mobile No.]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="231" y="7" width="1" height="33" uuid="d421a30a-dee5-4819-a99b-1a759c689595"/>
+			</line>
+			<line>
+				<reportElement x="0" y="39" width="802" height="1" uuid="54f6b490-46f2-4c76-8868-722c6ed3da38"/>
+			</line>
+			<staticText>
+				<reportElement x="446" y="11" width="94" height="13" uuid="53fb86aa-ac23-4903-a762-58afc7a21621"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Billing Date]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="801" y="8" width="1" height="32" uuid="fbe6b72a-9b4d-4e86-b4a7-92d2ab5e6a08"/>
+			</line>
+			<staticText>
+				<reportElement x="4" y="11" width="86" height="13" uuid="a33dbfeb-c3ac-4062-ac64-83272fa39723"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Patient Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="317" y="11" width="54" height="13" uuid="4acde0f0-a3b9-4a97-a201-b6b64eebadf6"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Payment Mode]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="7" width="802" height="1" uuid="eb139e24-b2d1-4706-9892-11547386c53f"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="742" y="7" width="1" height="33" uuid="f727141d-a256-455f-a9ef-a90da1863979"/>
+			</line>
+			<staticText>
+				<reportElement x="645" y="11" width="94" height="24" uuid="4ae330b9-5555-4b31-b97f-2edcee24106d"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Refund Process Date]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="23" splitType="Stretch">
+			<line>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="543" y="-11" width="1" height="33" uuid="6dbb3cb6-8aab-4847-ae93-bd8e87e1a6f0"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="379" y="4" width="59" height="13" uuid="fbfd1abd-d1fc-4f3d-b348-4b7edf37dcf6">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{billingamount}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="93" y="-11" width="1" height="33" uuid="b2b3c44c-edfb-4fb4-bf27-5da5c6f181a8"/>
+			</line>
+			<line>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="442" y="-11" width="1" height="33" uuid="3209fe14-6618-47f4-b80d-70e2eb6c0d32"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="177" y="5" width="51" height="13" uuid="20fc4dff-8951-45bb-bb23-371d034f03b9">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{age} + " / " + $F{gender}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-1" positionType="Float" stretchType="RelativeToTallestObject" x="0" y="-11" width="1" height="33" uuid="1730e131-ea44-4ac5-9bc5-9508f0f86345"/>
+			</line>
+			<line>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="173" y="-11" width="1" height="33" uuid="1df49665-bce3-4ca7-ac4b-824dbc9300f0"/>
+			</line>
+			<line>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="374" y="-11" width="1" height="33" uuid="797e15e3-206a-4e0a-be0f-8bacd37df502"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="237" y="4" width="72" height="13" uuid="35fd2c60-4fad-4d68-aa78-9377c6dde528"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{billingtype}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="546" y="4" width="94" height="13" uuid="1242613e-e09d-4436-8f82-0c8c35e7d7c4">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cancelleddate}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="313" y="-11" width="1" height="33" uuid="45443e6a-a9c3-4409-9f04-1d66b9d0fc25"/>
+			</line>
+			<line>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="642" y="-11" width="1" height="33" uuid="c8655480-95dd-4214-8b20-1b9eefb85cf7"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="98" y="5" width="70" height="13" uuid="e6bb183c-1588-4215-a205-a881dda54619"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{mobileno}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="231" y="-11" width="1" height="33" uuid="8651f0e9-8c93-4e6f-8f5d-48f6072a5de3"/>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="0" y="22" width="802" height="1" uuid="b2730a8b-70d2-47ec-a274-90fa8e91a669"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="446" y="4" width="94" height="13" uuid="5e44a07c-1890-40cd-a438-271f767cd9ff"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{billdate}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="4" y="5" width="86" height="13" uuid="ff19b3f3-49a5-4406-bcab-2a9b0741c6e8"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{patientname}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="317" y="4" width="54" height="13" uuid="aa6d2e53-94a0-4e3c-a79a-c881fb2bb24f"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{paymentmodename}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="645" y="4" width="94" height="13" uuid="6c3223c2-fc55-4501-9ad2-e2e15e7fe329"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{refunddate}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="801" y="-10" width="1" height="32" uuid="a628ebff-c91b-43ca-8b5b-4ad44871a359"/>
+			</line>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement x="745" y="4" width="54" height="13" uuid="fc3ec13e-5d55-4845-8d53-47db439ca13a"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{refundstatus}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToTallestObject" x="742" y="-11" width="1" height="33" uuid="b1a4f6c5-0ee1-4d00-9e27-baeec545b579"/>
+			</line>
+		</band>
+	</detail>
+</jasperReport>

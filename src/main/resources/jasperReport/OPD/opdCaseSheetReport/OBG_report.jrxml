@@ -1,0 +1,1293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="gynac_report" pageWidth="421" pageHeight="595" orientation="Landscape" columnWidth="421" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="b9d8255e-9721-4c3d-8f36-ef676b4039f3">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="visit_id" class="java.lang.Long"/>
+	<queryString>
+		<![CDATA[SELECT
+    v.visit_id,
+    p.patient_id,
+    obg.obg_id,
+    obg.opd_date,
+    COALESCE(obg.obstetric_history_notes, '') AS obstetric_history_notes,
+    COALESCE(obg.gravida, '') AS gravida,
+    COALESCE(obg.para, '') AS para,
+    COALESCE(obg.abortions, '') AS abortions,
+    COALESCE(obg.living_children, '') AS living_children,
+    COALESCE(obg.conception_type, '') AS conception_type,
+    COALESCE(obg.married_life_years, '') AS married_life_years,
+    COALESCE(obg.consanguinity, '') AS consanguinity,
+    COALESCE(obg.booked_status, '') AS booked_status,
+    COALESCE(obg.immunised_status, '') AS immunised_status,
+    COALESCE(obg.trimester, '') AS trimester,
+    COALESCE(obg.gc, '') AS gc,
+    COALESCE(obg.pallor, '') AS pallor,
+    COALESCE(obg.pedal_edema, '') AS pedal_edema,
+    COALESCE(obg.respiratory_system, '') AS respiratory_system,
+    COALESCE(obg.breath_sounds, '') AS breath_sounds,
+    COALESCE(obg.cardiovascular_s1, '') AS cardiovascular_s1,
+    COALESCE(obg.cardiovascular_s2, '') AS cardiovascular_s2,
+    COALESCE(obg.cardiovascular_murmurs, '') AS cardiovascular_murmurs,
+    COALESCE(obg.tt_status, '') AS tt_status,
+    COALESCE(obg.fhr, '') AS fhr,
+    COALESCE(obg.presentation, '') AS presentation,
+    COALESCE(obg.palpation_notes, '') AS palpation_notes,
+    COALESCE(obg.pv_done, '') AS pv_done,
+    COALESCE(obg.uterus_height, '') AS uterus_height,
+    COALESCE(obg.uterus_height_specify, '') AS uterus_height_specify,
+    COALESCE(obg.antenatal_remarks, '') AS antenatal_remarks,
+    COALESCE(obg.menarche_age, '') AS menarche_age,
+    COALESCE(obg.cycles, '') AS cycles,
+    COALESCE(obg.range_days, '') AS range_days,
+    COALESCE(obg.interval_days, '') AS interval_days,
+    COALESCE(obg.menstrual_flow, '') AS menstrual_flow,
+    COALESCE(obg.menstrual_pause, '') AS menstrual_pause,
+    COALESCE(obg.pv_os_dilatation, '') AS pv_os_dilatation,
+    COALESCE(obg.pv_effacement, '') AS pv_effacement,
+    COALESCE(obg.pv_membrane, '') AS pv_membrane,
+    COALESCE(obg.pv_liquor, '') AS pv_liquor,
+    COALESCE(obg.cervix_consistency, '') AS cervix_consistency,
+    COALESCE(obg.cervix_position, '') AS cervix_position,
+    COALESCE(obg.cervix_length, '') AS cervix_length,
+    COALESCE(obg.station_presenting, '') AS station_presenting,
+    COALESCE(obg.fetal_head, '') AS fetal_head,
+    COALESCE(obg.pelvis, '') AS pelvis,
+    COALESCE(obg.gyn_flow, '') AS gyn_flow,
+    COALESCE(obg.gyn_menarche_age, '') AS gyn_menarche_age,
+    obg.gyn_last_menstrual_period,
+    COALESCE(obg.gyn_menstrual_pattern, '') AS gyn_menstrual_pattern,
+    COALESCE(obg.gyn_cycle_type, '') AS gyn_cycle_type,
+    COALESCE(obg.sterilisation, '') AS sterilisation,
+    COALESCE(obg.abdomen_inspection, '') AS abdomen_inspection,
+    COALESCE(obg.abdomen_palpation, '') AS abdomen_palpation,
+    COALESCE(obg.pap_smear_result, '') AS pap_smear_result,
+    COALESCE(obg.local_examination_notes, '') AS local_examination_notes,
+    COALESCE(obg.per_speculum, '') AS per_speculum,
+    COALESCE(obg.bimanual_examination, '') AS bimanual_examination,
+    COALESCE(obg.gyn_obstetric_history, '') AS gyn_obstetric_history
+from opd_obg_details obg
+LEFT JOIN patient p ON p.patient_id = obg.patient_id
+LEFT JOIN visit v ON v.visit_id = obg.visit_id 
+	AND obg.patient_id = p.patient_id 
+WHERE obg.visit_id = $P{visit_id}]]>
+	</queryString>
+	<field name="visit_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="visit_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="visit_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="visit"/>
+	</field>
+	<field name="patient_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="patient_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="obg_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="obg_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="obg_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_obg_details"/>
+	</field>
+	<field name="opd_date" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="opd_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="opd_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_obg_details"/>
+	</field>
+	<field name="obstetric_history_notes" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="obstetric_history_notes"/>
+		<property name="com.jaspersoft.studio.field.label" value="obstetric_history_notes"/>
+	</field>
+	<field name="gravida" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gravida"/>
+		<property name="com.jaspersoft.studio.field.label" value="gravida"/>
+	</field>
+	<field name="para" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="para"/>
+		<property name="com.jaspersoft.studio.field.label" value="para"/>
+	</field>
+	<field name="abortions" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="abortions"/>
+		<property name="com.jaspersoft.studio.field.label" value="abortions"/>
+	</field>
+	<field name="living_children" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="living_children"/>
+		<property name="com.jaspersoft.studio.field.label" value="living_children"/>
+	</field>
+	<field name="conception_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="conception_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="conception_type"/>
+	</field>
+	<field name="married_life_years" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="married_life_years"/>
+		<property name="com.jaspersoft.studio.field.label" value="married_life_years"/>
+	</field>
+	<field name="consanguinity" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="consanguinity"/>
+		<property name="com.jaspersoft.studio.field.label" value="consanguinity"/>
+	</field>
+	<field name="booked_status" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="booked_status"/>
+		<property name="com.jaspersoft.studio.field.label" value="booked_status"/>
+	</field>
+	<field name="immunised_status" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="immunised_status"/>
+		<property name="com.jaspersoft.studio.field.label" value="immunised_status"/>
+	</field>
+	<field name="trimester" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="trimester"/>
+		<property name="com.jaspersoft.studio.field.label" value="trimester"/>
+	</field>
+	<field name="gc" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gc"/>
+		<property name="com.jaspersoft.studio.field.label" value="gc"/>
+	</field>
+	<field name="pallor" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pallor"/>
+		<property name="com.jaspersoft.studio.field.label" value="pallor"/>
+	</field>
+	<field name="pedal_edema" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pedal_edema"/>
+		<property name="com.jaspersoft.studio.field.label" value="pedal_edema"/>
+	</field>
+	<field name="respiratory_system" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="respiratory_system"/>
+		<property name="com.jaspersoft.studio.field.label" value="respiratory_system"/>
+	</field>
+	<field name="breath_sounds" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="breath_sounds"/>
+		<property name="com.jaspersoft.studio.field.label" value="breath_sounds"/>
+	</field>
+	<field name="cardiovascular_s1" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="cardiovascular_s1"/>
+		<property name="com.jaspersoft.studio.field.label" value="cardiovascular_s1"/>
+	</field>
+	<field name="cardiovascular_s2" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="cardiovascular_s2"/>
+		<property name="com.jaspersoft.studio.field.label" value="cardiovascular_s2"/>
+	</field>
+	<field name="cardiovascular_murmurs" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="cardiovascular_murmurs"/>
+		<property name="com.jaspersoft.studio.field.label" value="cardiovascular_murmurs"/>
+	</field>
+	<field name="tt_status" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="tt_status"/>
+		<property name="com.jaspersoft.studio.field.label" value="tt_status"/>
+	</field>
+	<field name="fhr" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="fhr"/>
+		<property name="com.jaspersoft.studio.field.label" value="fhr"/>
+	</field>
+	<field name="presentation" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="presentation"/>
+		<property name="com.jaspersoft.studio.field.label" value="presentation"/>
+	</field>
+	<field name="palpation_notes" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="palpation_notes"/>
+		<property name="com.jaspersoft.studio.field.label" value="palpation_notes"/>
+	</field>
+	<field name="pv_done" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pv_done"/>
+		<property name="com.jaspersoft.studio.field.label" value="pv_done"/>
+	</field>
+	<field name="uterus_height" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="uterus_height"/>
+		<property name="com.jaspersoft.studio.field.label" value="uterus_height"/>
+	</field>
+	<field name="uterus_height_specify" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="uterus_height_specify"/>
+		<property name="com.jaspersoft.studio.field.label" value="uterus_height_specify"/>
+	</field>
+	<field name="antenatal_remarks" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="antenatal_remarks"/>
+		<property name="com.jaspersoft.studio.field.label" value="antenatal_remarks"/>
+	</field>
+	<field name="menarche_age" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="menarche_age"/>
+		<property name="com.jaspersoft.studio.field.label" value="menarche_age"/>
+	</field>
+	<field name="cycles" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="cycles"/>
+		<property name="com.jaspersoft.studio.field.label" value="cycles"/>
+	</field>
+	<field name="range_days" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="range_days"/>
+		<property name="com.jaspersoft.studio.field.label" value="range_days"/>
+	</field>
+	<field name="interval_days" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="interval_days"/>
+		<property name="com.jaspersoft.studio.field.label" value="interval_days"/>
+	</field>
+	<field name="menstrual_flow" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="menstrual_flow"/>
+		<property name="com.jaspersoft.studio.field.label" value="menstrual_flow"/>
+	</field>
+	<field name="menstrual_pause" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="menstrual_pause"/>
+		<property name="com.jaspersoft.studio.field.label" value="menstrual_pause"/>
+	</field>
+	<field name="pv_os_dilatation" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pv_os_dilatation"/>
+		<property name="com.jaspersoft.studio.field.label" value="pv_os_dilatation"/>
+	</field>
+	<field name="pv_effacement" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pv_effacement"/>
+		<property name="com.jaspersoft.studio.field.label" value="pv_effacement"/>
+	</field>
+	<field name="pv_membrane" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pv_membrane"/>
+		<property name="com.jaspersoft.studio.field.label" value="pv_membrane"/>
+	</field>
+	<field name="pv_liquor" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pv_liquor"/>
+		<property name="com.jaspersoft.studio.field.label" value="pv_liquor"/>
+	</field>
+	<field name="cervix_consistency" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="cervix_consistency"/>
+		<property name="com.jaspersoft.studio.field.label" value="cervix_consistency"/>
+	</field>
+	<field name="cervix_position" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="cervix_position"/>
+		<property name="com.jaspersoft.studio.field.label" value="cervix_position"/>
+	</field>
+	<field name="cervix_length" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="cervix_length"/>
+		<property name="com.jaspersoft.studio.field.label" value="cervix_length"/>
+	</field>
+	<field name="station_presenting" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="station_presenting"/>
+		<property name="com.jaspersoft.studio.field.label" value="station_presenting"/>
+	</field>
+	<field name="fetal_head" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="fetal_head"/>
+		<property name="com.jaspersoft.studio.field.label" value="fetal_head"/>
+	</field>
+	<field name="pelvis" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pelvis"/>
+		<property name="com.jaspersoft.studio.field.label" value="pelvis"/>
+	</field>
+	<field name="gyn_flow" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gyn_flow"/>
+		<property name="com.jaspersoft.studio.field.label" value="gyn_flow"/>
+	</field>
+	<field name="gyn_menarche_age" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gyn_menarche_age"/>
+		<property name="com.jaspersoft.studio.field.label" value="gyn_menarche_age"/>
+	</field>
+	<field name="gyn_last_menstrual_period" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="gyn_last_menstrual_period"/>
+		<property name="com.jaspersoft.studio.field.label" value="gyn_last_menstrual_period"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_obg_details"/>
+	</field>
+	<field name="gyn_menstrual_pattern" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gyn_menstrual_pattern"/>
+		<property name="com.jaspersoft.studio.field.label" value="gyn_menstrual_pattern"/>
+	</field>
+	<field name="gyn_cycle_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gyn_cycle_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="gyn_cycle_type"/>
+	</field>
+	<field name="sterilisation" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="sterilisation"/>
+		<property name="com.jaspersoft.studio.field.label" value="sterilisation"/>
+	</field>
+	<field name="abdomen_inspection" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="abdomen_inspection"/>
+		<property name="com.jaspersoft.studio.field.label" value="abdomen_inspection"/>
+	</field>
+	<field name="abdomen_palpation" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="abdomen_palpation"/>
+		<property name="com.jaspersoft.studio.field.label" value="abdomen_palpation"/>
+	</field>
+	<field name="pap_smear_result" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="pap_smear_result"/>
+		<property name="com.jaspersoft.studio.field.label" value="pap_smear_result"/>
+	</field>
+	<field name="local_examination_notes" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="local_examination_notes"/>
+		<property name="com.jaspersoft.studio.field.label" value="local_examination_notes"/>
+	</field>
+	<field name="per_speculum" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="per_speculum"/>
+		<property name="com.jaspersoft.studio.field.label" value="per_speculum"/>
+	</field>
+	<field name="bimanual_examination" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="bimanual_examination"/>
+		<property name="com.jaspersoft.studio.field.label" value="bimanual_examination"/>
+	</field>
+	<field name="gyn_obstetric_history" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="gyn_obstetric_history"/>
+		<property name="com.jaspersoft.studio.field.label" value="gyn_obstetric_history"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<summary>
+		<band height="388" splitType="Immediate">
+			<staticText>
+				<reportElement positionType="Float" x="0" y="38" width="58" height="7" uuid="15966454-33c5-4b83-bea0-0569156e99b4"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Obstetric History :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="50" width="58" height="7" uuid="95d614c5-b620-46e5-8d07-0d060f00e9d9">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Consanguinity :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="50" width="58" height="7" isRemoveLineWhenBlank="true" uuid="fd55bc42-3e97-4ed9-b1d7-f3484fa4d9a0">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{consanguinity}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="38" width="58" height="7" uuid="52f13549-5c1c-4c8d-9fd4-ee94deaa96e5">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Conception :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="38" width="58" height="7" isRemoveLineWhenBlank="true" uuid="cfa67b7d-3e16-4547-a4e9-3e39f36e27f4">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{conception_type}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="273" y="38" width="58" height="7" uuid="6bb5d4f5-d5c6-4630-80c6-980e123b6ae0">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Married Life :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="335" y="38" width="58" height="7" isRemoveLineWhenBlank="true" uuid="bc77dc7e-6f5e-4b0c-abe0-58143559b38f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{married_life_years}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="62" width="58" height="14" uuid="dfb3b017-755e-41eb-b275-cf2c2c4b7ce0"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[I, II, II Trimesters :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="62" width="58" height="14" isRemoveLineWhenBlank="true" uuid="9ae23fa6-c93c-4284-8586-25912e829085"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{trimester}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="50" width="58" height="7" uuid="4a590792-cc3a-433b-86e9-ef221cf72b5b"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Booked :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="50" width="58" height="7" isRemoveLineWhenBlank="true" uuid="f5666959-c7ec-40e3-b43a-2f59cffe08f6"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{booked_status}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="273" y="50" width="58" height="7" uuid="3395d826-42c5-4587-96d2-7b6d2c795aec"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Immunised :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="335" y="50" width="58" height="7" isRemoveLineWhenBlank="true" uuid="4dfd8c2a-ec18-4d68-b13d-4a15334ab637"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{immunised_status}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="81" width="58" height="14" uuid="9e91cf91-d927-423d-94cd-9b1d8aa0e759"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PE(Per Examination):]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="81" width="58" height="14" isRemoveLineWhenBlank="true" uuid="512d6817-fb68-48da-a525-e41c2cbfd131"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pedal_edema}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="62" width="58" height="14" uuid="33346d01-1723-4026-83f6-777187cdf5ac"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[GC(Gestational Calculation) :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="62" width="58" height="14" isRemoveLineWhenBlank="true" uuid="715d5a93-337a-4937-b6b8-0ce9009d5101">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{gc}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="273" y="62" width="58" height="14" uuid="4e4fc1d2-c8a4-45dd-8b11-fae2bfdf7d09"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PA(Palpation) :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="335" y="62" width="58" height="14" isRemoveLineWhenBlank="true" uuid="517ef816-e2ed-4c95-a6a0-6212436a6c6e"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pallor}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="100" width="58" height="14" uuid="6da86261-fbf1-4f30-9315-eacc49bdab4e"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Presentation :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="100" width="58" height="14" isRemoveLineWhenBlank="true" uuid="2b462473-4d2b-4b21-bd0e-32d61f4c40b2"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{presentation}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="81" width="58" height="14" uuid="9ca14893-5a4e-4ebb-859c-f87b3bae2e28"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[TT(Tetanus Toxoid) :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="81" width="58" height="14" isRemoveLineWhenBlank="true" uuid="4ee577b9-df91-44b2-857c-4b4c9100f395">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tt_status}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="273" y="81" width="58" height="14" uuid="9c00e9f7-8cbc-4cf2-8884-dd8578b67d02"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[FHR(Fetal Heart Rate) :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="335" y="81" width="58" height="14" isRemoveLineWhenBlank="true" uuid="9fa0179b-eebd-4006-b4b9-b134b7c4e7fd"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fhr}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="119" width="58" height="14" uuid="e57a5b20-5e94-4588-b182-a03797d0530d"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Inspection-Height of Uterus]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="100" width="58" height="14" uuid="b10520b0-e2d3-4187-b66b-3d9a85512b50"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Palpation :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="273" y="100" width="58" height="14" uuid="47fe4a06-24cf-4245-896a-5c642361870a"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PV(Per Vaginal Examination) :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="119" width="58" height="14" isRemoveLineWhenBlank="true" uuid="cd9ca774-6451-44b8-9499-ca4e509ea0eb"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{uterus_height}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="100" width="58" height="14" isRemoveLineWhenBlank="true" uuid="cea2687a-60e9-4c68-9c0c-e06729679d17">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{palpation_notes}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="335" y="100" width="58" height="14" isRemoveLineWhenBlank="true" uuid="130113d5-13dd-4f43-973c-73e401152d77"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pv_done}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="118" width="58" height="14" uuid="8e43f78c-06f7-41a6-b805-e10902210012"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Specify :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="118" width="58" height="14" isRemoveLineWhenBlank="true" uuid="87476fe0-5544-49cd-bd0e-35e3c67ff468"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{uterus_height_specify}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="138" width="58" height="14" uuid="38035163-da09-44a9-8fd0-b42535d86de8"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[remarks :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="62" y="138" width="199" height="14" isRemoveLineWhenBlank="true" uuid="06acc946-f86a-44ae-82df-5b3c4144dcd9">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="22" width="220" height="13" uuid="57054424-dc32-4809-967c-f3188b475575"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Details :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="14" y="157" width="37" height="14" uuid="60fd260d-3532-48fe-a15b-2f1f618da0e2"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Obstetric Score]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="58" y="157" width="37" height="14" uuid="cfd4e470-c3f7-42aa-b5fd-192a3258144c"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Gravida]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="139" y="157" width="37" height="14" uuid="5dfa26d1-02fc-452b-9098-b33fda56971c"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Para]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="222" y="157" width="37" height="14" uuid="31e5ff7f-db5d-4150-9dbb-a231b7fa1d53"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Abortion]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="306" y="157" width="37" height="14" uuid="0d5d7a2d-2628-4199-9289-b8a66d001d58"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Living Children]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="196" width="58" height="7" uuid="e9c90ca9-12c1-41e7-bed2-13c5f4188360"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Age of Menarche :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="196" width="58" height="7" isRemoveLineWhenBlank="true" uuid="6815cda1-ab64-439e-ab67-6f5aa67ba96b"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{menarche_age}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="196" width="58" height="7" uuid="74d6ab16-9bb6-4793-bada-dd146f2a1980"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Cycles :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="196" width="58" height="7" isRemoveLineWhenBlank="true" uuid="34d97310-647f-4dc9-a9b5-d06ad1b17042"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cycles}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="335" y="196" width="58" height="7" isRemoveLineWhenBlank="true" uuid="cddd037b-cb60-4283-896f-a3cb9f592eb3"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{range_days}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="273" y="196" width="58" height="7" uuid="6e74ea0c-bdf7-459f-bf60-394444e1b125"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Range No of Days :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="208" width="58" height="7" uuid="df8f4a40-436b-404d-b74e-c96aae1b9faf"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Interval :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="208" width="58" height="7" isRemoveLineWhenBlank="true" uuid="b30c8606-d786-49bc-b073-eebb78350caa"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{interval_days}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="208" width="58" height="7" uuid="d271a44c-63f2-4e31-9b01-b2aadd1a0411"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Flow :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="208" width="58" height="7" isRemoveLineWhenBlank="true" uuid="0ebc056c-ed98-4982-a4a1-96bc1274fda7"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{menstrual_flow}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="273" y="208" width="58" height="7" uuid="c3632475-8dad-4855-afcd-1d7cf301c6b8"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Menstrual Pause :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="335" y="208" width="58" height="7" isRemoveLineWhenBlank="true" uuid="7c78482b-91f4-4477-b7fd-cbd44aa7c42f"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{menstrual_pause}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="180" width="220" height="13" uuid="0a758b31-4691-4441-a371-2cbcab733971"/>
+				<textElement markup="none">
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Menstrual History :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="238" width="58" height="14" uuid="29538985-654e-4020-887e-b7de4a0908a4"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Respiratory System :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="238" width="58" height="14" isRemoveLineWhenBlank="true" uuid="2367faa3-3ff6-4be0-a241-65cb0b4e8d72"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{respiratory_system}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="238" width="58" height="14" isRemoveLineWhenBlank="true" uuid="67bc2b72-2d61-47aa-a13f-a46ccb8f029c">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{breath_sounds}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="238" width="58" height="14" uuid="fa9c8a3c-ecb7-48cd-8582-e0ac8ac0476b">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Breath Sounds :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="222" width="220" height="13" uuid="08764e27-1b1a-4c85-b39d-656b18fdb02d"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Systemic Examination :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="275" width="58" height="7" uuid="a88ef809-019e-4660-b72c-8f2bc8f923a2">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S1 :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="275" width="58" height="7" isRemoveLineWhenBlank="true" uuid="8a2a2f44-ce93-4c8b-ac04-39521fce7908">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cardiovascular_s1}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="275" width="58" height="7" uuid="8e055bdf-41d4-4954-9d4c-7879d706e3a4">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S2 :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="275" width="58" height="7" isRemoveLineWhenBlank="true" uuid="328a65af-fc06-4ff3-a82b-e0dd9ac84c57">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cardiovascular_s2}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="335" y="275" width="58" height="7" isRemoveLineWhenBlank="true" uuid="a3ca0dab-e89f-4057-9bc3-70d5891720a3">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cardiovascular_murmurs}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="273" y="275" width="58" height="7" uuid="5822f3e1-fa6e-436a-8979-a9240d95008f">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="pixel"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Murmurs :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="259" width="220" height="13" uuid="07bd3c95-72e1-4010-b356-766bf5621e39">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Cardiovascular System :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="305" width="58" height="14" uuid="729a3a35-f320-4d53-a393-f6773858f5f5"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[OS Dilatation of cervix :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="305" width="58" height="14" isRemoveLineWhenBlank="true" uuid="99c7db66-038c-48b3-948f-ab14175f443e">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pv_os_dilatation}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="305" width="58" height="14" isRemoveLineWhenBlank="true" uuid="44ede979-14bd-4c0d-9520-8ff37263e47c">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pv_effacement}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="305" width="58" height="14" uuid="2970a79d-e3f0-4f05-80fa-b426556606b1">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Effacement of cervix :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="289" width="220" height="13" uuid="162f20e8-3658-46c4-97be-755676fd45b1">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Per Vaginal Examination :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="322" width="58" height="14" uuid="312be56c-89b0-47ee-8ad3-835bf8aab3b3"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Membrane :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="322" width="58" height="14" isRemoveLineWhenBlank="true" uuid="22a426e5-8a3e-45a2-bb82-d8a58b703da5">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pv_membrane}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="322" width="58" height="14" uuid="e19d8a50-c772-494b-984f-8f42d875245a">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Liquor :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="322" width="58" height="14" isRemoveLineWhenBlank="true" uuid="1c6e2ba9-237a-4753-8a6c-ae10dd167584">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pv_liquor}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="339" width="58" height="14" uuid="394f5575-c9ba-4763-ba58-51ebef958fc9"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Consistency of cervix :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="339" width="58" height="14" isRemoveLineWhenBlank="true" uuid="75057298-bacf-4ed4-bfb9-76b7029ecd9e">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cervix_consistency}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="339" width="58" height="14" uuid="3509c206-a595-47ea-b707-832d98c24c96">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Position of cervix :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="339" width="58" height="14" isRemoveLineWhenBlank="true" uuid="00a18f72-01ee-4dba-aa20-65a7977c00f4">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cervix_position}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="356" width="58" height="14" uuid="154ac9c3-733c-4c5b-aad6-aa1c23b3a9bf"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Length of cervix :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="356" width="58" height="14" isRemoveLineWhenBlank="true" uuid="dc453544-10c7-4461-914b-1d88efc8fbea">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{cervix_length}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="356" width="58" height="14" uuid="edc4ef8f-2dff-4f49-8a01-9c76dbaa7e3a">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Station of Presenting Part :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="356" width="58" height="14" isRemoveLineWhenBlank="true" uuid="f725ecb5-3326-4e41-b3bd-ef1a2b706975">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{station_presenting}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="0" y="374" width="58" height="14" uuid="fc0b11c5-504b-44ba-bb8e-00003504dbd7"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Head :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="374" width="58" height="14" isRemoveLineWhenBlank="true" uuid="87138605-f16c-4bc2-97fe-8c7a968eba3c">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{fetal_head}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="136" y="374" width="58" height="14" uuid="65c78c22-929a-4327-95b9-165db63e5676">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pelvis :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="198" y="374" width="58" height="14" isRemoveLineWhenBlank="true" uuid="d8be57a9-4ca1-4971-8599-78f3a57fbbc4">
+					<property name="com.jaspersoft.studio.unit.x" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pelvis}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField" positionType="Float" x="61" y="38" width="58" height="7" isRemoveLineWhenBlank="true" uuid="ab66e647-f0e7-489c-81a7-bc7bc2f82f46">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{gyn_obstetric_history}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="96" y="157" width="37" height="14" uuid="5dbf84dc-2d22-40c2-80bf-fe4db6baca35"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{gravida}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="177" y="157" width="37" height="14" uuid="551706cf-4d23-491d-ba5c-a78cf82a8b3c"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{para}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="260" y="157" width="37" height="14" uuid="e8ff28fd-07d4-41d3-9e8d-9b33f17bda5b"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{abortions}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="344" y="157" width="37" height="14" uuid="fbcd3df3-8a2a-4e82-9a62-952c60cb301d"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{living_children}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="5" width="220" height="13" uuid="69b542eb-2645-49bd-b268-664fc3433061"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Obstetrics and Gynaecology :]]></text>
+			</staticText>
+		</band>
+	</summary>
+</jasperReport>
