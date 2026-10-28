@@ -75,7 +75,8 @@
 		<parameter name="sample_id" class="java.lang.Long"/>
 		<parameter name="orderhd_id" class="java.lang.Integer"/>
 		<queryString>
-			<![CDATA[WITH selected_order AS (
+			<![CDATA[
+WITH selected_order AS (
     SELECT doh.patient_id
     FROM dg_orderhd doh
     WHERE doh.orderhd_id = $P{orderhd_id}
@@ -100,8 +101,9 @@ current_cutoff AS (
     WHERE dreh.order_hd_id = $P{orderhd_id}
       AND dred.validated = 'y'
       AND dred.investigation_id = $P{investigation_id}
+      AND dmi.investigation_type IN ('s', 'm')
       AND COALESCE(dscd.sample_id, dred.sample_id, dmi.sample_id)
-            IS NOT DISTINCT FROM $P{sample_id}
+          IS NOT DISTINCT FROM $P{sample_id}
 ),
 history_rows AS (
     SELECT
@@ -130,21 +132,27 @@ history_rows AS (
     LEFT JOIN dg_uom du
         ON du.uom_id = dred.uom_id
     LEFT JOIN mas_investigation_methodology mim
-        ON mim.method_id = dmi.method_id
+        ON mim.method_id = CASE
+            WHEN dmi.investigation_type = 's' THEN dmi.method_id
+            WHEN dmi.investigation_type = 'm' THEN dsmi.method_id
+        END
     CROSS JOIN current_cutoff cc
     WHERE dred.validated = 'y'
       AND COALESCE(dreh.sub_chargecode_id, dmi.sub_chargecode_id)
-            IS NOT DISTINCT FROM $P{sub_chargecode_id}
+          IS NOT DISTINCT FROM $P{sub_chargecode_id}
       AND dred.investigation_id = $P{investigation_id}
+      AND dmi.investigation_type IN ('s', 'm')
       AND COALESCE(dscd.sample_id, dred.sample_id, dmi.sample_id)
-            IS NOT DISTINCT FROM $P{sample_id}
+          IS NOT DISTINCT FROM $P{sample_id}
       AND cc.cutoff_ts IS NOT NULL
       AND dsch.collection_time <= cc.cutoff_ts
 ),
 ranked_history AS (
     SELECT
         hr.*,
-        DENSE_RANK() OVER (ORDER BY hr.collection_ts DESC) AS history_rank
+        DENSE_RANK() OVER (
+            ORDER BY hr.collection_ts DESC
+        ) AS history_rank
     FROM history_rows hr
 )
 SELECT
@@ -158,9 +166,8 @@ SELECT
     unit
 FROM ranked_history
 WHERE history_rank <= 5
-ORDER BY
-    collection_ts DESC,
-    sub_investigation_name]]>
+ORDER BY collection_ts DESC, sub_investigation_name
+]]>
 		</queryString>
 		<field name="sub_investigation_name" class="java.lang.String">
 			<property name="com.jaspersoft.studio.field.name" value="sub_investigation_name"/>
@@ -245,6 +252,9 @@ ORDER BY sub_investigation_name]]>
 	</subDataset>
 	<parameter name="orderhd_id" class="java.lang.Integer"/>
 	<parameter name="path" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA["D:\\hims_java\\src\\main\\resources\\jasperReport\\Lab\\"]]></defaultValueExpression>
+	</parameter>
 	<queryString>
 		<![CDATA[WITH current_order AS (
     SELECT
@@ -345,7 +355,8 @@ current_results AS (
         COALESCE(
             NULLIF(BTRIM(dmi.interpretation), ''),
             'No interpretations available at the moment'
-        ) AS interpretation
+        ) AS interpretation,
+        dmi.investigation_type
     FROM dg_result_entry_header dreh
     JOIN dg_result_entry_detail dred
         ON dred.result_entry_id = dreh.result_entry_id
@@ -407,7 +418,8 @@ SELECT DISTINCT
     CONCAT_WS(',', cr.investigation_name, cr.sample_description)
         AS investigation_sample,
     cr.sub_investigation_name,
-    cr.interpretation
+    cr.interpretation,
+    cr.investigation_type
 FROM current_order co
 JOIN current_results cr
     ON cr.order_hd_id = co.orderhd_id
@@ -420,7 +432,7 @@ ORDER BY
 	<field name="order_hd_id" class="java.lang.Integer">
 		<property name="com.jaspersoft.studio.field.name" value="order_hd_id"/>
 		<property name="com.jaspersoft.studio.field.label" value="order_hd_id"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="dg_result_entry_header"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_orderhd"/>
 	</field>
 	<field name="order_date" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="order_date"/>
@@ -435,7 +447,7 @@ ORDER BY
 	<field name="hin_id" class="java.lang.Long">
 		<property name="com.jaspersoft.studio.field.name" value="hin_id"/>
 		<property name="com.jaspersoft.studio.field.label" value="hin_id"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="dg_result_entry_header"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_orderhd"/>
 	</field>
 	<field name="patient_address" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="patient_address"/>
@@ -475,9 +487,18 @@ ORDER BY
 		<property name="com.jaspersoft.studio.field.label" value="uhid"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
 	</field>
-	<field name="order_type" class="java.lang.String"/>
-	<field name="admission_no" class="java.lang.String"/>
-	<field name="patient_identifier" class="java.lang.String"/>
+	<field name="order_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="order_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="order_type"/>
+	</field>
+	<field name="admission_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="admission_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="admission_no"/>
+	</field>
+	<field name="patient_identifier" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="patient_identifier"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_identifier"/>
+	</field>
 	<field name="collection_datetime" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="collection_datetime"/>
 		<property name="com.jaspersoft.studio.field.label" value="collection_datetime"/>
@@ -486,9 +507,19 @@ ORDER BY
 		<property name="com.jaspersoft.studio.field.name" value="result_datetime"/>
 		<property name="com.jaspersoft.studio.field.label" value="result_datetime"/>
 	</field>
-	<field name="sub_chargecode_id" class="java.lang.Long"/>
-	<field name="investigation_id" class="java.lang.Long"/>
-	<field name="sample_id" class="java.lang.Long"/>
+	<field name="sub_chargecode_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="sub_chargecode_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="sub_chargecode_id"/>
+	</field>
+	<field name="investigation_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="investigation_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="investigation_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_result_entry_detail"/>
+	</field>
+	<field name="sample_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="sample_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="sample_id"/>
+	</field>
 	<field name="sub_chargecode_name" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="sub_chargecode_name"/>
 		<property name="com.jaspersoft.studio.field.label" value="sub_chargecode_name"/>
@@ -507,10 +538,15 @@ ORDER BY
 		<property name="com.jaspersoft.studio.field.label" value="interpretation"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="dg_mas_investigation"/>
 	</field>
+	<field name="investigation_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="investigation_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="investigation_type"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_mas_investigation"/>
+	</field>
 	<group name="g_sub_chargecode_name" isStartNewPage="true" isReprintHeaderOnEachPage="true">
 		<groupExpression><![CDATA[$F{sub_chargecode_name}]]></groupExpression>
 		<groupHeader>
-			<band height="25">
+			<band height="25" splitType="Stretch">
 				<textField>
 					<reportElement x="0" y="6" width="555" height="19" uuid="5d85d2ee-a210-439c-a7f1-481d4cf09ad5"/>
 					<textElement textAlignment="Center">
@@ -548,7 +584,8 @@ ORDER BY
 	<group name="g_investigation_sample">
 		<groupExpression><![CDATA[$F{investigation_id} + "|" + String.valueOf($F{sample_id})]]></groupExpression>
 		<groupHeader>
-			<band height="90">
+			<band height="110" splitType="Stretch">
+				<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				<textField>
 					<reportElement isPrintRepeatedValues="false" x="0" y="6" width="555" height="14" uuid="8b2a4425-c9d9-47e6-b3c5-341657c12d69"/>
 					<textElement textAlignment="Left" verticalAlignment="Top">
@@ -557,12 +594,13 @@ ORDER BY
 					<textFieldExpression><![CDATA[$F{investigation_sample}]]></textFieldExpression>
 				</textField>
 				<crosstab>
-					<reportElement isPrintRepeatedValues="false" x="10" y="20" width="420" height="67" uuid="c5ba8d82-8cd0-450b-8e08-3426f804081d">
+					<reportElement style="Crosstab_CG" isPrintRepeatedValues="false" x="10" y="20" width="434" height="75" uuid="c5ba8d82-8cd0-450b-8e08-3426f804081d">
 						<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
 						<property name="com.jaspersoft.studio.crosstab.style.header" value="Crosstab_CH"/>
 						<property name="com.jaspersoft.studio.crosstab.style.group" value="Crosstab_CG"/>
 						<property name="com.jaspersoft.studio.crosstab.style.total" value="Crosstab_CT"/>
 						<property name="com.jaspersoft.studio.crosstab.style.detail" value="Crosstab_CD"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<crosstabDataset>
 						<dataset>
@@ -630,7 +668,7 @@ ORDER BY
 						<crosstabColumnHeader>
 							<cellContents mode="Opaque" style="Crosstab_CH">
 								<textField pattern="dd/MM/yy">
-									<reportElement x="0" y="0" width="60" height="20" uuid="5785db88-f8aa-4ed5-b555-37624a4eea11"/>
+									<reportElement x="0" y="0" width="80" height="20" uuid="5785db88-f8aa-4ed5-b555-37624a4eea11"/>
 									<textElement>
 										<font size="10" isBold="true"/>
 									</textElement>
@@ -654,7 +692,7 @@ ORDER BY
 						<crosstabColumnHeader>
 							<cellContents mode="Opaque" style="Crosstab_CH">
 								<textField pattern="hh:mm a">
-									<reportElement x="0" y="0" width="60" height="20" uuid="0dd6c65f-b2f7-4714-911c-c9d046a3b7fa"/>
+									<reportElement x="0" y="0" width="80" height="20" uuid="0dd6c65f-b2f7-4714-911c-c9d046a3b7fa"/>
 									<textElement>
 										<font size="10" isBold="true"/>
 									</textElement>
@@ -679,11 +717,11 @@ ORDER BY
 ? "<span style='color:red;'>" + $F{result} + "</span>"
 : $F{result}]]></measureExpression>
 					</measure>
-					<crosstabCell width="60" height="30">
+					<crosstabCell width="80" height="30">
 						<cellContents mode="Opaque" style="Crosstab_CD">
-							<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-								<reportElement x="0" y="0" width="60" height="30" uuid="a0e1aac9-9e2a-4f5b-a7b1-99c09783faa1"/>
-								<textElement markup="html">
+							<textField isBlankWhenNull="true">
+								<reportElement x="0" y="0" width="80" height="30" uuid="a0e1aac9-9e2a-4f5b-a7b1-99c09783faa1"/>
+								<textElement verticalAlignment="Top" markup="html">
 									<font size="10"/>
 								</textElement>
 								<textFieldExpression><![CDATA[$V{result_MEASURE}]]></textFieldExpression>
@@ -692,7 +730,7 @@ ORDER BY
 					</crosstabCell>
 				</crosstab>
 				<componentElement>
-					<reportElement isPrintRepeatedValues="false" x="430" y="30" width="125" height="50" uuid="4c787a69-03fe-4f32-b509-76f7db761570">
+					<reportElement isPrintRepeatedValues="false" x="450" y="30" width="100" height="57" uuid="4c787a69-03fe-4f32-b509-76f7db761570">
 						<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.VerticalRowLayout"/>
 						<property name="com.jaspersoft.studio.table.style.table_header" value="Table_TH"/>
 						<property name="com.jaspersoft.studio.table.style.column_header" value="Table_CH"/>
@@ -734,10 +772,10 @@ ORDER BY
 								</textField>
 							</jr:detailCell>
 						</jr:column>
-						<jr:column width="90" uuid="46b4531c-8dd5-49d1-b819-d3e98863662f">
+						<jr:column width="65" uuid="46b4531c-8dd5-49d1-b819-d3e98863662f">
 							<jr:columnHeader style="Table_CH" height="30">
 								<staticText>
-									<reportElement x="0" y="0" width="90" height="30" uuid="72517b04-2a50-4477-84e1-95890da1a6ef"/>
+									<reportElement x="0" y="0" width="65" height="30" uuid="72517b04-2a50-4477-84e1-95890da1a6ef"/>
 									<textElement verticalAlignment="Middle">
 										<font size="10" isBold="true"/>
 									</textElement>
@@ -746,7 +784,7 @@ ORDER BY
 							</jr:columnHeader>
 							<jr:detailCell style="Table_TD" height="30">
 								<textField>
-									<reportElement x="0" y="0" width="90" height="30" uuid="9a6d6b60-85bc-4e60-8a72-253032de25e3"/>
+									<reportElement x="0" y="0" width="65" height="30" uuid="9a6d6b60-85bc-4e60-8a72-253032de25e3"/>
 									<textElement>
 										<font size="10"/>
 									</textElement>
@@ -756,6 +794,25 @@ ORDER BY
 						</jr:column>
 					</jr:table>
 				</componentElement>
+				<subreport>
+					<reportElement x="9" y="22" width="435" height="15" uuid="14899de6-5bfc-4021-84fc-57d07476f286">
+						<printWhenExpression><![CDATA["t".equals($F{investigation_type})]]></printWhenExpression>
+					</reportElement>
+					<subreportParameter name="orderhd_id">
+						<subreportParameterExpression><![CDATA[$P{orderhd_id}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter name="sub_chargecode_id">
+						<subreportParameterExpression><![CDATA[$F{sub_chargecode_id}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter name="investigation_id">
+						<subreportParameterExpression><![CDATA[$F{investigation_id}]]></subreportParameterExpression>
+					</subreportParameter>
+					<subreportParameter name="sample_id">
+						<subreportParameterExpression><![CDATA[$F{sample_id}]]></subreportParameterExpression>
+					</subreportParameter>
+					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "lab_template_subreport.jasper"]]></subreportExpression>
+				</subreport>
 			</band>
 		</groupHeader>
 		<groupFooter>

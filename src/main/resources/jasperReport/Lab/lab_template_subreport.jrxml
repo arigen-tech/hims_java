@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="lab_template_subreport" pageWidth="435" pageHeight="842" columnWidth="435" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="9f3e91e0-bb25-42dc-859a-e440d6e42e72">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<parameter name="sub_chargecode_id" class="java.lang.Long"/>
+	<parameter name="investigation_id" class="java.lang.Long"/>
+	<parameter name="sample_id" class="java.lang.Long"/>
+	<parameter name="orderhd_id" class="java.lang.Integer"/>
+	<queryString language="SQL">
+		<![CDATA[
+SELECT
+    COALESCE(dsmi.sub_investigation_name, dmi.investigation_name)
+        AS sub_investigation_name,
+    mim.method_name,
+    dsch.collection_time::date AS collection_date,
+    dsch.collection_time::time AS collection_time,
+    dsch.collection_time AS collection_ts,
+    dred.result,
+    dred.result_flag_id,
+    du.uom_name AS unit
+FROM dg_orderhd doh
+JOIN dg_orderdt dod
+    ON dod.orderhd_id = doh.orderhd_id
+JOIN dg_result_entry_header dreh
+    ON dreh.order_hd_id = doh.orderhd_id
+JOIN dg_result_entry_detail dred
+    ON dred.result_entry_id = dreh.result_entry_id
+JOIN dg_sample_collection_details dscd
+    ON dscd.sample_collection_details_id = dred.sample_collection_details_id
+JOIN dg_sample_collection_header dsch
+    ON dsch.sample_collection_header_id = dscd.sample_collection_header_id
+JOIN dg_mas_investigation dmi
+    ON dmi.investigation_id = dred.investigation_id
+LEFT JOIN dg_sub_mas_investigation dsmi
+    ON dsmi.sub_investigation_id = dred.sub_investigation_id
+LEFT JOIN dg_uom du
+    ON du.uom_id = dred.uom_id
+LEFT JOIN mas_investigation_methodology mim
+    ON mim.method_id = dmi.method_id
+WHERE doh.orderhd_id = $P{orderhd_id}
+  AND dod.investigation_id = $P{investigation_id}
+  AND dred.investigation_id = $P{investigation_id}
+  AND dmi.investigation_type = 't'
+  AND dred.validated = 'y'
+  AND COALESCE(dreh.sub_chargecode_id, dmi.sub_chargecode_id)
+      IS NOT DISTINCT FROM $P{sub_chargecode_id}
+  AND COALESCE(dscd.sample_id, dred.sample_id, dmi.sample_id)
+      IS NOT DISTINCT FROM $P{sample_id}
+ORDER BY
+    dsch.collection_time DESC,
+    sub_investigation_name]]>
+	</queryString>
+	<field name="sub_investigation_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="sub_investigation_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="sub_investigation_name"/>
+	</field>
+	<field name="method_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="method_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="method_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_investigation_methodology"/>
+	</field>
+	<field name="collection_date" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="collection_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="collection_date"/>
+	</field>
+	<field name="collection_time" class="java.sql.Time">
+		<property name="com.jaspersoft.studio.field.name" value="collection_time"/>
+		<property name="com.jaspersoft.studio.field.label" value="collection_time"/>
+	</field>
+	<field name="collection_ts" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="collection_ts"/>
+		<property name="com.jaspersoft.studio.field.label" value="collection_ts"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_sample_collection_header"/>
+	</field>
+	<field name="result" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="result"/>
+		<property name="com.jaspersoft.studio.field.label" value="result"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_result_entry_detail"/>
+	</field>
+	<field name="result_flag_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="result_flag_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="result_flag_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_result_entry_detail"/>
+	</field>
+	<field name="unit" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="unit"/>
+		<property name="com.jaspersoft.studio.field.label" value="unit"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dg_uom"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<summary>
+		<band height="30" splitType="Stretch">
+			<textField textAdjust="StretchHeight">
+				<reportElement x="0" y="0" width="100" height="30" uuid="186efbe2-4d69-47a8-a9b1-782b5cce8464"/>
+				<textElement markup="html"/>
+				<textFieldExpression><![CDATA["<span style='font-size:8px;'>"
++ $F{sub_investigation_name}
++ "</span>"
++ "<br/>"
++ "<span style='font-size:6px; color:#777;'>"
++ ($F{method_name} == null ? "" : $F{method_name})
++ "</span>"]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="101" y="0" width="334" height="30" uuid="5625ae30-2db5-4601-8bf8-a00a7ecc446d"/>
+				<textElement markup="html"/>
+				<textFieldExpression><![CDATA[$F{result}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

@@ -35,7 +35,6 @@ public final class ReportConstants {
     public static final String OPD_SUBREPORT_DIR = "opdCaseSheetReport/";
     public static final String OPD_CASESHEET_JASPER = "opd_casesheet_new_report_1";
     public static final String OPD_CASESHEET_REPORT = "OpdCaseSheetReport";
-
     public static final String OPD_TOKEN_JASPER = "opd_token";
     public static final String OPD_TOKEN_REPORT = "OpdToken";
 
@@ -205,4 +204,7 @@ public final class ReportConstants {
 
     public static final String NIS_MEDICINE_REPORT_JASPER = "nis_medicine_report";
     public static final String NIS_MEDICINE_REPORT_REPORT = "NisMedicineReport";
+
+    public static final String BILLING_REFUND_DETAILS_JASPER = "Billing_refund_details";
+    public static final String BILLING_REFUND_DETAILS_REPORT = "BillingRefundDetails";
 }

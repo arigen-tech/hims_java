@@ -384,6 +384,7 @@ public class ReportController {
         Map<String , Object> params = new HashMap<>();
         params.put("orderhd_id", orderHdId);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+        params.put("SUBREPORT_DIR", Objects.requireNonNull(getClass().getResource(ReportConstants.JASPER_BASE_PATH_LAB).toString()));
 
         try{
             if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
@@ -1973,17 +1974,6 @@ public class ReportController {
         }
     }
 
-    private ResponseEntity<byte[]> buildPdfResponse(
-            byte[] pdfData,
-            String fileName) {
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "inline" + fileName + ".pdf")
-                .body(pdfData);
-    }
-
-
     @GetMapping(value = "/nisMedicineRegister", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintNisMedicineRegister(
             @RequestParam (required = false) Integer hospitalId,
@@ -2043,5 +2033,51 @@ public class ReportController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
         }
+    }
+
+    @GetMapping(value = "/billingRefundDetails", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintBillingRefundDetails(
+            @RequestParam (required = false) String patientName,
+            @RequestParam (required = false) String mobileNo,
+            @RequestParam (required = false) String billingService,
+            @RequestParam (required = false) String refundStatus,
+            @RequestParam(required = false) Integer paymentModeId,
+            @RequestParam String flag){
+        Map<String , Object> params = new HashMap<>();
+        params.put("patientName", patientName);
+        params.put("mobileNo", mobileNo);
+        params.put("billingService",billingService);
+        params.put("refundStatus", refundStatus);
+        params.put("paymentModeId", paymentModeId);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)){
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BILLING,ReportConstants.BILLING_REFUND_DETAILS_JASPER, params, dataSource);
+                return buildPdfResponse(viewPdf,ReportConstants.BILLING_REFUND_DETAILS_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)){
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BILLING,ReportConstants.BILLING_REFUND_DETAILS_JASPER, params, dataSource);
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    private ResponseEntity<byte[]> buildPdfResponse(
+            byte[] pdfData,
+            String fileName) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline" + fileName + ".pdf")
+                .body(pdfData);
     }
 }

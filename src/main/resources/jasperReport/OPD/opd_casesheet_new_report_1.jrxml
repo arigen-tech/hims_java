@@ -9,11 +9,11 @@
 	<import value="java.util.*"/>
 	<import value="net.sf.jasperreports.engine.data.*"/>
 	<parameter name="SUBREPORT_DIR" class="java.lang.String">
-		<defaultValueExpression><![CDATA["/Users/rozaltheric/JaspersoftWorkspace/MyReports/Billing/opd_casesheet_report/"]]></defaultValueExpression>
+		<defaultValueExpression><![CDATA["D:\\hims_java\\src\\main\\resources\\jasperReport\\OPD\\opdCaseSheetReport\\"]]></defaultValueExpression>
 	</parameter>
 	<parameter name="visit_id" class="java.lang.Long"/>
 	<parameter name="path" class="java.lang.String">
-		<defaultValueExpression><![CDATA["/Users/rozaltheric/Downloads/arigen_health.png"]]></defaultValueExpression>
+		<defaultValueExpression><![CDATA["D:\\hims_java\\src\\main\\resources\\Assets\\arigen_health.png"]]></defaultValueExpression>
 	</parameter>
 	<queryString>
 		<![CDATA[select
@@ -23,15 +23,16 @@
     md.department_name,
     CONCAT(p.p_fn, ' ', p.p_ln) AS patient_name,
     p.p_mobile_number AS mobile_number,
+    concat(concat(substring(p.p_age FROM '^(\d+)'), ' year(s) / '), mg.gender_name) as age_sex,
     p.uhid_no,
-    opd.height,
-    opd.weight,
-    opd.temperature,
-    CONCAT(opd.bp_systolic, '/', opd.bp_diastolic) AS blood_pressure,
-    opd.pulse,
-    opd.spo2,
-    opd.bmi,
-    opd.rr,
+    concat(opd.height, ' cm') as height,
+    concat(opd.weight, ' Kg') as weight,
+    concat(opd.temperature, '°F') as temperature,
+    concat(CONCAT(opd.bp_systolic, '/', opd.bp_diastolic), 'mmHg') AS blood_pressure,
+    concat(opd.pulse, '/min') as pulse,
+    concat(opd.spo2, '%') as spo2,
+    concat(opd.bmi, 'kg/m²') as bmi,
+    concat(opd.rr, '/min') as rr,
     CONCAT(
         me.emp_fn,
         ' ',
@@ -48,18 +49,13 @@
     opd.final_medical_advice,
     opd.follow_up_flag
 FROM opd_patient_details opd
-LEFT JOIN patient p
-    ON opd.patient_id = p.patient_id
-LEFT JOIN visit v
-    ON opd.visit_id = v.visit_id
-LEFT JOIN mas_hospital mh
-    ON opd.hospital_id = mh.hospital_id
-LEFT JOIN mas_department md
-    ON opd.department_id = md.department_id
-LEFT JOIN users u
-    ON opd.doctor_id = u.user_id
-LEFT JOIN mas_employee me
-    ON u.employee_id = me.emp_id
+LEFT JOIN patient p ON opd.patient_id = p.patient_id
+LEFT JOIN visit v ON opd.visit_id = v.visit_id
+LEFT JOIN mas_hospital mh ON opd.hospital_id = mh.hospital_id
+LEFT JOIN mas_department md ON opd.department_id = md.department_id
+LEFT JOIN users u ON opd.doctor_id = u.user_id
+LEFT JOIN mas_employee me ON u.employee_id = me.emp_id
+left join mas_gender mg on p.p_gender_id = mg.id 
 WHERE opd.visit_id = $P{visit_id}]]>
 	</queryString>
 	<field name="visit_id" class="java.lang.Long">
@@ -90,6 +86,10 @@ WHERE opd.visit_id = $P{visit_id}]]>
 		<property name="com.jaspersoft.studio.field.name" value="mobile_number"/>
 		<property name="com.jaspersoft.studio.field.label" value="mobile_number"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="patient"/>
+	</field>
+	<field name="age_sex" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="age_sex"/>
+		<property name="com.jaspersoft.studio.field.label" value="age_sex"/>
 	</field>
 	<field name="uhid_no" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="uhid_no"/>
@@ -182,78 +182,68 @@ WHERE opd.visit_id = $P{visit_id}]]>
 	<group name="A">
 		<groupExpression><![CDATA[$V{PAGE_NUMBER}]]></groupExpression>
 		<groupHeader>
-			<band height="101" splitType="Stretch">
-				<staticText>
-					<reportElement x="115" y="86" width="100" height="14" uuid="b4726368-c09a-430d-9a4c-d6f8d811f22a"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
-					</textElement>
-					<text><![CDATA[RR(/min)             ]]></text>
-				</staticText>
-				<staticText>
-					<reportElement x="231" y="69" width="100" height="14" uuid="d1294f7b-00d3-408c-b135-8a75c05c250b"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
-					</textElement>
-					<text><![CDATA[SPO2(%)   ]]></text>
-				</staticText>
-				<staticText>
-					<reportElement x="231" y="53" width="100" height="14" uuid="d1fe053e-ff5b-4b72-9492-bea2553625ee"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
-					</textElement>
-					<text><![CDATA[Temperature (°F)  ]]></text>
-				</staticText>
-				<staticText>
-					<reportElement x="3" y="54" width="100" height="14" uuid="f7595d24-b5b7-4787-8362-e5a1ea245ef0"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
-					</textElement>
-					<text><![CDATA[Height(cm)]]></text>
-				</staticText>
-				<staticText>
-					<reportElement x="264" y="19" width="36" height="14" uuid="20127766-b3f4-43e9-8f5a-8138c59e11ea"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
-					</textElement>
-					<text><![CDATA[Uhid No. :]]></text>
-				</staticText>
-				<staticText>
-					<reportElement x="150" y="19" width="84" height="14" uuid="a6ca9346-e5e5-4ec6-803b-89d0ec3d5572"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
-					</textElement>
-					<text><![CDATA[Mobile No. :]]></text>
-				</staticText>
-				<textField>
-					<reportElement x="187" y="19" width="48" height="12" uuid="4000739d-5cdc-48c0-92fb-aecc8d7411b3"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6"/>
-					</textElement>
-					<textFieldExpression><![CDATA[$F{mobile_number}]]></textFieldExpression>
-				</textField>
-				<staticText>
-					<reportElement x="2" y="19" width="78" height="14" uuid="5d205191-3895-4117-b9de-529d0dac4e3b"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
-					</textElement>
-					<text><![CDATA[Patient Name :]]></text>
-				</staticText>
+			<band height="36" splitType="Stretch">
 				<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-					<reportElement key="textField" positionType="Float" x="48" y="19" width="92" height="15" isRemoveLineWhenBlank="true" uuid="030acc15-f51b-4d3f-b07d-e331ec1e8bcd"/>
+					<reportElement key="textField" positionType="Float" x="49" y="5" width="62" height="10" isRemoveLineWhenBlank="true" uuid="030acc15-f51b-4d3f-b07d-e331ec1e8bcd"/>
 					<box>
 						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					</box>
-					<textElement>
+					<textElement textAlignment="Left">
 						<font fontName="DejaVu Sans Condensed" size="6"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{patient_name}]]></textFieldExpression>
 				</textField>
-				<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-					<reportElement key="textField" positionType="Float" x="48" y="54" width="65" height="15" isRemoveLineWhenBlank="true" uuid="4e354b47-366f-409f-ae12-33679d92e8be"/>
+				<textField textAdjust="StretchHeight" isBlankWhenNull="false">
+					<reportElement key="textField" positionType="Float" x="293" y="5" width="66" height="10" uuid="01fa3221-6d79-434b-b2e0-d87a0af91cdf"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement textAlignment="Left">
+						<font fontName="DejaVu Sans Condensed" size="6"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{mobile_number}+ " / " +$F{uhid_no}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement positionType="Float" x="169" y="5" width="50" height="10" uuid="0f060d50-5980-45be-988f-46d4342f48f3"/>
+					<textElement textAlignment="Left">
+						<font fontName="DejaVu Sans Condensed" size="6"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{age_sex}]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement key="textField-2" positionType="Float" x="1" y="5" width="46" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="3db50fea-1dfa-43d5-ac58-a20d13b38eda"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Patient Name :]]></text>
+				</staticText>
+				<staticText>
+					<reportElement key="textField-2" positionType="Float" x="121" y="5" width="46" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="be67874f-3e60-4a00-a800-7a4674160d6d"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Age / Gender :]]></text>
+				</staticText>
+				<staticText>
+					<reportElement key="textField-2" positionType="Float" x="230" y="5" width="60" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="1f25aeea-2f9b-441e-b6f7-a097e7318b8f"/>
 					<box>
 						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
@@ -261,162 +251,218 @@ WHERE opd.visit_id = $P{visit_id}]]>
 						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					</box>
 					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6"/>
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Mobile No. / Uhid :]]></text>
+				</staticText>
+				<staticText>
+					<reportElement key="textField-2" x="1" y="26" width="9" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="4a2b003a-4a29-4fe8-8b30-f1a817599d68"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Ht]]></text>
+				</staticText>
+				<staticText>
+					<reportElement key="textField-2" x="40" y="26" width="10" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="27bf9218-6b21-4cd3-a78b-27e36d0b749a"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Wt]]></text>
+				</staticText>
+				<staticText>
+					<reportElement key="textField-2" x="79" y="26" width="11" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="2cf3cdea-b257-44cf-97b7-b8f64ba74618"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+					</textElement>
+					<text><![CDATA[BP]]></text>
+				</staticText>
+				<staticText>
+					<reportElement key="textField-2" x="133" y="26" width="18" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="903f8829-5902-46d5-9cbc-4b91e6a7cf66"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+					</textElement>
+					<text><![CDATA[Pulse]]></text>
+				</staticText>
+				<staticText>
+					<reportElement key="textField-2" x="185" y="26" width="10" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="b3a0e569-8711-486c-8a1b-e68e825f085c"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+					</textElement>
+					<text><![CDATA[RR]]></text>
+				</staticText>
+				<staticText>
+					<reportElement key="textField-2" x="224" y="26" width="16" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="5dd14351-c964-469b-b8cc-29abf041c0a0"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+					</textElement>
+					<text><![CDATA[SpO₂]]></text>
+				</staticText>
+				<staticText>
+					<reportElement key="textField-2" x="264" y="26" width="18" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="aff70e72-6d61-457d-8793-57552d5f326a"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+					</textElement>
+					<text><![CDATA[temp]]></text>
+				</staticText>
+				<staticText>
+					<reportElement key="textField-2" x="314" y="26" width="13" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="a8747571-86ed-4c8e-8e78-04327939a863"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+					</textElement>
+					<text><![CDATA[BMI]]></text>
+				</staticText>
+				<textField>
+					<reportElement key="textField-2" x="10" y="26" width="25" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="e59d0eb2-702d-42ca-ae57-a1d98be5904a"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{height}]]></textFieldExpression>
 				</textField>
-				<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-					<reportElement key="textField" positionType="Float" x="154" y="54" width="75" height="15" isRemoveLineWhenBlank="true" uuid="9422bc3c-687f-4569-aa44-838e3d4624f3"/>
+				<textField>
+					<reportElement key="textField-2" x="240" y="26" width="20" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="5b4264d2-f589-48ed-9aca-ab32fec28c4e"/>
 					<box>
 						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					</box>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6"/>
-					</textElement>
-					<textFieldExpression><![CDATA[$F{weight}]]></textFieldExpression>
-				</textField>
-				<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-					<reportElement key="textField" positionType="Float" x="286" y="53" width="73" height="15" isRemoveLineWhenBlank="true" uuid="a64b8435-d12f-4b77-a6d9-efbbdf9c69e4"/>
-					<box>
-						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					</box>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6"/>
-					</textElement>
-					<textFieldExpression><![CDATA[$F{temperature}]]></textFieldExpression>
-				</textField>
-				<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-					<reportElement key="textField" positionType="Float" x="154" y="70" width="74" height="15" isRemoveLineWhenBlank="true" uuid="c8d0eb84-d116-44e8-a88e-1ad77aa60731"/>
-					<box>
-						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					</box>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6"/>
-					</textElement>
-					<textFieldExpression><![CDATA[$F{pulse}]]></textFieldExpression>
-				</textField>
-				<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-					<reportElement key="textField" positionType="Float" x="154" y="86" width="75" height="15" isRemoveLineWhenBlank="true" uuid="6c986411-d2de-4cf6-9bc9-5da39a89bb46"/>
-					<box>
-						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					</box>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6"/>
-					</textElement>
-					<textFieldExpression><![CDATA[$F{rr}]]></textFieldExpression>
-				</textField>
-				<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-					<reportElement key="textField" positionType="Float" x="285" y="69" width="76" height="15" isRemoveLineWhenBlank="true" uuid="abdb2663-e9fc-458c-97d7-e83dc9d667ee"/>
-					<box>
-						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-					</box>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6"/>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{spo2}]]></textFieldExpression>
 				</textField>
-				<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-					<reportElement key="textField" positionType="Float" x="48" y="70" width="65" height="15" isRemoveLineWhenBlank="true" uuid="1e6466ba-ffb7-466b-a8dc-82687ebad0bc"/>
+				<textField>
+					<reportElement key="textField-2" x="50" y="26" width="25" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="5b5c0f9a-6f29-47ea-9af1-4d88ad8b54f2"/>
 					<box>
 						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					</box>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6"/>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{weight}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement key="textField-2" x="282" y="26" width="28" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="5742f680-bbb5-464f-a753-268ced615613"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$F{temperature}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement key="textField-2" x="90" y="26" width="39" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="e71569f2-c538-49be-b0b9-be86bca1452e"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{blood_pressure}]]></textFieldExpression>
 				</textField>
-				<textField textAdjust="StretchHeight" pattern="###0" isBlankWhenNull="true">
-					<reportElement key="textField" positionType="Float" x="49" y="86" width="64" height="15" isRemoveLineWhenBlank="true" uuid="523d2421-1ae5-4bad-8e99-fe2f85c7d512"/>
+				<textField>
+					<reportElement key="textField-2" x="327" y="26" width="32" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="63a0ef34-b4ee-44a1-87cb-0b6bd2b2a8ef"/>
 					<box>
 						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					</box>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6"/>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{bmi}]]></textFieldExpression>
 				</textField>
-				<textField isBlankWhenNull="false">
-					<reportElement key="textField" x="294" y="19" width="66" height="15" uuid="01fa3221-6d79-434b-b2e0-d87a0af91cdf"/>
+				<textField>
+					<reportElement key="textField-2" x="151" y="26" width="29" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="6fd0f2c2-14f9-4ab2-ae20-2c8f0774dce2"/>
 					<box>
 						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					</box>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6"/>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 					</textElement>
-					<textFieldExpression><![CDATA[$F{uhid_no}]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$F{pulse}]]></textFieldExpression>
 				</textField>
-				<staticText>
-					<reportElement x="0" y="2" width="361" height="14" uuid="2d1da47c-9574-4df9-9c1b-98c9c124e4ae"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
+				<textField>
+					<reportElement key="textField-2" x="195" y="26" width="25" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="af16c06c-eb53-42b1-a18b-445ad04cda51"/>
+					<box>
+						<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+						<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					</box>
+					<textElement verticalAlignment="Top">
+						<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 					</textElement>
-					<text><![CDATA[Patient Details :]]></text>
-				</staticText>
-				<line>
-					<reportElement x="0" y="11" width="70" height="1" forecolor="rgba(0, 0, 0, 0.49411765)" uuid="27db4baa-82b0-4425-9459-f8408942481a"/>
-				</line>
-				<staticText>
-					<reportElement x="0" y="38" width="361" height="14" uuid="336caf5f-78a0-443c-b00f-198e28b90c15"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
-					</textElement>
-					<text><![CDATA[Vitals :]]></text>
-				</staticText>
-				<line>
-					<reportElement x="0" y="47" width="28" height="1" forecolor="rgba(0, 0, 0, 0.49411765)" uuid="200991b9-5d16-4ed4-8ff1-9f8ed1e29b02"/>
-				</line>
-				<staticText>
-					<reportElement x="3" y="70" width="100" height="14" uuid="3d727bc9-a50c-42db-b2f2-0b41d0387adc"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
-					</textElement>
-					<text><![CDATA[BP(mmHg)]]></text>
-				</staticText>
-				<staticText>
-					<reportElement x="3" y="86" width="100" height="14" uuid="bf54a936-bb49-46a4-984c-a4213229f176"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
-					</textElement>
-					<text><![CDATA[BMI(kg/m2)]]></text>
-				</staticText>
-				<staticText>
-					<reportElement x="115" y="55" width="100" height="14" uuid="e0135207-1735-480d-b36f-d49bd70ac813"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
-					</textElement>
-					<text><![CDATA[Weight(kg)]]></text>
-				</staticText>
-				<staticText>
-					<reportElement x="115" y="70" width="100" height="14" uuid="5d3b4022-9974-42ec-8294-861c27a87cfe"/>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
-					</textElement>
-					<text><![CDATA[Pulse(/min)]]></text>
-				</staticText>
+					<textFieldExpression><![CDATA[$F{rr}]]></textFieldExpression>
+				</textField>
 			</band>
 		</groupHeader>
 		<groupFooter>
@@ -427,23 +473,66 @@ WHERE opd.visit_id = $P{visit_id}]]>
 		<band splitType="Stretch"/>
 	</background>
 	<title>
-		<band height="62" splitType="Stretch">
+		<band height="48" splitType="Stretch">
 			<textField>
 				<reportElement x="0" y="2" width="361" height="14" uuid="4b17b0ec-c285-40f3-b14d-efe928ae7455"/>
 				<textElement textAlignment="Center">
-					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{hospital_name}]]></textFieldExpression>
 			</textField>
-			<staticText>
-				<reportElement x="0" y="47" width="60" height="15" uuid="1f9e6da9-200e-42db-99bd-acab9cc36977"/>
-				<textElement>
-					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
+				<reportElement key="textField-2" positionType="Float" x="49" y="38" width="62" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="a99c6a3b-2a12-4761-9c96-99adab98ac1b"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
-				<text><![CDATA[Consultation Date]]></text>
-			</staticText>
+				<textFieldExpression><![CDATA[$F{doc_name}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="3" y="4" width="77" height="27" uuid="5c13096d-f681-42d2-a8f2-5bcfa1a6cc8f"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement x="0" y="17" width="361" height="14" uuid="fde3ff1d-f310-401a-86dc-a82e34416c89"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["OPD Slip"]]></textFieldExpression>
+			</textField>
 			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
-				<reportElement key="textField-2" positionType="Float" x="61" y="47" width="66" height="15" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="a99c6a3b-2a12-4761-9c96-99adab98ac1b"/>
+				<reportElement key="textField-2" positionType="Float" x="166" y="38" width="54" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="0264eab2-22d6-4117-a0a8-fdd905d04d4c"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yy h:mm a" isBlankWhenNull="true">
+				<reportElement key="textField-2" positionType="Float" x="293" y="38" width="66" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="eed1f8ca-17ab-42cb-b06a-9a6d0a71b88e"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="6"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{visit_date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement key="textField-2" positionType="Float" x="1" y="38" width="46" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="f4d89caf-ec15-4a44-b5f1-0e59cb6d271a"/>
 				<box>
 					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
@@ -451,27 +540,35 @@ WHERE opd.visit_id = $P{visit_id}]]>
 					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
 				</box>
 				<textElement>
-					<font fontName="DejaVu Sans Condensed" size="6"/>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
 				</textElement>
-				<textFieldExpression><![CDATA[$F{visit_date}]]></textFieldExpression>
-			</textField>
-			<image>
-				<reportElement x="3" y="4" width="101" height="30" uuid="5c13096d-f681-42d2-a8f2-5bcfa1a6cc8f"/>
-				<imageExpression><![CDATA[$P{path}]]></imageExpression>
-			</image>
-			<textField>
-				<reportElement x="0" y="16" width="361" height="14" uuid="b4ac4b33-bca8-4696-b8cb-f012869ca20e"/>
-				<textElement textAlignment="Center">
-					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{department_name}]]></textFieldExpression>
-			</textField>
+				<text><![CDATA[Doctor Name :]]></text>
+			</staticText>
 			<staticText>
-				<reportElement x="0" y="30" width="361" height="14" uuid="2a442b67-2358-4406-ba51-d7ba9e59afa5"/>
-				<textElement textAlignment="Center">
-					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
+				<reportElement key="textField-2" positionType="Float" x="121" y="38" width="44" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="9fc1d41b-a7e6-4a27-988f-1a7ca63eafea"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
 				</textElement>
-				<text><![CDATA[OPD Slip]]></text>
+				<text><![CDATA[Department :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement key="textField-2" positionType="Float" x="230" y="38" width="60" height="10" isRemoveLineWhenBlank="true" forecolor="#000000" uuid="44f7cbb8-d604-4acc-a25f-10f270e59554"/>
+				<box>
+					<topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<bottomPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+					<rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+				</box>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Consultation Date :]]></text>
 			</staticText>
 		</band>
 	</title>
@@ -484,13 +581,10 @@ WHERE opd.visit_id = $P{visit_id}]]>
 	<columnFooter>
 		<band splitType="Stretch"/>
 	</columnFooter>
-	<lastPageFooter>
-		<band height="42"/>
-	</lastPageFooter>
 	<summary>
-		<band height="181" splitType="Stretch">
+		<band height="193" splitType="Stretch">
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="7" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="26155b52-9de3-4371-81a0-ffaa2397c4f2"/>
+				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="5" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="26155b52-9de3-4371-81a0-ffaa2397c4f2"/>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -501,7 +595,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Signs_symptoms_report_1.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-24" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="37" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="fae6ea8e-81e1-465b-9724-00cca0039ba3"/>
+				<reportElement key="subreport-24" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="35" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="fae6ea8e-81e1-465b-9724-00cca0039ba3"/>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -512,7 +606,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "History_of_past_history.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="47" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="d2d31f6e-2555-4e41-9eaf-216a3b82c0df">
+				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="45" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="d2d31f6e-2555-4e41-9eaf-216a3b82c0df">
 					<printWhenExpression><![CDATA[$F{working_diag} != null]]></printWhenExpression>
 				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -525,20 +619,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Diagnosis_report_1.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="57" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="34759dd6-d840-4d3e-b9fb-2d88f4268951">
-					<printWhenExpression><![CDATA[$F{icd_diag} != null]]></printWhenExpression>
-				</reportElement>
-				<subreportParameter name="SUBREPORT_DIR">
-					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="visit_id">
-					<subreportParameterExpression><![CDATA[$P{visit_id}]]></subreportParameterExpression>
-				</subreportParameter>
-				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
-				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Diagnosis_report_2.jasper"]]></subreportExpression>
-			</subreport>
-			<subreport isUsingCache="true">
-				<reportElement key="subreport-4" positionType="Float" mode="Transparent" x="1" y="67" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="6728596c-7088-4dac-b2be-48df64074c48"/>
+				<reportElement key="subreport-4" positionType="Float" mode="Transparent" x="1" y="75" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="6728596c-7088-4dac-b2be-48df64074c48"/>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -549,7 +630,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Investigation_SubReport1_report_1.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport>
-				<reportElement positionType="Float" x="1" y="77" width="359" height="11" uuid="e960f502-d44c-43ce-bd88-1ff987e276d2"/>
+				<reportElement positionType="Float" x="1" y="85" width="359" height="11" uuid="e960f502-d44c-43ce-bd88-1ff987e276d2"/>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -560,7 +641,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Treatment_SubReport_report_Batch1.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="17" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="9a8a157d-fcf7-4606-af18-1505c0c152e1"/>
+				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="15" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="9a8a157d-fcf7-4606-af18-1505c0c152e1"/>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -571,7 +652,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Past_medical_history.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="27" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="a488417e-417c-49d7-a6e5-0715559ac39f"/>
+				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="25" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="a488417e-417c-49d7-a6e5-0715559ac39f"/>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -582,7 +663,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Family_history.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement positionType="Float" x="1" y="88" width="359" height="11" uuid="dc20d74e-9107-46c6-8321-a12567def484">
+				<reportElement positionType="Float" x="1" y="96" width="359" height="11" uuid="dc20d74e-9107-46c6-8321-a12567def484">
 					<printWhenExpression><![CDATA["y".equalsIgnoreCase($F{admission_flag})]]></printWhenExpression>
 				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -595,7 +676,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Admission_advice.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement positionType="Float" x="1" y="99" width="359" height="11" uuid="df1a1aa7-961e-4a89-ac07-6193bbca977b">
+				<reportElement positionType="Float" x="1" y="107" width="359" height="11" uuid="df1a1aa7-961e-4a89-ac07-6193bbca977b">
 					<printWhenExpression><![CDATA["y".equalsIgnoreCase($F{referral_flag})]]></printWhenExpression>
 				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -608,7 +689,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Referral_advice.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="121" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="5f79e2ad-10d8-4dc2-b518-d1de58779f7e">
+				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="129" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="5f79e2ad-10d8-4dc2-b518-d1de58779f7e">
 					<printWhenExpression><![CDATA[$F{final_medical_advice} != null]]></printWhenExpression>
 				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -621,7 +702,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Final_medical_advice.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement positionType="Float" x="1" y="110" width="359" height="11" uuid="52ac575c-4c3f-4ccf-a52f-eb1d5a4a28c9">
+				<reportElement positionType="Float" x="1" y="118" width="359" height="11" uuid="52ac575c-4c3f-4ccf-a52f-eb1d5a4a28c9">
 					<printWhenExpression><![CDATA["y".equalsIgnoreCase($F{follow_up_flag})]]></printWhenExpression>
 				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -634,40 +715,62 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Follow_up.jasper"]]></subreportExpression>
 			</subreport>
 			<staticText>
-				<reportElement positionType="Float" x="230" y="141" width="124" height="10" uuid="725ea85c-2f14-4985-b97a-bc1798612a6b"/>
+				<reportElement positionType="Float" x="230" y="152" width="124" height="10" uuid="725ea85c-2f14-4985-b97a-bc1798612a6b"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[OPD Submitted By]]></text>
 			</staticText>
 			<textField isBlankWhenNull="true">
-				<reportElement positionType="Float" x="230" y="151" width="123" height="10" uuid="68ecaae3-b127-4c6b-a3e6-919c49d1258b"/>
+				<reportElement positionType="Float" x="230" y="162" width="123" height="10" uuid="68ecaae3-b127-4c6b-a3e6-919c49d1258b"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Dr. " + $F{doc_name}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement positionType="Float" x="230" y="161" width="123" height="10" uuid="7948ca96-13d3-4dfe-99fa-0982604a7d6d"/>
+				<reportElement positionType="Float" x="230" y="172" width="123" height="10" uuid="7948ca96-13d3-4dfe-99fa-0982604a7d6d"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{qualification}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement positionType="Float" x="230" y="171" width="30" height="10" uuid="2d88fe63-27bb-4f57-bf97-5e44f8ca396e"/>
+				<reportElement positionType="Float" x="230" y="182" width="30" height="10" uuid="2d88fe63-27bb-4f57-bf97-5e44f8ca396e"/>
 				<textElement>
 					<font size="6"/>
 				</textElement>
 				<text><![CDATA[Reg No. -]]></text>
 			</staticText>
 			<textField isBlankWhenNull="true">
-				<reportElement positionType="Float" x="259" y="171" width="94" height="10" uuid="a91b1ce9-e50c-4176-8536-6c5e389275ab"/>
+				<reportElement positionType="Float" x="259" y="182" width="94" height="10" uuid="a91b1ce9-e50c-4176-8536-6c5e389275ab"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{medical_registration_no}]]></textFieldExpression>
 			</textField>
+			<subreport isUsingCache="true">
+				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="55" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="7539caaf-cb88-4abb-a25d-8d4487d48e78"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="visit_id">
+					<subreportParameterExpression><![CDATA[$P{visit_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "OBG_report.jasper"]]></subreportExpression>
+			</subreport>
+			<subreport isUsingCache="true">
+				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="65" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="00f05fa5-db95-4bfb-93c2-361a605befd2"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="visit_id">
+					<subreportParameterExpression><![CDATA[$P{visit_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "opthal_report.jasper"]]></subreportExpression>
+			</subreport>
 		</band>
 	</summary>
 	<noData>

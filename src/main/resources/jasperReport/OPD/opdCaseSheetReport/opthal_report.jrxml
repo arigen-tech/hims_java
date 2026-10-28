@@ -1,0 +1,705 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="opthal_report" pageWidth="421" pageHeight="842" columnWidth="421" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="32e7486e-7124-4912-8961-87fadd8fd195">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<parameter name="visit_id" class="java.lang.Long"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT
+    opd_id,
+    patient_id,
+    visit_id,
+    opd_date,
+
+    -- Vision / Visual Acuity: Right Eye (R.E.)
+    re_distance_unaided,
+    re_distance_pinhole,
+    re_distance_best_corrected,
+    re_near_unaided,
+    re_near_pinhole,
+    re_near_best_corrected,
+
+    -- Vision / Visual Acuity: Left Eye (L.E.)
+    le_distance_unaided,
+    le_distance_pinhole,
+    le_distance_best_corrected,
+    le_near_unaided,
+    le_near_pinhole,
+    le_near_best_corrected,
+
+    -- Spectacle Prescription: Distance
+    re_sph_dist,
+    re_cyl_dist,
+    re_axis_dist,
+    le_sph_dist,
+    le_cyl_dist,
+    le_axis_dist,
+
+    -- Spectacle Prescription: Near
+    re_sph_near,
+    re_cyl_near,
+    re_axis_near,
+    le_sph_near,
+    le_cyl_near,
+    le_axis_near,
+
+    -- Spectacle Details
+    ipd_value,
+    spectacle_use,
+    lens_type
+
+FROM public.opd_opth_details
+WHERE visit_id = $P{visit_id}]]>
+	</queryString>
+	<field name="opd_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="opd_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="opd_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="patient_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="patient_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="patient_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="visit_id" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="visit_id"/>
+		<property name="com.jaspersoft.studio.field.label" value="visit_id"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="opd_date" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="opd_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="opd_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_distance_unaided" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_distance_unaided"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_distance_unaided"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_distance_pinhole" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_distance_pinhole"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_distance_pinhole"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_distance_best_corrected" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_distance_best_corrected"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_distance_best_corrected"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_near_unaided" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_near_unaided"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_near_unaided"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_near_pinhole" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_near_pinhole"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_near_pinhole"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_near_best_corrected" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_near_best_corrected"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_near_best_corrected"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_distance_unaided" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_distance_unaided"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_distance_unaided"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_distance_pinhole" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_distance_pinhole"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_distance_pinhole"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_distance_best_corrected" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_distance_best_corrected"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_distance_best_corrected"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_near_unaided" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_near_unaided"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_near_unaided"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_near_pinhole" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_near_pinhole"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_near_pinhole"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_near_best_corrected" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_near_best_corrected"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_near_best_corrected"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_sph_dist" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_sph_dist"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_sph_dist"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_cyl_dist" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_cyl_dist"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_cyl_dist"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_axis_dist" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_axis_dist"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_axis_dist"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_sph_dist" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_sph_dist"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_sph_dist"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_cyl_dist" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_cyl_dist"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_cyl_dist"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_axis_dist" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_axis_dist"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_axis_dist"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_sph_near" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_sph_near"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_sph_near"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_cyl_near" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_cyl_near"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_cyl_near"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="re_axis_near" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="re_axis_near"/>
+		<property name="com.jaspersoft.studio.field.label" value="re_axis_near"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_sph_near" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_sph_near"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_sph_near"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_cyl_near" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_cyl_near"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_cyl_near"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="le_axis_near" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="le_axis_near"/>
+		<property name="com.jaspersoft.studio.field.label" value="le_axis_near"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="ipd_value" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="ipd_value"/>
+		<property name="com.jaspersoft.studio.field.label" value="ipd_value"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="spectacle_use" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="spectacle_use"/>
+		<property name="com.jaspersoft.studio.field.label" value="spectacle_use"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<field name="lens_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="lens_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="lens_type"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="opd_opth_details"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<summary>
+		<band height="211" splitType="Immediate">
+			<line>
+				<reportElement x="0" y="39" width="378" height="1" uuid="2587f7ca-a653-4ebc-9359-8f7f0d2b68eb">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="0" y="52" width="378" height="1" uuid="eba872e1-b13d-45e9-b8e3-d4606636bdea"/>
+			</line>
+			<staticText>
+				<reportElement positionType="Float" x="109" y="42" width="51" height="7" uuid="7acdd65d-d95b-48fb-a68f-b01843d825e9"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Right Eye]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="271" y="42" width="51" height="7" uuid="071345de-8a21-4816-80ef-229ba10e390d"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Left Eye]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="54" y="55" width="51" height="7" uuid="c509b1cc-4d59-423d-8389-a68dab26a157"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Uncorrected]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="108" y="55" width="51" height="7" uuid="861326f0-70a1-44eb-9ded-f39f38dc9328"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pinhole]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="162" y="55" width="51" height="7" uuid="c120f201-1d02-4ef3-9ea1-8dc05bd09a86"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Best Corrected]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="3" y="68" width="47" height="7" uuid="5bae401b-aa6a-4a85-bca8-84ad5ceb5d6f"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Distance]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="3" y="82" width="47" height="7" uuid="7d23461c-5048-4429-87f8-eadd2edfbd8f"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Near]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="216" y="55" width="51" height="7" uuid="bc0945de-2dd9-4a63-817d-69a5667e0f4d"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Uncorrected]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="270" y="55" width="51" height="7" uuid="6b85ef6f-0ba5-4449-a830-e3fffb16f368"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Pinhole]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="324" y="55" width="51" height="7" uuid="55a05303-5c26-485e-ad1e-b1601de1e060"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Best Corrected]]></text>
+			</staticText>
+			<line>
+				<reportElement x="52" y="40" width="1" height="53" uuid="e764f300-bdef-4ec3-97fa-711cf075d2ed">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="0" y="78" width="378" height="1" uuid="6dfd8117-3393-46aa-b842-09dc8b1b88e2"/>
+			</line>
+			<line>
+				<reportElement x="0" y="64" width="378" height="1" uuid="025e3173-a373-42e7-9999-e1de5f87c007"/>
+			</line>
+			<line>
+				<reportElement x="0" y="93" width="378" height="1" uuid="ebcc70d9-da47-440f-a3e6-c7e864f3a0c1"/>
+			</line>
+			<line>
+				<reportElement x="214" y="40" width="1" height="53" uuid="fac61192-d3d1-44ed-9a81-0ee8ef5693d8">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="377" y="40" width="1" height="53" uuid="4cbd25ee-3435-46e1-9af6-e1a616cec619">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="0" y="40" width="1" height="53" uuid="0862abc5-b961-4e2e-9aca-fec132ceada3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="106" y="52" width="1" height="41" uuid="fd090845-3737-4010-985d-2bbe8ec9177e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="160" y="52" width="1" height="41" uuid="ba50db7b-d2f7-4b10-8ed4-eb8deacfcee3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="268" y="52" width="1" height="41" uuid="ecd2920f-a0e5-4782-9e86-7e904ef15654">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="322" y="52" width="1" height="41" uuid="84fc863e-f76f-454a-8b44-d6f50ab3dc53">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField>
+				<reportElement positionType="Float" x="54" y="68" width="51" height="7" uuid="982160b3-9049-448c-b5fa-e80f7fa18db7"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_distance_unaided}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="108" y="68" width="51" height="7" uuid="3fb617cf-23b4-45c0-82ce-57f94205b004"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_distance_pinhole}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="162" y="68" width="51" height="7" uuid="8cc184db-0a6a-45c6-ad93-e540f5cc4486"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_distance_best_corrected}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="216" y="68" width="51" height="7" uuid="33dba2da-508f-4489-bce7-13fedac92852"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_distance_unaided}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="270" y="68" width="51" height="7" uuid="4e690314-d5e4-4d69-871e-d438b6d3eb1d"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_distance_pinhole}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="324" y="68" width="51" height="7" uuid="b0a9971b-f08e-4210-aeb0-74fe20fb3299"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_distance_best_corrected}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="54" y="82" width="51" height="7" uuid="29694733-1777-409e-9708-e1f1d6a53dc9"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_near_unaided}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="108" y="82" width="51" height="7" uuid="aa16c9f7-c289-4c15-a930-5b4295e2982f"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_near_pinhole}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="162" y="82" width="51" height="7" uuid="4d4d0229-ab8c-4549-8488-7afcb9807f10"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_near_best_corrected}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="216" y="82" width="51" height="7" uuid="59f3d9bb-5177-4d32-813c-77d496814b44"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_near_unaided}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="270" y="82" width="51" height="7" uuid="fc87ee4a-901a-4a72-a134-846a7e13ee39"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_near_pinhole}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="324" y="82" width="51" height="7" uuid="decb519c-c70f-4111-bf1f-1e62a35913ad"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_near_best_corrected}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="22" width="220" height="13" uuid="a93757a7-d559-468b-b15f-2809df8c645b"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="false"/>
+				</textElement>
+				<text><![CDATA[Vision / Visual Acuity]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="5" width="220" height="13" uuid="03fbf00c-95bb-4b0a-805f-805fd5401cea"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Opthomology :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="109" width="220" height="13" uuid="f6b6d6cc-a8ae-425e-a33d-fa3d03006d56"/>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="false"/>
+				</textElement>
+				<text><![CDATA[Spectacle Prescription]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="125" width="378" height="1" uuid="ebff8e3a-3462-4ef3-b517-fc6a775c92fc">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="0" y="138" width="378" height="1" uuid="e0a05105-5db1-43a6-83f3-3b50ad263ecb"/>
+			</line>
+			<staticText>
+				<reportElement positionType="Float" x="109" y="128" width="51" height="7" uuid="0be7daa9-24e1-4440-93ad-1aa293cb08dd"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Right Eye]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="271" y="128" width="51" height="7" uuid="af85ba83-7595-410d-b867-ea907b12ddb5"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Left Eye]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="54" y="141" width="51" height="7" uuid="41a330ce-f85e-4f48-82ee-17976a839f81"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SPH]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="108" y="141" width="51" height="7" uuid="651dd075-ea45-4844-a576-645a62e4cabe"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CYL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="162" y="141" width="51" height="7" uuid="508afdb6-b24c-4c02-a211-57da3dea6d08"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[AXIS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="3" y="154" width="47" height="7" uuid="5e06a668-9115-4f45-b9e5-3913aab7d351"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Distance]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="3" y="168" width="47" height="7" uuid="c3e9c619-76f3-484b-bba1-f1f76ef361e3"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Near]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="216" y="141" width="51" height="7" uuid="1ae405d1-4890-443e-8d0e-bf5d09740631"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[SPH]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="270" y="141" width="51" height="7" uuid="c767c277-20fa-4811-b102-bca12f26b6ff"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CYL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="324" y="141" width="51" height="7" uuid="a76c4817-68ae-4a2f-b0b5-f511186d80f5"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[AXIS]]></text>
+			</staticText>
+			<line>
+				<reportElement x="52" y="126" width="1" height="53" uuid="695c9c81-cbd0-47b7-889b-37fb30ab8c93">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="0" y="164" width="378" height="1" uuid="8a6aa246-c175-4771-a791-2255fe5593f6"/>
+			</line>
+			<line>
+				<reportElement x="0" y="150" width="378" height="1" uuid="2c42adc4-7c46-471a-a7e5-25c9d7c99c3f"/>
+			</line>
+			<line>
+				<reportElement x="0" y="179" width="378" height="1" uuid="71d796c9-b0e7-47a0-a521-5c8980d29426"/>
+			</line>
+			<line>
+				<reportElement x="214" y="126" width="1" height="53" uuid="1002ad8f-53d1-438f-baec-2c465ef8f4e5">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="377" y="126" width="1" height="53" uuid="ceaf8e93-1d03-40b1-bd57-180018f5e516">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="0" y="126" width="1" height="53" uuid="3ab7fa23-4a47-4248-b16d-63bc6758d770">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="106" y="138" width="1" height="41" uuid="63674d28-47c9-44c7-8e9a-ba4d3bc797a9">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="160" y="138" width="1" height="41" uuid="f7f9d293-a02c-4b6c-8923-172de23a9cbc">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="268" y="138" width="1" height="41" uuid="f8b79cb0-7666-4ed6-9a1a-471d98b20f35">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement x="322" y="138" width="1" height="41" uuid="08d27e38-25cb-4254-a7ac-0e963b6861f5">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+			</line>
+			<textField>
+				<reportElement positionType="Float" x="54" y="154" width="51" height="7" uuid="f69f44b6-2659-44a8-a797-7f0960347b7c"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_sph_dist}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="108" y="154" width="51" height="7" uuid="b0de2784-094c-40ea-b9fb-abaf9fb8d192"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_cyl_dist}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="162" y="154" width="51" height="7" uuid="2603f0bc-2119-4471-9e1c-5c274ffbf08f"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_axis_dist}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="216" y="154" width="51" height="7" uuid="b26f8b6e-a251-4284-b61b-195be740c6e0"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_sph_dist}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="270" y="154" width="51" height="7" uuid="d1a9e7d7-f874-455f-bef7-6b974ac62aaf"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_cyl_dist}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="324" y="154" width="51" height="7" uuid="4b176efb-51ce-4a44-941e-35f60b4d6e16"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_axis_dist}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="54" y="168" width="51" height="7" uuid="402fb174-d2b3-47bf-b9d5-898727b47ab1"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_sph_near}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="108" y="168" width="51" height="7" uuid="d9abe095-482e-4678-8a60-849db6e4fa99"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_cyl_near}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="162" y="168" width="51" height="7" uuid="d822526b-8e6a-4dff-ab20-752dd9e4a103"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{re_axis_near}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="216" y="168" width="51" height="7" uuid="1d5154e9-20fd-420e-9e29-f158a7095676"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_sph_near}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="270" y="168" width="51" height="7" uuid="3022c696-3344-413d-b49c-ac5d78bad270"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_cyl_near}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="324" y="168" width="51" height="7" uuid="d9207955-5211-4ee9-bc18-742191c3d3ed"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{le_axis_near}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement positionType="Float" x="61" y="193" width="51" height="7" uuid="587819ba-3bca-44fa-9884-dd109d5999bf"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ipd_value}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="3" y="193" width="53" height="7" uuid="93fd4ee0-e873-44ad-a8b0-d1b6c7446c44">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[IPD/PD :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement positionType="Float" x="3" y="204" width="53" height="7" uuid="af5c9436-f65c-47b3-b910-47643b1095dd"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Type Of Lenses :]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight">
+				<reportElement positionType="Float" x="61" y="204" width="51" height="7" uuid="0bda02be-b8b8-4e86-87d3-5546d7925612"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{lens_type}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement positionType="Float" x="138" y="193" width="53" height="7" uuid="523d34ff-0017-41fb-a43f-44de69f12eb2">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Use :]]></text>
+			</staticText>
+			<textField>
+				<reportElement positionType="Float" x="196" y="193" width="74" height="7" uuid="97c89062-e5f4-43ab-9945-97c4d7d6460a"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{spectacle_use}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+</jasperReport>

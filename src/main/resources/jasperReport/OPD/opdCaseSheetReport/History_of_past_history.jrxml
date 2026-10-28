@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.20.1  -->
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="History_of_past_history" pageWidth="421" pageHeight="595" whenNoDataType="NoPages" columnWidth="421" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="9fbf08ce-1efe-485f-b07c-2a6e7a1e2d15">
 	<property name="ireport.scriptlethandling" value="0"/>
 	<property name="ireport.encoding" value="UTF-8"/>
@@ -26,9 +26,9 @@ where visit_id=$P{visit_id}]]>
 		<band splitType="Stretch"/>
 	</title>
 	<pageHeader>
-		<band height="18" splitType="Stretch">
+		<band height="30" splitType="Stretch">
 			<textField textAdjust="StretchHeight">
-				<reportElement x="97" y="1" width="300" height="16" uuid="6a06963b-82b9-4455-864b-ec2bb63faa6d"/>
+				<reportElement x="0" y="14" width="350" height="16" uuid="6a06963b-82b9-4455-864b-ec2bb63faa6d"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
@@ -39,7 +39,7 @@ where visit_id=$P{visit_id}]]>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
 				</textElement>
-				<text><![CDATA[Clinical Examination :]]></text>
+				<text><![CDATA[Clinical Notes :]]></text>
 			</staticText>
 		</band>
 	</pageHeader>
