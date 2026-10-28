@@ -23,8 +23,8 @@ public class MasState {
     @Column(name = "state_code", length = 8)
     private String stateCode;
 
-    @Size(max = 30)
-    @Column(name = "state_name", length = 30)
+    @Size(max = 100)
+    @Column(name = "state_name", length = 100)
     private String stateName;
 
     @Size(max = 1)

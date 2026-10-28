@@ -8,6 +8,7 @@ import com.hims.entity.User;
 import com.hims.entity.repository.MasCountryRepository;
 import com.hims.entity.repository.MasStateRepository;
 import com.hims.entity.repository.UserRepo;
+import com.hims.exception.SDDException;
 import com.hims.request.MasStateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.MasStateResponse;
@@ -89,8 +90,14 @@ public class MasStateServiceImpl implements MasStateService {
             MasState savedState = masStateRepository.save(state);
             return ResponseUtils.createSuccessResponse(mapToResponse(savedState), new TypeReference<>() {
             });
-        }
-        catch (Exception e) {
+        }catch (SDDException e){
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    e.getMessage(),
+                    e.getStatus()
+            );
+        } catch (Exception e) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "An unexpected error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
