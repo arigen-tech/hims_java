@@ -1,10 +1,12 @@
 package com.hims.service.impl;
 
 
+import com.hims.exception.SDDException;
 import com.hims.response.LgdDistrictsResponse;
 import com.hims.response.LgdStatesResponse;
 import com.hims.service.LgdStateAndDistrictApiService;
 import com.hims.service.LgdStateAndDistrictLookupService;
+import kong.unirest.HttpStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +42,8 @@ public class LgdStateAndDistrictAndDistrictLookupServiceImpl
                 .filter(code -> code != null && !code.isBlank())
                 .findFirst()
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                        new SDDException("LGD State",
+                                HttpStatus.BAD_REQUEST,
                                 "LGD state not found: " + stateName
                         ));
     }
@@ -78,7 +81,8 @@ public class LgdStateAndDistrictAndDistrictLookupServiceImpl
                 .filter(code -> code != null && !code.isBlank())
                 .findFirst()
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
+                                new SDDException("LGD District",
+                                        HttpStatus.BAD_REQUEST,
                                 "LGD district not found: "
                                         + districtName
                                         + " for LGD state code: "
