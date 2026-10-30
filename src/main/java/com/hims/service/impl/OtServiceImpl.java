@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.mapper.OtBookingHistoryMapper;
 import com.hims.projection.PendingForOtProjection;
 import com.hims.projection.PendingForOtSurgeryProjection;
 import com.hims.request.OtRequest;
@@ -57,6 +58,7 @@ public class OtServiceImpl implements OtService {
     private final UserRepo userRepo;
     private  final MasDepartmentRepository masDepartmentRepository;
     private final OtBookingRepository otBookingRepository;
+    private final OtBookingHistoryMapper otBookingHistoryMapper;
     private final OtBookingStatusLogRepository otBookingStatusLogRepository;
     @Value("${ipd.admission.status.admitted}")
     Long ipdAdmissionStatusAdmitted;
@@ -300,6 +302,17 @@ public class OtServiceImpl implements OtService {
         log.info("Pending OT review list fetched successfully, totalElements={}", responsePage.getTotalElements());
         return ResponseUtils.createSuccessResponse( responsePage,new TypeReference<>(){});
     }
+
+    @Override
+    @Transactional
+    public ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(String patient, Long statusId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<OtBookingHistoryResponse> responsePage = otBookingRepository
+                .findBookingHistory(patient == null || patient.isBlank() ? null : patient.trim(), statusId, pageable)
+                .map(otBookingHistoryMapper::toResponse);
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+    }
+
     @Override
     @Transactional
     public ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark) {
