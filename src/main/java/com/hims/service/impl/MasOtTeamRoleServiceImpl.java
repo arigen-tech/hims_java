@@ -237,6 +237,9 @@ public class MasOtTeamRoleServiceImpl implements MasOtTeamRoleService {
         response.setOtTeamRoleId(entity.getOtTeamRoleId());
         response.setRoleCode(entity.getRoleCode());
         response.setRoleName(entity.getRoleName());
+        response.setUserTypeId(entity.getUserType() != null
+                ? entity.getUserType().getUserTypeId()
+                : null);
         response.setDescription(entity.getDescription());
         response.setStatus(entity.getStatus());
         response.setLastChgBy(entity.getLastChgBy());

@@ -9,8 +9,10 @@ import com.hims.entity.repository.MasDepartmentRepository;
 import com.hims.entity.repository.MasRoleRepository;
 import com.hims.entity.repository.UserDepartmentRepository;
 import com.hims.entity.repository.UserRepo;
+import com.hims.mapper.UserSummaryMapper;
 import com.hims.response.ApiResponse;
 import com.hims.response.UserResponse;
+import com.hims.response.UserSummaryResponse;
 import com.hims.service.AuthService;
 import com.hims.service.UserService;
 import com.hims.utils.AuthUtil;
@@ -39,6 +41,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     UserRepo userRepository;
+
+    @Autowired
+    UserSummaryMapper userSummaryMapper;
     @Autowired
     AuthUtil authUtil;
 
@@ -226,6 +231,22 @@ public class UserServiceImpl implements UserService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                     "An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+
+    @Override
+    public ApiResponse<List<UserSummaryResponse>> getUsersByUserTypeOrDesignation(Long userTypeId, Long designationId) {
+        if ((userTypeId == null) == (designationId == null)) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Provide exactly one of userTypeId or designationId.", 400);
+        }
+
+        List<Object[]> rows = userTypeId != null
+                ? userRepository.findUserSummariesByUserTypeIdNative(userTypeId)
+                : userRepository.findUserSummariesByDesignationIdNative(designationId);
+        List<UserSummaryResponse> responses = rows.stream()
+                .map(userSummaryMapper::toResponse)
+                .collect(Collectors.toList());
+        return ResponseUtils.createSuccessResponse(responses, new TypeReference<>() {});
     }
 
 

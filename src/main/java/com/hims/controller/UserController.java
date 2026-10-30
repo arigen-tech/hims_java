@@ -4,6 +4,7 @@ import com.hims.response.ApiResponse;
 import com.hims.response.MasStoreItemResponse;
 import com.hims.response.UserApplicationResponse;
 import com.hims.response.UserResponse;
+import com.hims.response.UserSummaryResponse;
 import com.hims.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -51,6 +53,14 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable String user) {
         ApiResponse<UserResponse> response =userService.findByUser(user);
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/byUserTypeOrDesignation")
+    @Operation(summary = "Get users by user type or employee designation")
+    public ResponseEntity<ApiResponse<List<UserSummaryResponse>>> getUsersByUserTypeOrDesignation(
+            @RequestParam(required = false) Long userTypeId,
+            @RequestParam(required = false) Long designationId) {
+        return ResponseEntity.ok(userService.getUsersByUserTypeOrDesignation(userTypeId, designationId));
     }
 
 }

@@ -26,6 +26,10 @@ public class MasOtTeamRole {
     @Column(name = "role_name", nullable = false, unique = true, length = 100)
     private String roleName;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_type_id", referencedColumnName = "user_type_id")
+    private MasUserType userType;
+
     @Column(name = "description", length = 500)
     private String description;
 
