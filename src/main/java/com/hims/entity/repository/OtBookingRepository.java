@@ -15,13 +15,9 @@ public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
     @Query(value = """
             SELECT ob.ot_booking_id AS id,
                    obrh.ot_booking_request_id AS headerid,
-                   obrd.ot_booking_request_dt_id AS detailid,
                    p.patient_id AS patientId, p.uhid_no AS uhidNo,
                    CONCAT_WS(' ', NULLIF(TRIM(p.p_fn), ''), NULLIF(TRIM(p.p_ln), '')) AS patientName,
                    md.department_id AS departmentId, md.department_name AS departmentName,
-                   ms.surgery_id AS surgeryId, ms.surgery_name AS surgeryName,
-                   ms.surgery_level AS surgeryLevel,
-                   ms.is_anesthesia_required AS anesthesiaRequired,
                    obrh.preferred_date AS preferredDate,
                    obrh.preferred_start_time AS preferredStartTime,
                    obrh.preferred_end_time AS preferredEndTime,
@@ -37,30 +33,26 @@ public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
             FROM ot_booking ob
             JOIN mas_ot_booking_status mobs ON ob.booking_status_id = mobs.booking_status_id
             JOIN ot_booking_request_hd obrh ON ob.ot_booking_request_id = obrh.ot_booking_request_id
-            JOIN ot_booking_request_dt obrd ON obrh.ot_booking_request_id = obrd.ot_booking_request_id
             JOIN patient p ON obrh.patient_id = p.patient_id
             JOIN mas_department md ON obrh.department_id = md.department_id
             LEFT JOIN users surg ON obrh.primary_surgeon_id = surg.user_id
             LEFT JOIN mas_operation_theatre mot ON ob.ot_id = mot.ot_id
-            LEFT JOIN mas_surgery ms ON obrd.surgery_id = ms.surgery_id
             WHERE (:statusId IS NULL OR mobs.booking_status_id = :statusId)
               AND (:patient IS NULL OR :patient = ''
                    OR LOWER(COALESCE(p.p_fn, '') || ' ' || COALESCE(p.p_ln, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
                    OR LOWER(COALESCE(p.uhid_no, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
                    OR CAST(p.patient_id AS varchar) = :patient)
-            ORDER BY ob.booked_date DESC, ob.ot_booking_id DESC, ms.surgery_id
+            ORDER BY ob.booked_date DESC, ob.ot_booking_id DESC
             """,
             countQuery = """
             SELECT COUNT(*)
             FROM ot_booking ob
             JOIN mas_ot_booking_status mobs ON ob.booking_status_id = mobs.booking_status_id
             JOIN ot_booking_request_hd obrh ON ob.ot_booking_request_id = obrh.ot_booking_request_id
-            JOIN ot_booking_request_dt obrd ON obrh.ot_booking_request_id = obrd.ot_booking_request_id
             JOIN patient p ON obrh.patient_id = p.patient_id
             JOIN mas_department md ON obrh.department_id = md.department_id
             LEFT JOIN users surg ON obrh.primary_surgeon_id = surg.user_id
             LEFT JOIN mas_operation_theatre mot ON ob.ot_id = mot.ot_id
-            LEFT JOIN mas_surgery ms ON obrd.surgery_id = ms.surgery_id
             WHERE (:statusId IS NULL OR mobs.booking_status_id = :statusId)
               AND (:patient IS NULL OR :patient = ''
                    OR LOWER(COALESCE(p.p_fn, '') || ' ' || COALESCE(p.p_ln, '')) LIKE LOWER(CONCAT('%', :patient, '%'))

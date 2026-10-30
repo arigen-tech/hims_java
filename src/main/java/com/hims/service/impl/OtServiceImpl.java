@@ -5,6 +5,7 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.mapper.OtBookingHistoryMapper;
+import com.hims.projection.OtBookingHistoryProjection;
 import com.hims.projection.PendingForOtProjection;
 import com.hims.projection.PendingForOtSurgeryProjection;
 import com.hims.request.OtRequest;
@@ -307,9 +308,27 @@ public class OtServiceImpl implements OtService {
     @Transactional
     public ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(String patient, Long statusId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<OtBookingHistoryResponse> responsePage = otBookingRepository
-                .findBookingHistory(patient == null || patient.isBlank() ? null : patient.trim(), statusId, pageable)
-                .map(otBookingHistoryMapper::toResponse);
+        Page<OtBookingHistoryProjection> projectionPage = otBookingRepository.findBookingHistory(
+                patient == null || patient.isBlank() ? null : patient.trim(), statusId, pageable);
+        List<Long> requestIds = projectionPage.getContent().stream()
+                .map(OtBookingHistoryProjection::getHeaderid)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, List<OtBookingHistoryResponse.SurgeryDetail>> surgeryDetailsByRequestId = requestIds.isEmpty()
+                ? Collections.emptyMap()
+                : dtRepository.findSurgeriesByRequestIds(requestIds).stream()
+                        .collect(Collectors.groupingBy(
+                                PendingForOtSurgeryProjection::getOtBookingRequestId,
+                                Collectors.mapping(otBookingHistoryMapper::toSurgeryResponse, Collectors.toList())));
+
+        Page<OtBookingHistoryResponse> responsePage = projectionPage.map(projection -> {
+            OtBookingHistoryResponse response = otBookingHistoryMapper.toResponse(projection);
+            response.setSurgeries(surgeryDetailsByRequestId.getOrDefault(
+                    projection.getHeaderid(), Collections.emptyList()));
+            return response;
+        });
         return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
     }
 

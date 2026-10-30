@@ -7,16 +7,11 @@ import java.time.LocalTime;
 public interface OtBookingHistoryProjection {
     Long getId();
     Long getHeaderid();
-    Long getDetailid();
     Long getPatientId();
     String getUhidNo();
     String getPatientName();
     Long getDepartmentId();
     String getDepartmentName();
-    Long getSurgeryId();
-    String getSurgeryName();
-    String getSurgeryLevel();
-    String getAnesthesiaRequired();
     LocalDate getPreferredDate();
     LocalTime getPreferredStartTime();
     LocalTime getPreferredEndTime();

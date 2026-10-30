@@ -8,4 +8,6 @@ public interface PendingForOtSurgeryProjection {
     Long getSurgeryId();
 
     String getSurgeryName();
+
+    String getAnesthesiaRequired();
 }

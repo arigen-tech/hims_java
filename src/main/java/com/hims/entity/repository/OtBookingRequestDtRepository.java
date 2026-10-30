@@ -20,7 +20,8 @@ public interface OtBookingRequestDtRepository extends JpaRepository<OtBookingReq
             d.ot_booking_request_dt_id AS otBookingDtId,
             d.ot_booking_request_id AS otBookingRequestId,
             d.surgery_id AS surgeryId,
-            s.surgery_name AS surgeryName
+            s.surgery_name AS surgeryName,
+            s.is_anesthesia_required AS anesthesiaRequired
 
         FROM ot_booking_request_dt d
 
