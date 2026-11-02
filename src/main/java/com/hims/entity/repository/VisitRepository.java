@@ -782,7 +782,9 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
         )
     )
 
-    ORDER BY v.visit_date ASC
+    ORDER BY
+        CASE WHEN 'y' IN (:visitStatus) THEN v.visit_date END DESC,
+        CASE WHEN 'y' NOT IN (:visitStatus) THEN v.visit_date END ASC
     """, nativeQuery = true)
     List<AppointmentHistoryProjection> findAppointmentHistoryByHospitalPatientIdOrMobileAndDepartments(
             @Param("hospitalId") Long hospitalId,
