@@ -32,5 +32,8 @@ public class LabInvestigationsReportResponse {
     private Long resultFlagId;
     private String resultFlagName;
     private String investigationType;
+    private Long investigationId;
+    private Long subInvestigationId;
+    private String subInvestigationName;
 
 }

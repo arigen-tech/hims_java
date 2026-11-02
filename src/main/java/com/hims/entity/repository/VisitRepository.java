@@ -1561,7 +1561,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
         JOIN d.departmentType dt
         WHERE v.visitStatus = :visitStatus
           AND dt.departmentTypeCode = :departmentTypeCode
-          AND p.id = :patientId
+          AND (:patientId IS NULL OR p.id = :patientId)
           AND (
               :hospitalId IS NULL
               OR v.hospital.id = :hospitalId

@@ -2826,12 +2826,19 @@ public class OpdPatientDetailServiceImpl implements OpdPatientDetailService {
 
     @Override
     public ApiResponse<List<OpdReportDepartmentResponse>> getOpdReportDepartmentList(Long patientId, Long hospitalId) {
-        List<OpdReportDepartmentResponse> departments = visitRepository.getOpdReportDepartments(
-                        AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPD_TYPE, patientId, hospitalId)
-                .stream()
-                .map(projection -> new OpdReportDepartmentResponse(
-                        projection.getDepartmentId(), projection.getDepartmentName()))
-                .toList();
+        List<OpdReportDepartmentResponse> departments;
+        if (patientId == null && hospitalId == null) {
+            departments = departmentRepository.findActiveDepartmentsByTypeCode(AppConstants.OPD_TYPE).stream()
+                    .map(department -> new OpdReportDepartmentResponse(department.getId(), department.getDepartmentName()))
+                    .toList();
+        } else {
+            departments = visitRepository.getOpdReportDepartments(
+                            AppConstants.VISIT_STATUS_COMPLETED.toLowerCase(), AppConstants.OPD_TYPE, patientId, hospitalId)
+                    .stream()
+                    .map(projection -> new OpdReportDepartmentResponse(
+                            projection.getDepartmentId(), projection.getDepartmentName()))
+                    .toList();
+        }
 
         return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {
         });
