@@ -312,10 +312,11 @@ public class OtServiceImpl implements OtService {
 
     @Override
     @Transactional
-    public ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(String patient, Long statusId, int page, int size) {
+    public ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(
+            String patient, Long patientId, Boolean ipd, Long statusId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<OtBookingHistoryProjection> projectionPage = otBookingRepository.findBookingHistory(
-                patient == null || patient.isBlank() ? null : patient.trim(), statusId, pageable);
+                patient == null || patient.isBlank() ? null : patient.trim(), patientId, ipd, statusId, pageable);
         List<Long> requestIds = projectionPage.getContent().stream()
                 .map(OtBookingHistoryProjection::getHeaderid)
                 .filter(Objects::nonNull)

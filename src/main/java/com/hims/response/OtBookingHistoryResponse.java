@@ -28,6 +28,7 @@ public class OtBookingHistoryResponse {
     private String bookingNo;
     private Long primarySurgeonId;
     private String surgeonName;
+    private String priority;
     private LocalDateTime cancelledDate;
     private String cancelledBy;
     private Long bookingStatusId;
@@ -38,6 +39,9 @@ public class OtBookingHistoryResponse {
         private Long otBookingRequestDtId;
         private Long surgeryId;
         private String surgeryName;
+        private Long surgeryTypeId;
+        private String surgeryTypeName;
+        private String surgeryLevel;
         private String anesthesiaRequired;
     }
 }

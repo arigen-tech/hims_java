@@ -23,6 +23,7 @@ public interface OtBookingHistoryProjection {
     String getBookingNo();
     Long getPrimarySurgeonId();
     String getSurgeonName();
+    String getPriority();
     LocalDateTime getCancelledDate();
     String getCancelledBy();
     Long getBookingStatusId();

@@ -27,6 +27,7 @@ public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
                    obrh.primary_surgeon_id AS primarySurgeonId,
                    CONCAT_WS(' ', NULLIF(TRIM(surg.first_name), ''), NULLIF(TRIM(surg.middle_name), ''),
                              NULLIF(TRIM(surg.last_name), '')) AS surgeonName,
+                   obrh.priority AS priority,
                    ob.cancelled_date AS cancelledDate, ob.cancelled_by AS cancelledBy,
                    mobs.booking_status_id AS bookingStatusId,
                    mobs.status_name AS statusName
@@ -38,6 +39,8 @@ public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
             LEFT JOIN users surg ON obrh.primary_surgeon_id = surg.user_id
             LEFT JOIN mas_operation_theatre mot ON ob.ot_id = mot.ot_id
             WHERE (:statusId IS NULL OR mobs.booking_status_id = :statusId)
+              AND (:patientId IS NULL OR p.patient_id = :patientId)
+              AND (:ipd IS NULL OR upper(coalesce(obrh.request_source, '')) = CASE WHEN :ipd THEN 'IPD' ELSE 'OPD' END)
               AND (:patient IS NULL OR :patient = ''
                    OR LOWER(COALESCE(p.p_fn, '') || ' ' || COALESCE(p.p_ln, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
                    OR LOWER(COALESCE(p.uhid_no, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
@@ -54,12 +57,16 @@ public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
             LEFT JOIN users surg ON obrh.primary_surgeon_id = surg.user_id
             LEFT JOIN mas_operation_theatre mot ON ob.ot_id = mot.ot_id
             WHERE (:statusId IS NULL OR mobs.booking_status_id = :statusId)
+              AND (:patientId IS NULL OR p.patient_id = :patientId)
+              AND (:ipd IS NULL OR upper(coalesce(obrh.request_source, '')) = CASE WHEN :ipd THEN 'IPD' ELSE 'OPD' END)
               AND (:patient IS NULL OR :patient = ''
                    OR LOWER(COALESCE(p.p_fn, '') || ' ' || COALESCE(p.p_ln, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
                    OR LOWER(COALESCE(p.uhid_no, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
                    OR CAST(p.patient_id AS varchar) = :patient)
             """, nativeQuery = true)
     Page<OtBookingHistoryProjection> findBookingHistory(@Param("patient") String patient,
+                                                        @Param("patientId") Long patientId,
+                                                        @Param("ipd") Boolean ipd,
                                                         @Param("statusId") Long statusId,
                                                         Pageable pageable);
 }

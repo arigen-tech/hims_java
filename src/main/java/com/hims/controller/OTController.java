@@ -77,11 +77,13 @@ public class OTController {
     @Operation(summary = "Get paginated OT booking history")
     public ResponseEntity<ApiResponse<Page<OtBookingHistoryResponse>>> getOtBookingHistory(
             @RequestParam(required = false) String patient,
+            @RequestParam(required = false) @Positive Long patientId,
+            @RequestParam(required = false) Boolean ipd,
             @RequestParam(required = false) @Positive Long statusId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+            @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size) {
         ApiResponse<Page<OtBookingHistoryResponse>> response =
-                otService.getOtBookingHistory(patient, statusId, page, size);
+                otService.getOtBookingHistory(patient, patientId, ipd, statusId, page, size);
         return ResponseEntity.ok(response);
     }
     /**
