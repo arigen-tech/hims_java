@@ -2,11 +2,13 @@ package com.hims.controller;
 
 import com.hims.request.OpdOpthDetailsRequest;
 import com.hims.request.OtRequest;
+import com.hims.request.OtTeamMemberRequest;
 import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ActiveAdmissionResponse;
 import com.hims.response.ApiResponse;
 import com.hims.response.PendingForOtResponse;
 import com.hims.response.OtBookingHistoryResponse;
+import com.hims.response.OtTeamMemberResponse;
 import com.hims.service.OtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +19,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -103,6 +106,16 @@ public class OTController {
         ApiResponse<String> response = otService.saveAcceptAndReject(otBookingRequestId, flag, remark);
         log.info("Accept/Reject OT request API completed: otBookingRequestId={}, flag={}, remark={}", otBookingRequestId, flag, remark);
         return response;
+    }
+
+    @PostMapping("/teamMember")
+    public ApiResponse<OtTeamMemberResponse> saveOtTeamMember(@Valid @RequestBody OtTeamMemberRequest request) {
+        return otService.saveOtTeamMember(request);
+    }
+
+    @GetMapping("/teamMember")
+    public ApiResponse<OtTeamMemberResponse> getOtTeamMembers(@RequestParam @Positive Long otBookingId) {
+        return otService.getOtTeamMembers(otBookingId);
     }
 
 }

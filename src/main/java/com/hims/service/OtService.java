@@ -6,6 +6,9 @@ import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ApiResponse;
 import com.hims.response.PendingForOtResponse;
 import com.hims.response.OtBookingHistoryResponse;
+import com.hims.request.OtTeamMemberRequest;
+import com.hims.response.OtTeamMemberResponse;
+import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 
@@ -22,4 +25,8 @@ public interface OtService {
     ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(String patient, Long statusId, int page, int size);
 
     ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark);
+
+    ApiResponse<OtTeamMemberResponse> saveOtTeamMember(OtTeamMemberRequest request);
+
+    ApiResponse<OtTeamMemberResponse> getOtTeamMembers(Long otBookingId);
 }

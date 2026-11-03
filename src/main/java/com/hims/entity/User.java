@@ -9,6 +9,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDate;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
@@ -166,7 +168,9 @@ public class User implements UserDetails {
     }
 
     public String getFullName(){
-        return firstName+" "+middleName+" " +lastName;
+        return Stream.of(firstName, middleName, lastName)
+                .filter(name -> name != null && !name.isBlank())
+                .collect(Collectors.joining(" "));
     }
 
 }
