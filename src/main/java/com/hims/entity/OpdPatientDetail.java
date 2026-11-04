@@ -217,4 +217,38 @@ public class OpdPatientDetail {
     @Column(name = "radio_Advised")
     private String radioAdvised;
 
+
+    // Referral Type (I = Internal, E = External)
+    @Size(max = 1)
+    @Column(name = "referral_type", length = 1)
+    private String referralType;
+
+    // Referral Department
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "referral_dept_id")
+    private MasDepartment referralDepartment;
+
+    // Internal Referral Doctor
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "int_referral_doctor_id")
+    private User internalReferralDoctor;
+
+    // Allergy History
+    @Column(name = "allergy_history", columnDefinition = "TEXT")
+    private String allergyHistory;
+
+    // Surgery Advice Flag (A = Advised, S = Scheduled)
+    @Size(max = 1)
+    @Column(name = "surgery_adv_flag", length = 1)
+    private String surgeryAdvFlag;
+
+    // Surgery Advice
+    @Column(name = "surgery_advise", columnDefinition = "TEXT")
+    private String surgeryAdvise;
+
+    @Size(max = 200)
+    @Column(name = "ref_doctor_name", length = 200)
+    private String referralDoctorName;
+
+
 }

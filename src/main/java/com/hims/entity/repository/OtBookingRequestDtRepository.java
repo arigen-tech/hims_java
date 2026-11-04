@@ -4,6 +4,7 @@ import com.hims.entity.OtBookingRequestDt;
 import com.hims.entity.OtBookingRequestHd;
 import com.hims.projection.PendingForOtSurgeryProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -33,6 +34,15 @@ public interface OtBookingRequestDtRepository extends JpaRepository<OtBookingReq
             nativeQuery = true)
     List<PendingForOtSurgeryProjection> findSurgeriesByRequestIds(
             @Param("requestIds") List<Long> requestIds
+    );
+
+    @Modifying
+    @Query("""
+            DELETE FROM OtBookingRequestDt dt
+            WHERE dt.otBookingRequest.otBookingRequestId = :bookingId
+            """)
+    void deleteByBookingId(
+            @Param("bookingId") Long bookingId
     );
 }
 

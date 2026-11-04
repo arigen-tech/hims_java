@@ -43,6 +43,10 @@ public class MasPacsTemplate {
     @Column(name = "status", length = 1, nullable = false)
     private String status;
 
+    @NotBlank(message = "templateType is required")
+    @Column(name = "template_type", nullable = false,length =1)
+    private String templateType;
+
     @NotBlank(message = "createdBy is required")
     @Size(max = 100, message = "createdBy max length is 100")
     @Column(name = "created_by", length = 100, nullable = false)

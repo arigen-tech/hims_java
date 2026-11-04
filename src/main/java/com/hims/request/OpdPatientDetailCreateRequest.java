@@ -52,6 +52,7 @@ public class OpdPatientDetailCreateRequest {
     private String presentComplaints;
     private String patientSignsSymptoms;
     private String clinicalExamination;
+    private  String allergyHistory;
 
     // ======================== Diagnosis ========================
     private String workingDiagnosis;
@@ -88,6 +89,10 @@ public class OpdPatientDetailCreateRequest {
 
     //  =========================== referral ==============================
     private String referralFlag;
+    private String referralType;
+    private Long referralDepartmentId;
+    private Long internalRefDoctorId;
+    private String referralDoctorName;
     private String referTo;
     private String referredHospitalName;
     private String referralRemarks;

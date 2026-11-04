@@ -5,6 +5,7 @@ import com.hims.request.OtRequest;
 import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ApiResponse;
 import com.hims.response.PendingForOtResponse;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 
@@ -19,4 +20,11 @@ public interface OtService {
     ApiResponse<Page<PendingForOtResponse>> pendingForReviewOt(int page, int size, String patientName, String mobileNo, String patientType);
 
     ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark);
+@Transactional
+void deleteOtBookingRequest(
+            Long otBookingRequestId,
+            Long patientId,
+            Long visitId
+    );
+
 }

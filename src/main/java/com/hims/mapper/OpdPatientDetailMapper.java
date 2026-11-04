@@ -140,6 +140,7 @@ public class OpdPatientDetailMapper {
         opd.setWorkingDiag(request.getWorkingDiagnosis());
         opd.setFinalMedicalAdvice(request.getDoctorRemarks());
         opd.setTreatmentAdvice(request.getTreatmentAdvice());
+        opd.setAllergyHistory(request.getAllergyHistory());
 
         if (request.getIcdDiagnosis() != null && !request.getIcdDiagnosis().isEmpty()) {
             String joinedNames = request.getIcdDiagnosis().stream().filter(Objects::nonNull).map(OpdPatientDetailCreateRequest.IcdDiagnosis::getIcdDiagnosisName).filter(Objects::nonNull).collect(Collectors.joining(","));
