@@ -38,6 +38,7 @@ public class OpdPatientRecallResponce {
     private String presentHistory;
     private String patientSignsSymptoms;
     private String clinicalExamination;
+    private String allergyHistory;
                //=============Vital===============
     private String height;
     private String idealWeight;
@@ -93,6 +94,10 @@ public class OpdPatientRecallResponce {
     private Instant referralDate;
     private String referTo;
     private String referredHospitalName;
+    private String referralType;
+    private Long referralDepartmentId;
+    private Long internalRefDoctorId;
+    private String referralDoctorName;
 
     // =================== follow up =========
 

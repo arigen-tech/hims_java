@@ -403,7 +403,7 @@ public class CreateAbhaServiceImpl implements CreateAbhaService {
     @Override
     public Mono<ApiResponse<AbdmUpdateAddressResponse>> updateSuggestion(AbhaSuggestionUpdateRequest abhaSuggestionUpdateRequest) throws Exception {
 
-        Map<String, Object> requestData = CreateAbdmRequest.createRequestForAbhaAddresssUpdate(abhaSuggestionUpdateRequest.getTnxId(), abhaSuggestionUpdateRequest.getAbhaAddress());
+        Map<String, Object> requestData = CreateAbdmRequest.createRequestForAbhaAddressUpdate(abhaSuggestionUpdateRequest.getTnxId(), abhaSuggestionUpdateRequest.getAbhaAddress());
         Mono<AbdmUpdateAddressResponse> sendOtpResponse = createAbhaMapper.updateSuggestion(requestData);
 
         return sendOtpResponse.map(res -> {

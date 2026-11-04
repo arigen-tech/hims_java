@@ -216,7 +216,7 @@ public class CreateAbdmRequest {
     }
 
 
-    public static Map<String, Object> createRequestForAbhaAddresssUpdate(
+    public static Map<String, Object> createRequestForAbhaAddressUpdate(
             String txnId,
             String abhaAddress
     ) {

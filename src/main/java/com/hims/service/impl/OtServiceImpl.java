@@ -167,6 +167,7 @@ public class OtServiceImpl implements OtService {
         hd.setRequestedDate(dto.getRequestedDate());
         hd.setLastChgBy(dto.getLastChgBy());
         hd.setLastChgDate(LocalDateTime.now());
+        hd.setSurgeryLevel(dto.getSurgeryLevel());
         OtBookingRequestHd savedHd = hdRepository.save(hd);
 
         log.info("OT Booking Header saved successfully. ID: {}",savedHd.getOtBookingRequestId());
@@ -604,5 +605,71 @@ public class OtServiceImpl implements OtService {
         response.setDoctorName(projection.getDoctorName());
 
         return response;
+    }
+
+    @Transactional
+    public void deleteOtBookingRequest(
+            Long otBookingRequestId,
+            Long patientId,
+            Long visitId
+    ) {
+
+        if (otBookingRequestId == null) {
+            throw new SDDException(
+                    "otBookingRequestId",
+                    400,
+                    "OT booking request ID is required"
+            );
+        }
+
+        if (patientId == null || visitId == null) {
+            throw new SDDException(
+                    "patientVisit",
+                    400,
+                    "Patient ID and Visit ID are required"
+            );
+        }
+
+        OtBookingRequestHd otBooking = hdRepository
+                .findById(otBookingRequestId)
+                .orElseThrow(() -> new SDDException(
+                        "otBooking",
+                        404,
+                        "OT booking request not found for ID: " + otBookingRequestId
+                ));
+
+        if (otBooking.getRequestSource() == null
+                || !otBooking.getRequestSource().equalsIgnoreCase("OPD")) {
+
+            throw new SDDException(
+                    "otBooking",
+                    400,
+                    "Only OPD OT bookings can be deleted"
+            );
+        }
+
+        if (otBooking.getPatientId() == null
+                || !patientId.equals(otBooking.getPatientId().getId())) {
+
+            throw new SDDException(
+                    "patientId",
+                    400,
+                    "OT booking does not belong to this patient"
+            );
+        }
+
+        if (otBooking.getVisitId() == null
+                || !visitId.equals(otBooking.getVisitId())) {
+
+            throw new SDDException(
+                    "visitId",
+                    400,
+                    "OT booking does not belong to this visit"
+            );
+        }
+
+        dtRepository.deleteByBookingId(otBookingRequestId);
+
+        hdRepository.delete(otBooking);
     }
 }

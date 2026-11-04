@@ -1495,6 +1495,10 @@ public class RegistrationServiceImpl implements RegistrationService {
                     .ifPresent(patient::setPatientHospital);
         }
 
+        if(request.getIsRegisterThroughAbha()){
+            saveAbhaDetails(patient,request);
+        }
+
         return patientRepository.save(patient);
     }
     private Visit updateExistingVisitById(VisitRequest visit, Patient patient) {
@@ -1797,6 +1801,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             patientAbhaMapping.setAbhaAddress(patientRequest.getAbhaAddress());
             patientAbhaMapping.setAbhaProfilePhoto(patientRequest.getAbhaProfilePhotoPath());
             patientAbhaMapping.setPatientHospitalId(patient.getPatientHospital());
+            patientAbhaMapping.setXToken(patientRequest.getXToken());
 
             patientAbhaMappingRepository.save(patientAbhaMapping);
             return true;

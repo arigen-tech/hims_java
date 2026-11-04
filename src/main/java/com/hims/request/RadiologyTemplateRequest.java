@@ -17,4 +17,7 @@ public class RadiologyTemplateRequest {
 
     @NotBlank(message = "templateText is required")
     private String templateText;
+
+    @NotBlank(message = "TemplateType is required")
+    private String templateType;
 }
