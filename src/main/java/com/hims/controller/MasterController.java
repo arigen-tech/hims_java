@@ -135,7 +135,7 @@ public class MasterController {
     @Autowired
     private MasMedicalHistoryService masMedicalHistoryService;
     @Autowired
-    private MasTreatmentAdviseService service;
+    private MasTreatmentAdviseService masTreatmentAdviseService;
     @Autowired
     private MasProcedureTypeService masProcedureTypeService;
     @Autowired
@@ -2134,14 +2134,14 @@ public class MasterController {
 
     @GetMapping("masTreatmentAdvise/getAll/{flag}")
     public ResponseEntity<?> getAllTreatment(@PathVariable int flag) {
-        return ResponseEntity.ok(service.getAll(flag));
+        return ResponseEntity.ok(masTreatmentAdviseService.getAll(flag));
     }
 
     @PostMapping("masTreatmentAdvise/create")
     public ResponseEntity<ApiResponse<MasTreatmentAdviseResponse>> add(
             @RequestBody MasTreatmentAdviseRequest request) {
 
-        ApiResponse<MasTreatmentAdviseResponse> response = service.add(request);
+        ApiResponse<MasTreatmentAdviseResponse> response = masTreatmentAdviseService.add(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -2150,7 +2150,7 @@ public class MasterController {
             @PathVariable Long id,
             @RequestBody MasTreatmentAdviseRequest request) {
 
-        ApiResponse<MasTreatmentAdviseResponse> response = service.update(id, request);
+        ApiResponse<MasTreatmentAdviseResponse> response = masTreatmentAdviseService.update(id, request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -2159,7 +2159,7 @@ public class MasterController {
             @PathVariable Long id,
             @RequestParam String status) {
 
-        ApiResponse<MasTreatmentAdviseResponse> response = service.changeStatus(id, status);
+        ApiResponse<MasTreatmentAdviseResponse> response = masTreatmentAdviseService.changeStatus(id, status);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
     //    ===============================Mas Procedure Type =====================================
@@ -4513,9 +4513,9 @@ public class MasterController {
     }
 
     //=======================================Radiology Template master ====================================================
-    @GetMapping("radiologyTemplate/getAll/{flag}")
-    public ResponseEntity<ApiResponse<List<RadiologyTemplateResponse>>> getAllemplate(@PathVariable int flag) {
-        return ResponseEntity.ok(radiologyTemplateService.getAll(flag));
+    @GetMapping("radiologyTemplate/getAll/{templateType}/{flag}")
+    public ResponseEntity<ApiResponse<List<RadiologyTemplateResponse>>> getAllTemplateWrtTemplateType(@PathVariable String templateType,@PathVariable int flag) {
+        return ResponseEntity.ok(radiologyTemplateService.getAll(templateType,flag));
     }
 
     @GetMapping("radiologyTemplate/getById/{id}")
@@ -4543,9 +4543,9 @@ public class MasterController {
             @RequestParam String status) {
         return ResponseEntity.ok(radiologyTemplateService.changeStatus(id, status));
     }
-    @GetMapping("radiologyTemplateList/getById/{modalityId}")
-    public ResponseEntity<ApiResponse<List<RadiologyTemplateResponse>>> getByIdTemplateList(@PathVariable Long modalityId) {
-        return ResponseEntity.ok(radiologyTemplateService.getByIdTemplateList(modalityId));
+    @GetMapping("templateList/{modalityId}/{templateType}")
+    public ResponseEntity<ApiResponse<List<RadiologyTemplateResponse>>> getByIdTemplateListWrtTemplateType(@PathVariable Long modalityId,@PathVariable String templateType) {
+        return ResponseEntity.ok(radiologyTemplateService.getByIdTemplateList(modalityId,templateType));
     }
 
 

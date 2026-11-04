@@ -25,6 +25,7 @@ public class RecallOpdPatientDetailRequest {
     private String clinicalExamination;
     private String pastMedicalHistory;
     private String presentHistory;
+    private String allergyHistory;
     private String mlcFlag;
     private String workingDiagnosis;
     private List<IcdDiagnosis> icdDiagnosisList;
@@ -47,6 +48,10 @@ public class RecallOpdPatientDetailRequest {
     private Long admissionWard;
     private String admissionPriority;
     private String referralFlag;
+    private String referralType;
+    private Long referralDepartmentId;
+    private Long internalRefDoctorId;
+    private String referralDoctorName;
     private String referralRemarks;
     private Instant referralDate;
     private String referTo;

@@ -7,7 +7,7 @@ import com.hims.response.RadiologyTemplateResponse;
 import java.util.List;
 
 public interface RadiologyTemplateService {
-    ApiResponse<List<RadiologyTemplateResponse>> getAll(int flag);
+    ApiResponse<List<RadiologyTemplateResponse>> getAll(String templateType,int flag);
 
     ApiResponse<RadiologyTemplateResponse> getById(Long id);
 
@@ -17,5 +17,5 @@ public interface RadiologyTemplateService {
 
     ApiResponse<RadiologyTemplateResponse> changeStatus(Long id, String status);
 
-    ApiResponse<List<RadiologyTemplateResponse>> getByIdTemplateList(Long modalityId);
+    ApiResponse<List<RadiologyTemplateResponse>> getByIdTemplateList(Long modalityId,String templateType);
 }
