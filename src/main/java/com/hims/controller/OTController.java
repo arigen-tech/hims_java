@@ -9,6 +9,8 @@ import com.hims.response.ApiResponse;
 import com.hims.response.PendingForOtResponse;
 import com.hims.response.OtBookingHistoryResponse;
 import com.hims.response.OtTeamMemberResponse;
+import com.hims.response.OtDashboardResponse;
+import com.hims.response.OtDepartmentResponse;
 import com.hims.service.OtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +25,8 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.time.LocalDate;
 
 @RestController
 @Validated
@@ -78,13 +82,32 @@ public class OTController {
     public ResponseEntity<ApiResponse<Page<OtBookingHistoryResponse>>> getOtBookingHistory(
             @RequestParam(required = false) String patient,
             @RequestParam(required = false) @Positive Long patientId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate scheduledDate,
             @RequestParam(required = false) Boolean ipd,
             @RequestParam(required = false) @Positive Long statusId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size) {
         ApiResponse<Page<OtBookingHistoryResponse>> response =
-                otService.getOtBookingHistory(patient, patientId, ipd, statusId, page, size);
+                otService.getOtBookingHistory(patient, patientId, scheduledDate, ipd, statusId, page, size);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/dashboard")
+    @Operation(summary = "Get date-wise OT booking dashboard counts")
+    public ResponseEntity<ApiResponse<List<OtDashboardResponse>>> getOtDashboard(
+            @RequestParam @Min(1) @Max(12) int month,
+            @RequestParam @Min(2000) int year,
+            @RequestParam(required = false) @Positive Long otId,
+            @RequestParam(required = false) @Positive Long departmentId) {
+        ApiResponse<List<OtDashboardResponse>> response = otService.getOtDashboard(month, year, otId, departmentId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/departments")
+    @Operation(summary = "Get departments with OT bookings for a hospital")
+    public ResponseEntity<ApiResponse<List<OtDepartmentResponse>>> getOtDepartments(
+            @RequestParam @Positive Long hospitalId) {
+        return ResponseEntity.ok(otService.getOtDepartments(hospitalId));
     }
     /**
      * Accept or reject an OT booking request.
