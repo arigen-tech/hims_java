@@ -28,11 +28,13 @@ public interface OtService {
 
     ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark);
 
+    void deleteOtBookingRequest(Long otBookingRequestId,Long patientId,Long visitId);
+
     ApiResponse<OtTeamMemberResponse> saveOtTeamMember(OtTeamMemberRequest request);
 
     ApiResponse<OtTeamMemberResponse> getOtTeamMembers(Long otBookingId);
 
-    ApiResponse<java.util.List<OtDashboardResponse>> getOtDashboard(int month, int year, Long otId, Long departmentId);
+    ApiResponse<List<OtDashboardResponse>> getOtDashboard(int month, int year, Long otId, Long departmentId);
 
-    ApiResponse<java.util.List<OtDepartmentResponse>> getOtDepartments(Long hospitalId);
+    ApiResponse<List<OtDepartmentResponse>> getOtDepartments(Long hospitalId);
 }

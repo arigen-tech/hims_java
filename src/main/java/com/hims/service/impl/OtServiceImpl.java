@@ -18,6 +18,7 @@ import com.hims.utils.HMISTransaction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import com.hims.exception.SDDException;
+import com.hims.projection.ActiveAdmissionOtProjection;
 import com.hims.request.OtBookingRequestDtDto;
 import com.hims.request.OtBookingRequestHdDto;
 import com.hims.request.OtTeamMemberRequest;
@@ -608,6 +609,7 @@ public class OtServiceImpl implements OtService {
     }
 
     @Transactional
+    @Override
     public void deleteOtBookingRequest(
             Long otBookingRequestId,
             Long patientId,
