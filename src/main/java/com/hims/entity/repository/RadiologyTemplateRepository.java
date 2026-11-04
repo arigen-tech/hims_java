@@ -25,4 +25,10 @@ public interface RadiologyTemplateRepository extends JpaRepository<MasPacsTempla
     """)
     List<MasPacsTemplate> findBySubChargecodeId_SubIdAndStatusIgnoreCaseOrderByTemplateNameAsc(@Param("subChargecodeId") Long subChargecodeId,
                                                 @Param("status") String status);
+
+    List<MasPacsTemplate> findByTemplateTypeAndStatusIgnoreCaseOrderByTemplateNameAsc(String templateType,String status);
+
+    List<MasPacsTemplate> findByTemplateTypeIgnoreCaseOrderByLastUpdateDateDesc(String templateType);
+
+    List<MasPacsTemplate> findBySubChargecodeId_SubIdAndTemplateTypeIgnoreCaseAndStatusIgnoreCaseOrderByTemplateNameAsc(Long modalityId, String templateType, String status);
 }

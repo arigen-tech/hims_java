@@ -96,4 +96,7 @@ public class OtBookingRequestHd {
     @JoinColumn(name = "admission_id")
     private Inpatient admissionId;
 
+    @Column(name = "surgery_level", length = 5)
+    private String surgeryLevel;
+
 }

@@ -38,6 +38,7 @@ public class OtBookingRequestHdDto {
     private String status;
     private String lastChgBy;
     private LocalDateTime lastChgDate;
+    private String surgeryLevel;
     // DT records
     private List<OtBookingRequestDtDto> surgeryDetails;
 }

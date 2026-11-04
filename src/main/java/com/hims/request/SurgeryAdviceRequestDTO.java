@@ -11,6 +11,9 @@ import java.util.List;
 @Builder
 public class SurgeryAdviceRequestDTO {
 
+    private String surgeryActionType;
+    private String surgeryAdvise;
+    private String surgeryLevel;
     private Long otId;
     private Long otHdId;
     private LocalDate surgeryDate;

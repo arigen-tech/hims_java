@@ -256,4 +256,8 @@ public class AppConstants {
     public static final String COMPATIBLE = "compatible";
     public static final String INCOMPATIBLE = "incompatible";
     public static final String STATUS_I = "I";
+    public static final String REFERRAL_TYPE_INTERNAL = "I";
+    public static final String SURGERY_ACTION_TYPE_ADVISE = "A";
+    public static final String SURGERY_ACTION_TYPE_SCHEDULE = "S";
+    public static final String REFERRAL_TYPE_EXTERNAL = "E";
 }

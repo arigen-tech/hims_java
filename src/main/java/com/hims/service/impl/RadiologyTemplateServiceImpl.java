@@ -35,11 +35,11 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
     private UserContextService userContextService;
 
     @Override
-    public ApiResponse<List<RadiologyTemplateResponse>> getAll(int flag) {
+    public ApiResponse<List<RadiologyTemplateResponse>> getAll(String templateType,int flag) {
         try {
             List<MasPacsTemplate> list = (flag == 1)
-                    ? radiologyTemplateRepository.findByStatusIgnoreCaseOrderByTemplateNameAsc("y")
-                    : radiologyTemplateRepository.findAllByOrderByLastUpdateDateDesc();
+                    ? radiologyTemplateRepository.findByTemplateTypeAndStatusIgnoreCaseOrderByTemplateNameAsc(templateType,"y")
+                    : radiologyTemplateRepository.findByTemplateTypeIgnoreCaseOrderByLastUpdateDateDesc(templateType);
 
             return ResponseUtils.createSuccessResponse(list.stream().map(this::toResponse).toList(),
                     new TypeReference<>() {}
@@ -91,6 +91,7 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
             entity.setTemplateName(request.getTemplateName());
             entity.setSubChargecodeId(subChargeCode);
             entity.setTemplateText(request.getTemplateText());
+            entity.setTemplateType(request.getTemplateType());
             entity.setStatus("y");
 
             entity.setCreatedBy(userContext.getUserFullName());
@@ -144,6 +145,7 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
 
             entity.setLastUpdatedBy(userContext.getUserFullName());
             entity.setLastUpdateDate(LocalDateTime.now());
+            entity.setTemplateType(request.getTemplateType());
             MasPacsTemplate saved = radiologyTemplateRepository.save(entity);
             return ResponseUtils.createSuccessResponse(
                     toResponse(saved), new TypeReference<>() {}
@@ -199,13 +201,13 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
     }
 
     @Override
-    public ApiResponse<List<RadiologyTemplateResponse>> getByIdTemplateList(Long modalityId) {
+    public ApiResponse<List<RadiologyTemplateResponse>> getByIdTemplateList(Long modalityId,String templateType) {
         try {
-            if (modalityId == null) {
+            if (modalityId == null || templateType == null) {
                 return ResponseUtils.createFailureResponse(List.of(), new TypeReference<List<RadiologyTemplateResponse>>() {},
-                        "subChargecodeId is required", 404);
+                        "Modality and Template type is required", 404);
             }
-            List<MasPacsTemplate> templates = radiologyTemplateRepository.findBySubChargecodeId_SubIdAndStatusIgnoreCaseOrderByTemplateNameAsc(modalityId, "y");
+            List<MasPacsTemplate> templates = radiologyTemplateRepository.findBySubChargecodeId_SubIdAndTemplateTypeIgnoreCaseAndStatusIgnoreCaseOrderByTemplateNameAsc(modalityId, templateType,"y");
             List<RadiologyTemplateResponse> resp = templates.stream()
                     .map(t -> RadiologyTemplateResponse.builder()
                             .pacsTemplateId(t.getPacsTemplateId())
@@ -241,6 +243,7 @@ public class RadiologyTemplateServiceImpl implements RadiologyTemplateService {
         res.setSubChargecodeId(e.getSubChargecodeId() != null ? e.getSubChargecodeId().getSubId() : null);
         res.setSubChargeCodeName(e.getSubChargecodeId() != null ? e.getSubChargecodeId().getSubName() : null);
         res.setTemplateText(e.getTemplateText());
+        res.setTemplateType(e.getTemplateType());
         return res;
     }
 }
