@@ -195,7 +195,10 @@ SELECT new com.hims.response.LabInvestigationsReportResponse(
     oh.orderDate,
     r.resultFlagId,
     r.flagName,
-    inv.investigationType
+    inv.investigationType,
+    inv.investigationId,
+    subInv.subInvestigationId,
+    subInv.subInvestigationName
 )
 FROM DgResultEntryDetail d
 JOIN d.resultEntryId h
@@ -203,6 +206,7 @@ LEFT JOIN d.resultFlag r
 LEFT JOIN h.hinId p
 LEFT JOIN p.patientGender g
 LEFT JOIN d.investigationId inv
+LEFT JOIN d.subInvestigationId subInv
 LEFT JOIN d.uomId uom
 LEFT JOIN h.orderHd oh
 LEFT JOIN User u ON u.userId = h.resultVerifiedBy
@@ -261,7 +265,10 @@ SELECT new com.hims.response.LabInvestigationsReportResponse(
     oh.orderDate,
     r.resultFlagId,
     r.flagName,
-    inv.investigationType
+    inv.investigationType,
+    inv.investigationId,
+    subInv.subInvestigationId,
+    subInv.subInvestigationName
 )
 FROM DgResultEntryDetail d
 JOIN d.resultEntryId h
@@ -270,6 +277,7 @@ JOIN inpatient.patient p
 LEFT JOIN d.resultFlag r
 LEFT JOIN p.patientGender g
 LEFT JOIN d.investigationId inv
+LEFT JOIN d.subInvestigationId subInv
 LEFT JOIN d.uomId uom
 LEFT JOIN h.orderHd oh
 LEFT JOIN User u ON u.userId = h.resultVerifiedBy
@@ -322,7 +330,10 @@ AND (:investigationName IS NULL OR LOWER(COALESCE(inv.investigationName, '')) LI
             oh.orderDate,
             r.resultFlagId,
             r.flagName,
-            i.investigationType
+            i.investigationType,
+            i.investigationId,
+            subInv.subInvestigationId,
+            subInv.subInvestigationName
             
         )
         FROM DgResultEntryDetail d
@@ -334,6 +345,7 @@ AND (:investigationName IS NULL OR LOWER(COALESCE(inv.investigationName, '')) LI
         LEFT JOIN h.orderHd oh
 
         LEFT JOIN d.investigationId i
+        LEFT JOIN d.subInvestigationId subInv
 
         LEFT JOIN d.uomId u
 

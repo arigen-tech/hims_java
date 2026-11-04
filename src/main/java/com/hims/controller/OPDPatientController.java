@@ -305,7 +305,7 @@ public class OPDPatientController {
 
     @GetMapping("/getOpdReportDepartmentList")
     public ApiResponse<List<OpdReportDepartmentResponse>> getOpdReportDepartmentList(
-            @RequestParam Long patientId,
+            @RequestParam(required = false) Long patientId,
             @RequestParam(required = false) Long hospitalId
     ) {
         log.info("Received request to fetch OPD report departments. patientId: {}, hospitalId: {}", patientId, hospitalId);

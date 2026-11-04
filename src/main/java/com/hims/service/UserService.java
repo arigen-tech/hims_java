@@ -2,6 +2,7 @@ package com.hims.service;
 
 import com.hims.response.ApiResponse;
 import com.hims.response.UserResponse;
+import com.hims.response.UserSummaryResponse;
 
 import java.util.List;
 
@@ -15,4 +16,6 @@ public interface UserService {
     ApiResponse<List<UserResponse>> getAllUsers(int flag);
 
     ApiResponse<UserResponse> findByUser(String user);
+
+    ApiResponse<List<UserSummaryResponse>> getUsersByUserTypeOrDesignation(Long userTypeId, Long designationId);
 }

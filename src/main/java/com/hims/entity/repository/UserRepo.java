@@ -73,4 +73,20 @@ public interface UserRepo extends JpaRepository<User, Long> {
     List<User> findUsersByEmployee_EmployeeIdIn(@Param("employeeIds") List<Long> employeeIds);
 
     List<User> findByUserIdIn(Collection<Long> ids);
+
+    @Query(value = "SELECT u.user_id, " +
+            "TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.middle_name, ''), ' ', COALESCE(u.last_name, ''))) AS full_name, " +
+            "u.status, u.user_type_id, ut.user_type_name " +
+            "FROM users u JOIN mas_user_type ut ON ut.user_type_id = u.user_type_id " +
+            "WHERE u.user_type_id = :userTypeId AND UPPER(u.status) = 'Y'", nativeQuery = true)
+    List<Object[]> findUserSummariesByUserTypeIdNative(@Param("userTypeId") Long userTypeId);
+
+    @Query(value = "SELECT u.user_id, " +
+            "TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.middle_name, ''), ' ', COALESCE(u.last_name, ''))) AS full_name, " +
+            "u.status, u.user_type_id, ut.user_type_name " +
+            "FROM users u " +
+            "JOIN mas_user_type ut ON ut.user_type_id = u.user_type_id " +
+            "JOIN mas_employee e ON e.emp_id = u.employee_id " +
+            "WHERE e.designation_id = :designationId AND UPPER(u.status) = 'Y'", nativeQuery = true)
+    List<Object[]> findUserSummariesByDesignationIdNative(@Param("designationId") Long designationId);
 }

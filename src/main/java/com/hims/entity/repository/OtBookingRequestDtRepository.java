@@ -21,12 +21,18 @@ public interface OtBookingRequestDtRepository extends JpaRepository<OtBookingReq
             d.ot_booking_request_dt_id AS otBookingDtId,
             d.ot_booking_request_id AS otBookingRequestId,
             d.surgery_id AS surgeryId,
-            s.surgery_name AS surgeryName
+            s.surgery_name AS surgeryName,
+            COALESCE(d.surgery_type_id, s.surgery_type_id) AS "surgeryTypeId",
+            st.surgery_type_name AS "surgeryTypeName",
+            s.surgery_level AS "surgeryLevel",
+            s.is_anesthesia_required AS anesthesiaRequired
 
         FROM ot_booking_request_dt d
 
         LEFT JOIN mas_surgery s
             ON s.surgery_id = d.surgery_id
+        LEFT JOIN mas_surgery_type st
+            ON st.surgery_type_id = COALESCE(d.surgery_type_id, s.surgery_type_id)
 
         WHERE d.ot_booking_request_id IN (:requestIds)
          ORDER BY d.sequence_no

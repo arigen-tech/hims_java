@@ -2,21 +2,30 @@ package com.hims.controller;
 
 import com.hims.request.OpdOpthDetailsRequest;
 import com.hims.request.OtRequest;
+import com.hims.request.OtTeamMemberRequest;
 import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ActiveAdmissionResponse;
 import com.hims.response.ApiResponse;
 import com.hims.response.PendingForOtResponse;
+import com.hims.response.OtBookingHistoryResponse;
+import com.hims.response.OtTeamMemberResponse;
 import com.hims.service.OtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@Validated
 @Tag(name = "OTController")
 @RequestMapping("/otController")
 @Slf4j
@@ -63,6 +72,20 @@ public class OTController {
         return ResponseEntity.ok(response);
 
     }
+
+    @GetMapping("/bookingHistory")
+    @Operation(summary = "Get paginated OT booking history")
+    public ResponseEntity<ApiResponse<Page<OtBookingHistoryResponse>>> getOtBookingHistory(
+            @RequestParam(required = false) String patient,
+            @RequestParam(required = false) @Positive Long patientId,
+            @RequestParam(required = false) Boolean ipd,
+            @RequestParam(required = false) @Positive Long statusId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size) {
+        ApiResponse<Page<OtBookingHistoryResponse>> response =
+                otService.getOtBookingHistory(patient, patientId, ipd, statusId, page, size);
+        return ResponseEntity.ok(response);
+    }
     /**
      * Accept or reject an OT booking request.
      *
@@ -85,6 +108,16 @@ public class OTController {
         ApiResponse<String> response = otService.saveAcceptAndReject(otBookingRequestId, flag, remark);
         log.info("Accept/Reject OT request API completed: otBookingRequestId={}, flag={}, remark={}", otBookingRequestId, flag, remark);
         return response;
+    }
+
+    @PostMapping("/teamMember")
+    public ApiResponse<OtTeamMemberResponse> saveOtTeamMember(@Valid @RequestBody OtTeamMemberRequest request) {
+        return otService.saveOtTeamMember(request);
+    }
+
+    @GetMapping("/teamMember")
+    public ApiResponse<OtTeamMemberResponse> getOtTeamMembers(@RequestParam @Positive Long otBookingId) {
+        return otService.getOtTeamMembers(otBookingId);
     }
 
 }

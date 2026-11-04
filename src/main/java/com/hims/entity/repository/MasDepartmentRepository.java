@@ -10,6 +10,15 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MasDepartmentRepository extends JpaRepository<MasDepartment, Long> {
+    @Query("""
+        SELECT d
+        FROM MasDepartment d
+        WHERE LOWER(d.status) = 'y'
+          AND LOWER(d.departmentType.departmentTypeCode) = LOWER(:departmentTypeCode)
+        ORDER BY d.departmentName
+    """)
+    List<MasDepartment> findActiveDepartmentsByTypeCode(@Param("departmentTypeCode") String departmentTypeCode);
+
    // MasDepartment findById(Long amountTypeId);
    List<MasDepartment> findByStatusIgnoreCase(String status);
    List<MasDepartment> findByStatusInIgnoreCase(List<String> statuses);

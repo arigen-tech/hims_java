@@ -72,4 +72,7 @@ public class OtBooking {
 
     @Column(name = "is_pac_done", length = 1, nullable = false)
     private String isPacDone;
+
+    @Column(name = "pac_status", nullable = false)
+    private String pacStatus;
 }

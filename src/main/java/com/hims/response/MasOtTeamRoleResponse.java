@@ -11,6 +11,7 @@ public class MasOtTeamRoleResponse {
     private Long otTeamRoleId;
     private String roleCode;
     private String roleName;
+    private Long userTypeId;
     private String description;
     private String status;
     private String lastChgBy;

@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
+import com.hims.mapper.OtBookingHistoryMapper;
+import com.hims.mapper.OtTeamMemberMapper;
+import com.hims.projection.OtBookingHistoryProjection;
 import com.hims.projection.PendingForOtProjection;
 import com.hims.projection.PendingForOtSurgeryProjection;
 import com.hims.request.OtRequest;
@@ -19,6 +22,8 @@ import com.hims.projection.ActiveAdmissionOtProjection;
 import com.hims.projection.ActiveAdmissionProjectionResponse;
 import com.hims.request.OtBookingRequestDtDto;
 import com.hims.request.OtBookingRequestHdDto;
+import com.hims.request.OtTeamMemberRequest;
+import com.hims.request.OtTeamMemberDetailRequest;
 import com.hims.service.OtService;
 import com.hims.utils.ResponseUtils;
 import jakarta.transaction.Transactional;
@@ -53,11 +58,15 @@ public class OtServiceImpl implements OtService {
     private final MasSurgeryTypeRepository masSurgeryTypeRepository;
     private final MasSurgeryRepository masSurgeryRepository;
     private final MasOtBookingStatusRepository masOtBookingStatusRepository;
+    private final MasOtTeamRoleRepository masOtTeamRoleRepository;
     private final MasOperationTheatreRepository masOperationTheatreRepository;
     private final UserRepo userRepo;
     private  final MasDepartmentRepository masDepartmentRepository;
     private final OtBookingRepository otBookingRepository;
+    private final OtBookingHistoryMapper otBookingHistoryMapper;
+    private final OtTeamMemberMapper otTeamMemberMapper;
     private final OtBookingStatusLogRepository otBookingStatusLogRepository;
+    private final OtTeamMemberRepository otTeamMemberRepository;
     @Value("${ipd.admission.status.admitted}")
     Long ipdAdmissionStatusAdmitted;
 
@@ -301,6 +310,36 @@ public class OtServiceImpl implements OtService {
         log.info("Pending OT review list fetched successfully, totalElements={}", responsePage.getTotalElements());
         return ResponseUtils.createSuccessResponse( responsePage,new TypeReference<>(){});
     }
+
+    @Override
+    @Transactional
+    public ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(
+            String patient, Long patientId, Boolean ipd, Long statusId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<OtBookingHistoryProjection> projectionPage = otBookingRepository.findBookingHistory(
+                patient == null || patient.isBlank() ? null : patient.trim(), patientId, ipd, statusId, pageable);
+        List<Long> requestIds = projectionPage.getContent().stream()
+                .map(OtBookingHistoryProjection::getHeaderid)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, List<OtBookingHistoryResponse.SurgeryDetail>> surgeryDetailsByRequestId = requestIds.isEmpty()
+                ? Collections.emptyMap()
+                : dtRepository.findSurgeriesByRequestIds(requestIds).stream()
+                        .collect(Collectors.groupingBy(
+                                PendingForOtSurgeryProjection::getOtBookingRequestId,
+                                Collectors.mapping(otBookingHistoryMapper::toSurgeryResponse, Collectors.toList())));
+
+        Page<OtBookingHistoryResponse> responsePage = projectionPage.map(projection -> {
+            OtBookingHistoryResponse response = otBookingHistoryMapper.toResponse(projection);
+            response.setSurgeries(surgeryDetailsByRequestId.getOrDefault(
+                    projection.getHeaderid(), Collections.emptyList()));
+            return response;
+        });
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+    }
+
     @Override
     @Transactional
     public ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark) {
@@ -345,6 +384,7 @@ public class OtServiceImpl implements OtService {
                 .lastChgDate(now)
                 .isPacRequired("N")
                 .isPacDone("N")
+                .pacStatus("NOT_REQUIRED")
                 .build();
 
         booking = otBookingRepository.save(booking);
@@ -367,6 +407,66 @@ public class OtServiceImpl implements OtService {
 
             throw new RuntimeException("Failed to process OT booking request: " + otBookingRequestId, e);
         }
+    }
+
+    @Transactional
+    @Override
+    public ApiResponse<OtTeamMemberResponse> saveOtTeamMember(OtTeamMemberRequest request) {
+        OtBooking booking = otBookingRepository.findById(request.getOtBookingId())
+                .orElseThrow(() -> new SDDException("otBookingId", 404, "OT booking not found"));
+        UserContext userContext = userContextService.getCurrentUserContext();
+        LocalDateTime now = LocalDateTime.now();
+        List<OtTeamMemberDetailResponse> responses = new ArrayList<>();
+        List<OtTeamMember> existingMembers = otTeamMemberRepository.findByOtBooking_OtBookingId(request.getOtBookingId());
+        Set<Long> retainedMemberIds = new HashSet<>();
+
+        for (OtTeamMemberDetailRequest detail : request.getTeamMembers()) {
+            MasOtTeamRole role = masOtTeamRoleRepository.findById(detail.getOtTeamRoleId())
+                    .orElseThrow(() -> new SDDException("otTeamRoleId", 404, "OT team role not found"));
+            User user = userRepo.findById(detail.getUserId())
+                    .orElseThrow(() -> new SDDException("userId", 404, "User not found"));
+
+            OtTeamMember member = existingMembers.stream()
+                    .filter(existing -> Objects.equals(existing.getOtTeamRole().getOtTeamRoleId(), detail.getOtTeamRoleId())
+                            && Objects.equals(existing.getUser().getUserId(), detail.getUserId()))
+                    .findFirst()
+                    .orElseGet(OtTeamMember::new);
+
+            member.setOtBooking(booking);
+            member.setOtTeamRole(role);
+            member.setUser(user);
+            member.setIsPrimary(detail.getIsPrimary().toUpperCase(Locale.ROOT));
+            member.setStatus("Y");
+            member.setLastChgBy(userContext.getUserFullName());
+            member.setLastChgDate(now);
+            OtTeamMember savedMember = otTeamMemberRepository.save(member);
+            retainedMemberIds.add(savedMember.getOtTeamMemberId());
+            responses.add(otTeamMemberMapper.toResponse(savedMember));
+        }
+
+        for (OtTeamMember existing : existingMembers) {
+            if ("Y".equalsIgnoreCase(existing.getStatus()) && !retainedMemberIds.contains(existing.getOtTeamMemberId())) {
+                existing.setStatus("N");
+                existing.setLastChgBy(userContext.getUserFullName());
+                existing.setLastChgDate(now);
+                otTeamMemberRepository.save(existing);
+            }
+        }
+        OtTeamMemberResponse response = new OtTeamMemberResponse();
+        response.setOtBookingId(booking.getOtBookingId());
+        response.setTeamMembers(responses);
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+    }
+
+    @Override
+    public ApiResponse<OtTeamMemberResponse> getOtTeamMembers(Long otBookingId) {
+        List<OtTeamMemberDetailResponse> members = otTeamMemberRepository
+                .findActiveTeamMembersByBookingId(otBookingId)
+                .stream().map(otTeamMemberMapper::toResponse).toList();
+        OtTeamMemberResponse response = new OtTeamMemberResponse();
+        response.setOtBookingId(otBookingId);
+        response.setTeamMembers(members);
+        return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
     }
 
     private void saveOrUpdateOtDetails(OtBookingRequestHd hd, List<OtBookingRequestDtDto> requestDetails) {
