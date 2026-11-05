@@ -2,6 +2,8 @@ package com.hims.entity.repository;
 
 import com.hims.entity.OtBooking;
 import com.hims.projection.OtBookingHistoryProjection;
+import com.hims.projection.OtDashboardProjection;
+import com.hims.projection.OtDepartmentProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +13,50 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
+
+    @Query(value = """
+            SELECT DISTINCT md.department_id AS id, md.department_name AS name
+            FROM ot_booking ob
+            JOIN ot_booking_request_hd obrh ON obrh.ot_booking_request_id = ob.ot_booking_request_id
+            JOIN mas_department md ON md.department_id = obrh.department_id
+            WHERE md.hospital_id = :hospitalId
+            ORDER BY md.department_name
+            """, nativeQuery = true)
+    java.util.List<OtDepartmentProjection> findDepartmentsByHospitalId(@Param("hospitalId") Long hospitalId);
+
+    @Query(value = """
+            WITH filtered_bookings AS (
+                SELECT ob.ot_booking_id, ob.scheduled_date, ob.booking_status_id,
+                       mot.ot_name, ob.ot_id, obrh.department_id
+                FROM ot_booking ob
+                JOIN ot_booking_request_hd obrh ON obrh.ot_booking_request_id = ob.ot_booking_request_id
+                LEFT JOIN mas_operation_theatre mot ON mot.ot_id = ob.ot_id
+                WHERE EXTRACT(MONTH FROM ob.scheduled_date) = :month
+                  AND EXTRACT(YEAR FROM ob.scheduled_date) = :year
+                  AND (:otId IS NULL OR ob.ot_id = :otId)
+                  AND (:departmentId IS NULL OR obrh.department_id = :departmentId)
+            ), date_ot_names AS (
+                SELECT scheduled_date,
+                       STRING_AGG(DISTINCT ot_name, ', ' ORDER BY ot_name) AS ot_names
+                FROM filtered_bookings
+                GROUP BY scheduled_date
+            )
+            SELECT don.scheduled_date AS scheduledDate,
+                   mobs.booking_status_id AS bookingStatusId,
+                   mobs.status_name AS statusName,
+                   COALESCE(COUNT(fb.ot_booking_id), 0) AS bookingCount,
+                   don.ot_names AS otNames
+            FROM date_ot_names don
+            JOIN filtered_bookings fb ON fb.scheduled_date = don.scheduled_date
+            LEFT JOIN mas_ot_booking_status mobs ON mobs.booking_status_id = fb.booking_status_id
+            WHERE mobs.booking_status_id IS NOT NULL
+            GROUP BY don.scheduled_date, mobs.booking_status_id, mobs.status_name, don.ot_names
+            ORDER BY don.scheduled_date, mobs.booking_status_id
+            """, nativeQuery = true)
+    java.util.List<OtDashboardProjection> findOtDashboard(@Param("month") int month,
+                                                           @Param("year") int year,
+                                                           @Param("otId") Long otId,
+                                                           @Param("departmentId") Long departmentId);
 
     @Query(value = """
             SELECT ob.ot_booking_id AS id,
@@ -40,6 +86,7 @@ public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
             LEFT JOIN mas_operation_theatre mot ON ob.ot_id = mot.ot_id
             WHERE (:statusId IS NULL OR mobs.booking_status_id = :statusId)
               AND (:patientId IS NULL OR p.patient_id = :patientId)
+              AND (CAST(:scheduledDate AS date) IS NULL OR ob.scheduled_date = CAST(:scheduledDate AS date))
               AND (:ipd IS NULL OR upper(coalesce(obrh.request_source, '')) = CASE WHEN :ipd THEN 'IPD' ELSE 'OPD' END)
               AND (:patient IS NULL OR :patient = ''
                    OR LOWER(COALESCE(p.p_fn, '') || ' ' || COALESCE(p.p_ln, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
@@ -58,6 +105,7 @@ public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
             LEFT JOIN mas_operation_theatre mot ON ob.ot_id = mot.ot_id
             WHERE (:statusId IS NULL OR mobs.booking_status_id = :statusId)
               AND (:patientId IS NULL OR p.patient_id = :patientId)
+              AND (CAST(:scheduledDate AS date) IS NULL OR ob.scheduled_date = CAST(:scheduledDate AS date))
               AND (:ipd IS NULL OR upper(coalesce(obrh.request_source, '')) = CASE WHEN :ipd THEN 'IPD' ELSE 'OPD' END)
               AND (:patient IS NULL OR :patient = ''
                    OR LOWER(COALESCE(p.p_fn, '') || ' ' || COALESCE(p.p_ln, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
@@ -66,6 +114,7 @@ public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
             """, nativeQuery = true)
     Page<OtBookingHistoryProjection> findBookingHistory(@Param("patient") String patient,
                                                         @Param("patientId") Long patientId,
+                                                        @Param("scheduledDate") java.time.LocalDate scheduledDate,
                                                         @Param("ipd") Boolean ipd,
                                                         @Param("statusId") Long statusId,
                                                         Pageable pageable);

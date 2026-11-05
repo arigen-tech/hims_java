@@ -8,6 +8,8 @@ import com.hims.response.PendingForOtResponse;
 import com.hims.response.OtBookingHistoryResponse;
 import com.hims.request.OtTeamMemberRequest;
 import com.hims.response.OtTeamMemberResponse;
+import com.hims.response.OtDashboardResponse;
+import com.hims.response.OtDepartmentResponse;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -22,11 +24,17 @@ public interface OtService {
 
     ApiResponse<Page<PendingForOtResponse>> pendingForReviewOt(int page, int size, String patientName, String mobileNo, String patientType);
 
-    ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(String patient, Long patientId, Boolean ipd, Long statusId, int page, int size);
+    ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(String patient, Long patientId, java.time.LocalDate scheduledDate, Boolean ipd, Long statusId, int page, int size);
 
     ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark);
+
+    void deleteOtBookingRequest(Long otBookingRequestId,Long patientId,Long visitId);
 
     ApiResponse<OtTeamMemberResponse> saveOtTeamMember(OtTeamMemberRequest request);
 
     ApiResponse<OtTeamMemberResponse> getOtTeamMembers(Long otBookingId);
+
+    ApiResponse<List<OtDashboardResponse>> getOtDashboard(int month, int year, Long otId, Long departmentId);
+
+    ApiResponse<List<OtDepartmentResponse>> getOtDepartments(Long hospitalId);
 }

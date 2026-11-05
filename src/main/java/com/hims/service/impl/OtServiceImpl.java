@@ -5,10 +5,10 @@ import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.mapper.OtBookingHistoryMapper;
+import com.hims.mapper.OtDashboardMapper;
+import com.hims.mapper.OtDepartmentMapper;
 import com.hims.mapper.OtTeamMemberMapper;
-import com.hims.projection.OtBookingHistoryProjection;
-import com.hims.projection.PendingForOtProjection;
-import com.hims.projection.PendingForOtSurgeryProjection;
+import com.hims.projection.*;
 import com.hims.request.OtRequest;
 import com.hims.response.*;
 import com.hims.service.TransactionSequenceService;
@@ -19,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import com.hims.exception.SDDException;
 import com.hims.projection.ActiveAdmissionOtProjection;
-import com.hims.projection.ActiveAdmissionProjectionResponse;
 import com.hims.request.OtBookingRequestDtDto;
 import com.hims.request.OtBookingRequestHdDto;
 import com.hims.request.OtTeamMemberRequest;
@@ -64,6 +63,8 @@ public class OtServiceImpl implements OtService {
     private  final MasDepartmentRepository masDepartmentRepository;
     private final OtBookingRepository otBookingRepository;
     private final OtBookingHistoryMapper otBookingHistoryMapper;
+    private final OtDashboardMapper otDashboardMapper;
+    private final OtDepartmentMapper otDepartmentMapper;
     private final OtTeamMemberMapper otTeamMemberMapper;
     private final OtBookingStatusLogRepository otBookingStatusLogRepository;
     private final OtTeamMemberRepository otTeamMemberRepository;
@@ -75,6 +76,27 @@ public class OtServiceImpl implements OtService {
 
     @Autowired
     private UserContextService userContextService;
+
+    @Override
+    public ApiResponse<List<OtDashboardResponse>> getOtDashboard(int month, int year, Long otId, Long departmentId) {
+        Map<LocalDate, List<OtDashboardProjection>> rowsByDate = otBookingRepository
+                .findOtDashboard(month, year, otId, departmentId).stream()
+                .collect(Collectors.groupingBy(OtDashboardProjection::getScheduledDate, LinkedHashMap::new, Collectors.toList()));
+        List<OtDashboardResponse> dashboard = rowsByDate.entrySet().stream()
+                .map(entry -> new OtDashboardResponse(
+                        entry.getKey(),
+                        entry.getValue().stream().map(otDashboardMapper::toStatusCount).toList(),
+                        entry.getValue().get(0).getOtNames()))
+                .toList();
+        return ResponseUtils.createSuccessResponse(dashboard, new TypeReference<>() {}, "OT dashboard fetched successfully");
+    }
+
+    @Override
+    public ApiResponse<List<OtDepartmentResponse>> getOtDepartments(Long hospitalId) {
+        List<OtDepartmentResponse> departments = otDepartmentMapper.toResponseList(
+                otBookingRepository.findDepartmentsByHospitalId(hospitalId));
+        return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {}, "OT departments fetched successfully");
+    }
 
 
     @Transactional
@@ -314,10 +336,10 @@ public class OtServiceImpl implements OtService {
     @Override
     @Transactional
     public ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(
-            String patient, Long patientId, Boolean ipd, Long statusId, int page, int size) {
+            String patient, Long patientId, LocalDate scheduledDate, Boolean ipd, Long statusId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<OtBookingHistoryProjection> projectionPage = otBookingRepository.findBookingHistory(
-                patient == null || patient.isBlank() ? null : patient.trim(), patientId, ipd, statusId, pageable);
+                patient == null || patient.isBlank() ? null : patient.trim(), patientId, scheduledDate, ipd, statusId, pageable);
         List<Long> requestIds = projectionPage.getContent().stream()
                 .map(OtBookingHistoryProjection::getHeaderid)
                 .filter(Objects::nonNull)
