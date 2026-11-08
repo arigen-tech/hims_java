@@ -7,6 +7,8 @@ import com.hims.response.ApiResponse;
 import com.hims.response.PendingForOtResponse;
 import com.hims.response.OtBookingHistoryResponse;
 import com.hims.request.OtTeamMemberRequest;
+import com.hims.request.OtBookingRescheduleRequest;
+import com.hims.request.OtBookingCancelRequest;
 import com.hims.response.OtTeamMemberResponse;
 import com.hims.response.OtDashboardResponse;
 import com.hims.response.OtDepartmentResponse;
@@ -27,6 +29,12 @@ public interface OtService {
     ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(String patient, Long patientId, java.time.LocalDate scheduledDate, Boolean ipd, Long statusId, int page, int size);
 
     ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark);
+
+    ApiResponse<String> updateOtPatientTransaction(Long otBookingId, String statusCode);
+
+    ApiResponse<String> rescheduleOtBooking(OtBookingRescheduleRequest request);
+
+    ApiResponse<String> cancelOtBooking(OtBookingCancelRequest request);
 
     void deleteOtBookingRequest(Long otBookingRequestId,Long patientId,Long visitId);
 

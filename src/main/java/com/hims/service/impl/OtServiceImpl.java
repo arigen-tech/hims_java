@@ -21,11 +21,15 @@ import com.hims.exception.SDDException;
 import com.hims.projection.ActiveAdmissionOtProjection;
 import com.hims.request.OtBookingRequestDtDto;
 import com.hims.request.OtBookingRequestHdDto;
+import com.hims.request.OtBookingRescheduleRequest;
+import com.hims.request.OtBookingCancelRequest;
 import com.hims.request.OtTeamMemberRequest;
 import com.hims.request.OtTeamMemberDetailRequest;
 import com.hims.service.OtService;
 import com.hims.utils.ResponseUtils;
 import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +61,7 @@ public class OtServiceImpl implements OtService {
     private final MasSurgeryTypeRepository masSurgeryTypeRepository;
     private final MasSurgeryRepository masSurgeryRepository;
     private final MasOtBookingStatusRepository masOtBookingStatusRepository;
+    private final MasOtScheduleChangeReasonRepository masOtScheduleChangeReasonRepository;
     private final MasOtTeamRoleRepository masOtTeamRoleRepository;
     private final MasOperationTheatreRepository masOperationTheatreRepository;
     private final UserRepo userRepo;
@@ -67,15 +72,30 @@ public class OtServiceImpl implements OtService {
     private final OtDepartmentMapper otDepartmentMapper;
     private final OtTeamMemberMapper otTeamMemberMapper;
     private final OtBookingStatusLogRepository otBookingStatusLogRepository;
+    private final OtBookingRescheduleCancelHistoryRepository otBookingRescheduleCancelHistoryRepository;
     private final OtTeamMemberRepository otTeamMemberRepository;
     @Value("${ipd.admission.status.admitted}")
     Long ipdAdmissionStatusAdmitted;
-
     @Value("${surgery.booking-status.requested}")
     private Long surgeryBookingStatusRequested;
 
+    @Value("${ot.booking.status-code.requested}")
+    private String otBookingStatusRequested;
+    @Value("${ot.booking.status-code.rejected}")
+    private String otBookingStatusRejected;
+    @Value("${ot.booking.status-code.scheduled}")
+    private String otBookingStatusScheduled;
+    @Value("${ot.booking.status-code.cancelled}")
+    private String otBookingStatusCancelled;
+    @Value("${ot.booking.status-code.sent-to-ot}")
+    private String otBookingStatusSentToOt;
+    @Value("${ot.booking.status-code.received-in-ot}")
+    private String otBookingStatusReceivedInOt;
+
     @Autowired
     private UserContextService userContextService;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public ApiResponse<List<OtDashboardResponse>> getOtDashboard(int month, int year, Long otId, Long departmentId) {
@@ -323,9 +343,14 @@ public class OtServiceImpl implements OtService {
                     response.setOtName(projection.getOtName());
                     response.setRequestedDate(projection.getRequestedDate());
                     response.setRequestedTime(projection.getRequestedTime());
+                    response.setPreferredDate(projection.getPreferredDate());
+                    response.setPreferredStartTime(projection.getPreferredStartTime());
+                    response.setPreferredEndTime(projection.getPreferredEndTime());
+                    response.setRescheduleRemarks(projection.getRescheduleRemarks());
                     response.setRequestedBy(projection.getRequestedBy());
                     response.setPriority(projection.getPriority());
                     response.setRequestedNo(projection.getRequestedNo());
+                    response.setStatusCode(otBookingStatusRequested);
                     response.setSurgeryResponses(surgeryMap.getOrDefault(projection.getOtBookingRequestId(), new ArrayList<>()));
                     return response;});
 
@@ -374,6 +399,18 @@ public class OtServiceImpl implements OtService {
         }
         OtBookingRequestHd request = hdRepository.findById(otBookingRequestId)
                         .orElseThrow(() -> new RuntimeException("OT booking request not found: " + otBookingRequestId));
+
+        Optional<OtBookingRescheduleCancelHistory> pendingReschedule =
+                otBookingRescheduleCancelHistoryRepository
+                        .findFirstByOtBooking_OtBookingRequest_OtBookingRequestIdAndActionTypeIgnoreCaseAndReviewStatusIgnoreCaseAndStatusIgnoreCaseOrderByRequestedDateDesc(
+                                otBookingRequestId, "RESCHEDULE", "PENDING", "Y");
+        if (pendingReschedule.isPresent()) {
+            processRescheduleReview(request, pendingReschedule.get(), flag, remark, userContext);
+            String reviewMessage = flag.equalsIgnoreCase("A")
+                    ? "OT reschedule request accepted successfully"
+                    : "OT reschedule request rejected successfully";
+            return ResponseUtils.createSuccessResponse(reviewMessage, new TypeReference<>() {});
+        }
 
         MasOtBookingStatus fromStatus = request.getBookingStatusId();
 
@@ -429,6 +466,313 @@ public class OtServiceImpl implements OtService {
 
             throw new RuntimeException("Failed to process OT booking request: " + otBookingRequestId, e);
         }
+    }
+
+    private void processRescheduleReview(OtBookingRequestHd request,
+                                         OtBookingRescheduleCancelHistory history,
+                                         String flag,
+                                         String remark,
+                                         UserContext userContext) {
+        LocalDateTime now = LocalDateTime.now();
+        String changedBy = userContext.getUserFullName();
+        boolean accepted = flag.equalsIgnoreCase("A");
+
+        history.setReviewStatus(accepted ? "ACCEPTED" : "REJECTED");
+        history.setReviewedBy(changedBy);
+        history.setReviewedDate(now);
+        history.setReviewRemarks(remark);
+
+        if (accepted) {
+            OtBooking booking = history.getOtBooking();
+            booking.setOperationTheatre(history.getNewOt());
+            booking.setScheduledDate(history.getNewScheduledDate());
+            booking.setScheduledStartTime(history.getNewStartTime());
+            booking.setScheduledEndTime(history.getNewEndTime());
+        } else {
+            request.setPreferredOtId(history.getOldOt());
+            request.setPreferredDate(history.getOldScheduledDate());
+            request.setPreferredStartTime(history.getOldStartTime());
+            request.setPreferredEndTime(history.getOldEndTime());
+        }
+
+        OtBooking booking = history.getOtBooking();
+        MasOtBookingStatus fromBookingStatus = booking.getBookingStatus();
+        MasOtBookingStatus scheduledStatus = masOtBookingStatusRepository.findByStatusCodeIgnoreCase(otBookingStatusScheduled)
+                .filter(status -> "Y".equalsIgnoreCase(status.getStatus()))
+                .orElseThrow(() -> new SDDException("status", 404,
+                        "Active " + otBookingStatusScheduled + " OT booking status not found"));
+        booking.setBookingStatus(scheduledStatus);
+        booking.setLastChgBy(changedBy);
+        booking.setLastChgDate(now);
+        otBookingRepository.save(booking);
+
+        OtBookingStatusLog statusLog = OtBookingStatusLog.builder()
+                .otBooking(booking)
+                .fromStatus(fromBookingStatus)
+                .toStatus(scheduledStatus)
+                .actionRemarks("Reschedule request " + (accepted ? "accepted" : "rejected")
+                        + "; OT booking status updated to " + otBookingStatusScheduled
+                        + (remark == null || remark.isBlank() ? "" : ". " + remark))
+                .changedBy(changedBy)
+                .changedDate(now)
+                .status("Y")
+                .lastChgBy(changedBy)
+                .lastChgDate(now)
+                .build();
+        otBookingStatusLogRepository.save(statusLog);
+
+        Long reviewedStatusId = accepted ? 3L : 2L;
+        request.setBookingStatusId(masOtBookingStatusRepository.findById(reviewedStatusId)
+                .orElseThrow(() -> new SDDException("status", 404, "OT booking review status not found")));
+        request.setReviewedBy(changedBy);
+        request.setReviewedDate(now);
+        request.setRejectionRemarks(accepted ? null : remark);
+        request.setLastChgBy(changedBy);
+        request.setLastChgDate(now);
+        hdRepository.save(request);
+        otBookingRescheduleCancelHistoryRepository.save(history);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> rescheduleOtBooking(OtBookingRescheduleRequest request) {
+        if (!request.getNewEndTime().isAfter(request.getNewStartTime())) {
+            throw new SDDException("newEndTime", 400, "New end time must be after new start time");
+        }
+        OtBookingScheduleProjection booking = otBookingRepository.findScheduleForChange(request.getOtBookingId())
+                .orElseThrow(() -> new SDDException("otBookingId", 404, "OT booking not found"));
+        if (!otBookingStatusScheduled.equalsIgnoreCase(booking.getStatusCode())) {
+            throw new SDDException("otBookingId", 400,
+                    "Only " + otBookingStatusScheduled + " OT bookings can be rescheduled");
+        }
+        if (otBookingRescheduleCancelHistoryRepository.hasPendingAction(
+                booking.getOtBookingId(), "RESCHEDULE", "PENDING", "Y")) {
+            throw new SDDException("otBookingId", 400, "An OT reschedule request is already pending review");
+        }
+        OtScheduleChangeReasonProjection reason = findActiveScheduleChangeReason(request.getReasonId(), "RESCHEDULE");
+        Long newOtId = masOperationTheatreRepository.findActiveOtId(request.getNewOtId())
+                .orElseThrow(() -> new SDDException("newOtId", 404, "Active operation theatre not found"));
+
+        UserContext userContext = userContextService.getCurrentUserContext();
+        String changedBy = userContext.getUserFullName();
+        LocalDateTime now = LocalDateTime.now();
+        MasOtBookingStatus requestedStatus = masOtBookingStatusRepository.findById(surgeryBookingStatusRequested)
+                .filter(status -> "Y".equalsIgnoreCase(status.getStatus()))
+                .filter(status -> otBookingStatusRequested.equalsIgnoreCase(status.getStatusCode()))
+                .orElseThrow(() -> new SDDException("status", 404,
+                        "Configured REQUESTED OT booking status not found: " + surgeryBookingStatusRequested));
+        Long requestedStatusId = requestedStatus.getBookingStatusId();
+
+        OtBookingRescheduleCancelHistory history = OtBookingRescheduleCancelHistory.builder()
+                .otBooking(entityManager.getReference(OtBooking.class, booking.getOtBookingId()))
+                .actionType("RESCHEDULE")
+                .oldOt(entityManager.getReference(MasOperationTheatre.class, booking.getOtId()))
+                .oldScheduledDate(booking.getScheduledDate())
+                .oldStartTime(booking.getScheduledStartTime())
+                .oldEndTime(booking.getScheduledEndTime())
+                .newOt(entityManager.getReference(MasOperationTheatre.class, newOtId))
+                .newScheduledDate(request.getNewScheduledDate())
+                .newStartTime(request.getNewStartTime())
+                .newEndTime(request.getNewEndTime())
+                .reason(entityManager.getReference(MasOtScheduleChangeReason.class, reason.getReasonId()))
+                .remarks(request.getRemarks())
+                .requestedBy(changedBy)
+                .requestedDate(now)
+                .reviewStatus("PENDING")
+                .status("Y")
+                .lastChgBy(changedBy)
+                .lastChgDate(now)
+                .build();
+        otBookingRescheduleCancelHistoryRepository.save(history);
+
+        OtBooking bookingEntity = otBookingRepository.findById(booking.getOtBookingId())
+                .orElseThrow(() -> new SDDException("otBookingId", 404, "OT booking not found"));
+        bookingEntity.setBookingStatus(requestedStatus);
+        bookingEntity.setLastChgBy(changedBy);
+        bookingEntity.setLastChgDate(now);
+        otBookingRepository.save(bookingEntity);
+
+        OtBookingStatusLog statusLog = OtBookingStatusLog.builder()
+                .otBooking(bookingEntity)
+                .fromStatus(entityManager.getReference(MasOtBookingStatus.class, booking.getBookingStatusId()))
+                .toStatus(requestedStatus)
+                .actionRemarks("OT reschedule requested; status changed from " + otBookingStatusScheduled
+                        + " to " + otBookingStatusRequested
+                        + (request.getRemarks() == null || request.getRemarks().isBlank() ? "" : ". " + request.getRemarks()))
+                .changedBy(changedBy)
+                .changedDate(now)
+                .status("Y")
+                .lastChgBy(changedBy)
+                .lastChgDate(now)
+                .build();
+        otBookingStatusLogRepository.save(statusLog);
+
+        OtBookingRequestHd bookingRequest = hdRepository.findById(booking.getOtBookingRequestId())
+                .orElseThrow(() -> new SDDException("otBookingRequestId", 404, "OT booking request not found"));
+        bookingRequest.setPreferredOtId(entityManager.getReference(MasOperationTheatre.class, newOtId));
+        bookingRequest.setPreferredDate(request.getNewScheduledDate());
+        bookingRequest.setPreferredStartTime(request.getNewStartTime());
+        bookingRequest.setPreferredEndTime(request.getNewEndTime());
+        bookingRequest.setBookingStatusId(requestedStatus);
+        bookingRequest.setRequestedBy(changedBy);
+        bookingRequest.setRequestedDate(now);
+        bookingRequest.setLastChgBy(changedBy);
+        bookingRequest.setLastChgDate(now);
+        hdRepository.save(bookingRequest);
+
+        return ResponseUtils.createSuccessResponse("OT reschedule request submitted for review", new TypeReference<>() {});
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> cancelOtBooking(OtBookingCancelRequest request) {
+        OtBookingScheduleProjection booking = otBookingRepository.findScheduleForChange(request.getOtBookingId())
+                .orElseThrow(() -> new SDDException("otBookingId", 404, "OT booking not found"));
+        OtScheduleChangeReasonProjection reason = findActiveScheduleChangeReason(request.getReasonId(), "CANCEL");
+        Long cancelledStatusId = otBookingRepository.findActiveBookingStatusId(otBookingStatusCancelled)
+                .orElseThrow(() -> new SDDException("status", 404,
+                        "Active " + otBookingStatusCancelled + " OT booking status not found"));
+
+        if (otBookingStatusCancelled.equalsIgnoreCase(booking.getStatusCode())) {
+            throw new SDDException("otBookingId", 400, "OT booking is already cancelled");
+        }
+        UserContext userContext = userContextService.getCurrentUserContext();
+        String changedBy = userContext.getUserFullName();
+        LocalDateTime now = LocalDateTime.now();
+
+        OtBookingRescheduleCancelHistory history = OtBookingRescheduleCancelHistory.builder()
+                .otBooking(entityManager.getReference(OtBooking.class, booking.getOtBookingId()))
+                .actionType("CANCEL")
+                .oldOt(entityManager.getReference(MasOperationTheatre.class, booking.getOtId()))
+                .oldScheduledDate(booking.getScheduledDate())
+                .oldStartTime(booking.getScheduledStartTime())
+                .oldEndTime(booking.getScheduledEndTime())
+                .reason(entityManager.getReference(MasOtScheduleChangeReason.class, reason.getReasonId()))
+                .remarks(request.getRemarks())
+                .requestedBy(changedBy)
+                .requestedDate(now)
+                .reviewStatus("ACCEPTED")
+                .reviewedBy(changedBy)
+                .reviewedDate(now)
+                .status("Y")
+                .lastChgBy(changedBy)
+                .lastChgDate(now)
+                .build();
+        otBookingRescheduleCancelHistoryRepository.save(history);
+
+        OtBooking bookingEntity = entityManager.getReference(OtBooking.class, booking.getOtBookingId());
+        bookingEntity.setBookingStatus(entityManager.getReference(MasOtBookingStatus.class, cancelledStatusId));
+        bookingEntity.setCancelledBy(changedBy);
+        bookingEntity.setCancelledDate(now);
+        bookingEntity.setLastChgBy(changedBy);
+        bookingEntity.setLastChgDate(now);
+        otBookingRepository.save(bookingEntity);
+
+        OtBookingRequestHd bookingRequest = entityManager.getReference(
+                OtBookingRequestHd.class, booking.getOtBookingRequestId());
+        bookingRequest.setBookingStatusId(entityManager.getReference(MasOtBookingStatus.class, cancelledStatusId));
+        bookingRequest.setLastChgBy(changedBy);
+        bookingRequest.setLastChgDate(now);
+        hdRepository.save(bookingRequest);
+
+        otBookingRescheduleCancelHistoryRepository
+                .findFirstByOtBooking_OtBookingIdAndActionTypeIgnoreCaseAndReviewStatusIgnoreCaseAndStatusIgnoreCaseOrderByRequestedDateDesc(
+                        booking.getOtBookingId(), "RESCHEDULE", "PENDING", "Y")
+                .ifPresent(pending -> {
+                    pending.setReviewStatus("REJECTED");
+                    pending.setReviewedBy(changedBy);
+                    pending.setReviewedDate(now);
+                    pending.setReviewRemarks("Reschedule request closed because the booking was cancelled");
+                    pending.setLastChgBy(changedBy);
+                    pending.setLastChgDate(now);
+                    otBookingRescheduleCancelHistoryRepository.save(pending);
+                });
+
+        OtBookingStatusLog statusLog = OtBookingStatusLog.builder()
+                .otBooking(entityManager.getReference(OtBooking.class, booking.getOtBookingId()))
+                .fromStatus(booking.getBookingStatusId() == null ? null
+                        : entityManager.getReference(MasOtBookingStatus.class, booking.getBookingStatusId()))
+                .toStatus(entityManager.getReference(MasOtBookingStatus.class, cancelledStatusId))
+                .actionRemarks("OT booking cancelled. Reason: " + reason.getReason()
+                        + (request.getRemarks() == null || request.getRemarks().isBlank() ? "" : ". " + request.getRemarks()))
+                .changedBy(changedBy)
+                .changedDate(now)
+                .status("Y")
+                .lastChgBy(changedBy)
+                .lastChgDate(now)
+                .build();
+        otBookingStatusLogRepository.save(statusLog);
+
+        return ResponseUtils.createSuccessResponse("OT booking cancelled successfully", new TypeReference<>() {});
+    }
+
+    private OtScheduleChangeReasonProjection findActiveScheduleChangeReason(Long reasonId, String action) {
+        OtScheduleChangeReasonProjection reason = masOtScheduleChangeReasonRepository.findActiveReasonDetails(reasonId)
+                .orElseThrow(() -> new SDDException("reasonId", 404, "Active OT schedule change reason not found"));
+        if (!"BOTH".equalsIgnoreCase(reason.getApplicableFor())
+                && !action.equalsIgnoreCase(reason.getApplicableFor())) {
+            throw new SDDException("reasonId", 400, "Reason is not applicable for " + action);
+        }
+        return reason;
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> updateOtPatientTransaction(Long otBookingId, String statusCode) {
+        String normalizedStatusCode = statusCode == null ? "" : statusCode.trim();
+        if (normalizedStatusCode.isEmpty()) {
+            throw new SDDException("status", 400, "OT booking status code is required");
+        }
+
+        OtBooking booking = otBookingRepository.findById(otBookingId)
+                .orElseThrow(() -> new SDDException("otBookingId", 404, "OT booking not found"));
+        MasOtBookingStatus toStatus = masOtBookingStatusRepository.findByStatusCodeIgnoreCase(normalizedStatusCode)
+                .filter(status -> "Y".equalsIgnoreCase(status.getStatus()))
+                .orElseThrow(() -> new SDDException("status", 404,
+                        "Active OT booking status not found: " + normalizedStatusCode));
+
+        MasOtBookingStatus fromStatus = booking.getBookingStatus();
+        if (fromStatus != null && Objects.equals(fromStatus.getBookingStatusId(), toStatus.getBookingStatusId())) {
+            return ResponseUtils.createSuccessResponse(
+                    "OT booking already has status " + toStatus.getStatusCode(), new TypeReference<>() {});
+        }
+
+        String fromStatusCode = fromStatus == null ? null : fromStatus.getStatusCode();
+        boolean allowedTransition = fromStatusCode != null
+                && ((fromStatusCode.equalsIgnoreCase(otBookingStatusScheduled)
+                        && Set.of(otBookingStatusSentToOt, otBookingStatusCancelled, otBookingStatusRejected).stream()
+                                .anyMatch(code -> code.equalsIgnoreCase(normalizedStatusCode)))
+                    || (fromStatusCode.equalsIgnoreCase(otBookingStatusSentToOt)
+                        && normalizedStatusCode.equalsIgnoreCase(otBookingStatusReceivedInOt)));
+        if (!allowedTransition) {
+            throw new SDDException("status", 400,
+                    "Invalid OT booking status transition from "
+                            + (fromStatusCode == null ? "null" : fromStatusCode) + " to " + normalizedStatusCode);
+        }
+
+        UserContext userContext = userContextService.getCurrentUserContext();
+        String changedBy = userContext.getUserFullName();
+        LocalDateTime now = LocalDateTime.now();
+        booking.setBookingStatus(toStatus);
+        booking.setLastChgBy(changedBy);
+        booking.setLastChgDate(now);
+        otBookingRepository.save(booking);
+
+        OtBookingStatusLog statusLog = OtBookingStatusLog.builder()
+                .otBooking(booking)
+                .fromStatus(fromStatus)
+                .toStatus(toStatus)
+                .actionRemarks("OT Status updated from "+fromStatus.getStatusCode()+" to "+toStatus.getStatusCode())
+                .changedBy(changedBy)
+                .changedDate(now)
+                .status("Y")
+                .lastChgBy(changedBy)
+                .lastChgDate(now)
+                .build();
+        otBookingStatusLogRepository.save(statusLog);
+
+        return ResponseUtils.createSuccessResponse(
+                "OT booking status updated to " + toStatus.getStatusCode(), new TypeReference<>() {});
     }
 
     @Transactional

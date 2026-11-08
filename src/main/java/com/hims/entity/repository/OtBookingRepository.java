@@ -4,6 +4,7 @@ import com.hims.entity.OtBooking;
 import com.hims.projection.OtBookingHistoryProjection;
 import com.hims.projection.OtDashboardProjection;
 import com.hims.projection.OtDepartmentProjection;
+import com.hims.projection.OtBookingScheduleProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,6 +14,24 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
+
+    @Query(value = """
+            SELECT ob.ot_booking_id AS otBookingId,
+                   ob.ot_booking_request_id AS otBookingRequestId,
+                   ob.ot_id AS otId,
+                   ob.scheduled_date AS scheduledDate,
+                   ob.scheduled_start_time AS scheduledStartTime,
+                   ob.scheduled_end_time AS scheduledEndTime,
+                   ob.booking_status_id AS bookingStatusId,
+                   s.status_code AS statusCode
+            FROM ot_booking ob
+            JOIN mas_ot_booking_status s ON s.booking_status_id = ob.booking_status_id
+            WHERE ob.ot_booking_id = :otBookingId AND ob.status = 'Y'
+            """, nativeQuery = true)
+    java.util.Optional<OtBookingScheduleProjection> findScheduleForChange(@Param("otBookingId") Long otBookingId);
+
+    @Query(value = "SELECT booking_status_id FROM mas_ot_booking_status WHERE status_code = :statusCode AND status = 'Y'", nativeQuery = true)
+    java.util.Optional<Long> findActiveBookingStatusId(@Param("statusCode") String statusCode);
 
     @Query(value = """
             SELECT DISTINCT md.department_id AS id, md.department_name AS name
