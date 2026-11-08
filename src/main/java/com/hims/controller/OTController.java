@@ -88,10 +88,24 @@ public class OTController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate scheduledDate,
             @RequestParam(required = false) Boolean ipd,
             @RequestParam(required = false) @Positive Long statusId,
+            @RequestParam(required = false) @Positive Long otId,
+            @RequestParam(required = false) @Positive Long departmentId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size) {
         ApiResponse<Page<OtBookingHistoryResponse>> response =
-                otService.getOtBookingHistory(patient, patientId, scheduledDate, ipd, statusId, page, size);
+                otService.getOtBookingHistory(patient, patientId, scheduledDate, ipd, statusId, otId, departmentId, page, size);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/patientReceiptList")
+    @Operation(summary = "Get paginated OT patient receipt list (sent to OT)")
+    public ResponseEntity<ApiResponse<Page<OtBookingHistoryResponse>>> getPatientReceiptList(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Positive Long departmentId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size) {
+        ApiResponse<Page<OtBookingHistoryResponse>> response =
+                otService.getPatientReceiptList(search, departmentId, page, size);
         return ResponseEntity.ok(response);
     }
 

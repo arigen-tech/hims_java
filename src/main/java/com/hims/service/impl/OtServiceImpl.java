@@ -361,10 +361,12 @@ public class OtServiceImpl implements OtService {
     @Override
     @Transactional
     public ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(
-            String patient, Long patientId, LocalDate scheduledDate, Boolean ipd, Long statusId, int page, int size) {
+            String patient, Long patientId, LocalDate scheduledDate, Boolean ipd, Long statusId,
+            Long otId, Long departmentId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<OtBookingHistoryProjection> projectionPage = otBookingRepository.findBookingHistory(
-                patient == null || patient.isBlank() ? null : patient.trim(), patientId, scheduledDate, ipd, statusId, pageable);
+                patient == null || patient.isBlank() ? null : patient.trim(), patientId, scheduledDate, ipd,
+                statusId, otId, departmentId, pageable);
         List<Long> requestIds = projectionPage.getContent().stream()
                 .map(OtBookingHistoryProjection::getHeaderid)
                 .filter(Objects::nonNull)
@@ -378,6 +380,37 @@ public class OtServiceImpl implements OtService {
                                 PendingForOtSurgeryProjection::getOtBookingRequestId,
                                 Collectors.mapping(otBookingHistoryMapper::toSurgeryResponse, Collectors.toList())));
 
+        Page<OtBookingHistoryResponse> responsePage = projectionPage.map(projection -> {
+            OtBookingHistoryResponse response = otBookingHistoryMapper.toResponse(projection);
+            response.setSurgeries(surgeryDetailsByRequestId.getOrDefault(
+                    projection.getHeaderid(), Collections.emptyList()));
+            return response;
+        });
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<Page<OtBookingHistoryResponse>> getPatientReceiptList(
+            String search, Long departmentId, int page, int size) {
+        Long sentToOtStatusId = otBookingRepository.findActiveBookingStatusId(otBookingStatusSentToOt).orElse(null);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<OtBookingHistoryProjection> projectionPage = sentToOtStatusId == null
+                ? Page.empty(pageable)
+                : otBookingRepository.findBookingHistory(
+                        search == null || search.isBlank() ? null : search.trim(), null, null, null,
+                        sentToOtStatusId, null, departmentId, pageable);
+        List<Long> requestIds = projectionPage.getContent().stream()
+                .map(OtBookingHistoryProjection::getHeaderid)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, List<OtBookingHistoryResponse.SurgeryDetail>> surgeryDetailsByRequestId = requestIds.isEmpty()
+                ? Collections.emptyMap()
+                : dtRepository.findSurgeriesByRequestIds(requestIds).stream()
+                        .collect(Collectors.groupingBy(
+                                PendingForOtSurgeryProjection::getOtBookingRequestId,
+                                Collectors.mapping(otBookingHistoryMapper::toSurgeryResponse, Collectors.toList())));
         Page<OtBookingHistoryResponse> responsePage = projectionPage.map(projection -> {
             OtBookingHistoryResponse response = otBookingHistoryMapper.toResponse(projection);
             response.setSurgeries(surgeryDetailsByRequestId.getOrDefault(
