@@ -31,7 +31,7 @@ public interface OtService {
 
     ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark);
 
-    ApiResponse<String> updateOtPatientTransaction(Long otBookingId, String statusCode);
+    ApiResponse<String> updateOtPatientTransaction(Long otBookingId, String statusCode, String remark);
 
     ApiResponse<String> rescheduleOtBooking(OtBookingRescheduleRequest request);
 

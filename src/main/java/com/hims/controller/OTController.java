@@ -154,8 +154,9 @@ public class OTController {
     @Operation(summary = "Update OT booking status for patient transaction")
     public ApiResponse<String> updateOtPatientTransaction(
             @RequestParam @Positive Long otBookingId,
-            @RequestParam @NotBlank String status) {
-        return otService.updateOtPatientTransaction(otBookingId, status);
+            @RequestParam @NotBlank String status,
+            @RequestParam(required = false) String remark) {
+        return otService.updateOtPatientTransaction(otBookingId, status, remark);
     }
 
     @PostMapping("/reschedule")

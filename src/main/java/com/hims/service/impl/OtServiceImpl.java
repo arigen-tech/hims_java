@@ -751,7 +751,7 @@ public class OtServiceImpl implements OtService {
 
     @Override
     @Transactional
-    public ApiResponse<String> updateOtPatientTransaction(Long otBookingId, String statusCode) {
+    public ApiResponse<String> updateOtPatientTransaction(Long otBookingId, String statusCode, String remark) {
         String normalizedStatusCode = statusCode == null ? "" : statusCode.trim();
         if (normalizedStatusCode.isEmpty()) {
             throw new SDDException("status", 400, "OT booking status code is required");
@@ -795,7 +795,9 @@ public class OtServiceImpl implements OtService {
                 .otBooking(booking)
                 .fromStatus(fromStatus)
                 .toStatus(toStatus)
-                .actionRemarks("OT Status updated from "+fromStatus.getStatusCode()+" to "+toStatus.getStatusCode())
+                .actionRemarks(remark == null || remark.isBlank()
+                        ? "OT Status updated from " + fromStatus.getStatusCode() + " to " + toStatus.getStatusCode()
+                        : remark.trim())
                 .changedBy(changedBy)
                 .changedDate(now)
                 .status("Y")
