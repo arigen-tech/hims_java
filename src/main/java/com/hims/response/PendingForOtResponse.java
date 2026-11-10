@@ -30,6 +30,11 @@ public class PendingForOtResponse {
     private LocalTime requestedTime;
     private String requestedBy;
     private String requestedNo;
+    private String statusCode;
+    private LocalDate preferredDate;
+    private LocalTime preferredStartTime;
+    private LocalTime preferredEndTime;
+    private String rescheduleRemarks;
      List<SurgeryResponse> surgeryResponses;
     @Data
     public static class SurgeryResponse{

@@ -4,6 +4,7 @@ import com.hims.entity.OtBooking;
 import com.hims.projection.OtBookingHistoryProjection;
 import com.hims.projection.OtDashboardProjection;
 import com.hims.projection.OtDepartmentProjection;
+import com.hims.projection.OtBookingScheduleProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,6 +14,24 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
+
+    @Query(value = """
+            SELECT ob.ot_booking_id AS otBookingId,
+                   ob.ot_booking_request_id AS otBookingRequestId,
+                   ob.ot_id AS otId,
+                   ob.scheduled_date AS scheduledDate,
+                   ob.scheduled_start_time AS scheduledStartTime,
+                   ob.scheduled_end_time AS scheduledEndTime,
+                   ob.booking_status_id AS bookingStatusId,
+                   s.status_code AS statusCode
+            FROM ot_booking ob
+            JOIN mas_ot_booking_status s ON s.booking_status_id = ob.booking_status_id
+            WHERE ob.ot_booking_id = :otBookingId AND ob.status = 'Y'
+            """, nativeQuery = true)
+    java.util.Optional<OtBookingScheduleProjection> findScheduleForChange(@Param("otBookingId") Long otBookingId);
+
+    @Query(value = "SELECT booking_status_id FROM mas_ot_booking_status WHERE status_code = :statusCode AND status = 'Y'", nativeQuery = true)
+    java.util.Optional<Long> findActiveBookingStatusId(@Param("statusCode") String statusCode);
 
     @Query(value = """
             SELECT DISTINCT md.department_id AS id, md.department_name AS name
@@ -88,9 +107,16 @@ public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
               AND (:patientId IS NULL OR p.patient_id = :patientId)
               AND (CAST(:scheduledDate AS date) IS NULL OR ob.scheduled_date = CAST(:scheduledDate AS date))
               AND (:ipd IS NULL OR upper(coalesce(obrh.request_source, '')) = CASE WHEN :ipd THEN 'IPD' ELSE 'OPD' END)
+              AND (:otId IS NULL OR ob.ot_id = :otId)
+              AND (:departmentId IS NULL OR obrh.department_id = :departmentId)
               AND (:patient IS NULL OR :patient = ''
                    OR LOWER(COALESCE(p.p_fn, '') || ' ' || COALESCE(p.p_ln, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
                    OR LOWER(COALESCE(p.uhid_no, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
+                   OR LOWER(COALESCE(surg.first_name, '') || ' ' || COALESCE(surg.middle_name, '') || ' ' || COALESCE(surg.last_name, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
+                   OR EXISTS (SELECT 1 FROM ot_booking_request_dt search_dt
+                              JOIN mas_surgery search_s ON search_s.surgery_id = search_dt.surgery_id
+                              WHERE search_dt.ot_booking_request_id = obrh.ot_booking_request_id
+                                AND LOWER(COALESCE(search_s.surgery_name, '')) LIKE LOWER(CONCAT('%', :patient, '%')))
                    OR CAST(p.patient_id AS varchar) = :patient)
             ORDER BY ob.booked_date DESC, ob.ot_booking_id DESC
             """,
@@ -107,9 +133,16 @@ public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
               AND (:patientId IS NULL OR p.patient_id = :patientId)
               AND (CAST(:scheduledDate AS date) IS NULL OR ob.scheduled_date = CAST(:scheduledDate AS date))
               AND (:ipd IS NULL OR upper(coalesce(obrh.request_source, '')) = CASE WHEN :ipd THEN 'IPD' ELSE 'OPD' END)
+              AND (:otId IS NULL OR ob.ot_id = :otId)
+              AND (:departmentId IS NULL OR obrh.department_id = :departmentId)
               AND (:patient IS NULL OR :patient = ''
                    OR LOWER(COALESCE(p.p_fn, '') || ' ' || COALESCE(p.p_ln, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
                    OR LOWER(COALESCE(p.uhid_no, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
+                   OR LOWER(COALESCE(surg.first_name, '') || ' ' || COALESCE(surg.middle_name, '') || ' ' || COALESCE(surg.last_name, '')) LIKE LOWER(CONCAT('%', :patient, '%'))
+                   OR EXISTS (SELECT 1 FROM ot_booking_request_dt search_dt
+                              JOIN mas_surgery search_s ON search_s.surgery_id = search_dt.surgery_id
+                              WHERE search_dt.ot_booking_request_id = obrh.ot_booking_request_id
+                                AND LOWER(COALESCE(search_s.surgery_name, '')) LIKE LOWER(CONCAT('%', :patient, '%')))
                    OR CAST(p.patient_id AS varchar) = :patient)
             """, nativeQuery = true)
     Page<OtBookingHistoryProjection> findBookingHistory(@Param("patient") String patient,
@@ -117,5 +150,7 @@ public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
                                                         @Param("scheduledDate") java.time.LocalDate scheduledDate,
                                                         @Param("ipd") Boolean ipd,
                                                         @Param("statusId") Long statusId,
+                                                        @Param("otId") Long otId,
+                                                        @Param("departmentId") Long departmentId,
                                                         Pageable pageable);
 }
