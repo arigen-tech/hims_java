@@ -118,28 +118,6 @@ public class OtServiceImpl implements OtService {
         return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {}, "OT departments fetched successfully");
     }
 
-    @Override
-    public ApiResponse<List<OtDashboardResponse>> getOtDashboard(int month, int year, Long otId, Long departmentId) {
-        Map<LocalDate, List<OtDashboardProjection>> rowsByDate = otBookingRepository
-                .findOtDashboard(month, year, otId, departmentId).stream()
-                .collect(Collectors.groupingBy(OtDashboardProjection::getScheduledDate, LinkedHashMap::new, Collectors.toList()));
-        List<OtDashboardResponse> dashboard = rowsByDate.entrySet().stream()
-                .map(entry -> new OtDashboardResponse(
-                        entry.getKey(),
-                        entry.getValue().stream().map(otDashboardMapper::toStatusCount).toList(),
-                        entry.getValue().get(0).getOtNames()))
-                .toList();
-        return ResponseUtils.createSuccessResponse(dashboard, new TypeReference<>() {}, "OT dashboard fetched successfully");
-    }
-
-    @Override
-    public ApiResponse<List<OtDepartmentResponse>> getOtDepartments(Long hospitalId) {
-        List<OtDepartmentResponse> departments = otDepartmentMapper.toResponseList(
-                otBookingRepository.findDepartmentsByHospitalId(hospitalId));
-        return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {}, "OT departments fetched successfully");
-    }
-
-
     @Transactional
     @Override
     public ApiResponse<String> createOrUpdateOtBookingHeader(OtBookingRequestHdDto dto) {
