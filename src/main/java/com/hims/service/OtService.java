@@ -12,6 +12,7 @@ import com.hims.request.OtBookingCancelRequest;
 import com.hims.response.OtTeamMemberResponse;
 import com.hims.response.OtDashboardResponse;
 import com.hims.response.OtDepartmentResponse;
+import com.hims.response.PacPendingResponse;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -46,4 +47,6 @@ public interface OtService {
     ApiResponse<List<OtDashboardResponse>> getOtDashboard(int month, int year, Long otId, Long departmentId);
 
     ApiResponse<List<OtDepartmentResponse>> getOtDepartments(Long hospitalId);
+
+    ApiResponse<Page<PacPendingResponse>> getPacPendingList(String search, String type, int page, int size);
 }

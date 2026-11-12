@@ -13,6 +13,7 @@ import com.hims.response.OtBookingHistoryResponse;
 import com.hims.response.OtTeamMemberResponse;
 import com.hims.response.OtDashboardResponse;
 import com.hims.response.OtDepartmentResponse;
+import com.hims.response.PacPendingResponse;
 import com.hims.service.OtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -125,6 +126,16 @@ public class OTController {
     public ResponseEntity<ApiResponse<List<OtDepartmentResponse>>> getOtDepartments(
             @RequestParam @Positive Long hospitalId) {
         return ResponseEntity.ok(otService.getOtDepartments(hospitalId));
+    }
+
+    @GetMapping("/pacPendingList")
+    @Operation(summary = "Get pending PAC cases for scheduled OT bookings")
+    public ResponseEntity<ApiResponse<Page<PacPendingResponse>>> getPacPendingList(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "All") String type,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+        return ResponseEntity.ok(otService.getPacPendingList(search, type, page, size));
     }
     /**
      * Accept or reject an OT booking request.

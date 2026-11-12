@@ -1,6 +1,8 @@
 package com.hims.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hims.constants.AppConstants;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
@@ -74,6 +76,7 @@ public class OtServiceImpl implements OtService {
     private final OtBookingStatusLogRepository otBookingStatusLogRepository;
     private final OtBookingRescheduleCancelHistoryRepository otBookingRescheduleCancelHistoryRepository;
     private final OtTeamMemberRepository otTeamMemberRepository;
+    private final ObjectMapper objectMapper;
     @Value("${ipd.admission.status.admitted}")
     Long ipdAdmissionStatusAdmitted;
     @Value("${surgery.booking-status.requested}")
@@ -116,6 +119,42 @@ public class OtServiceImpl implements OtService {
         List<OtDepartmentResponse> departments = otDepartmentMapper.toResponseList(
                 otBookingRepository.findDepartmentsByHospitalId(hospitalId));
         return ResponseUtils.createSuccessResponse(departments, new TypeReference<>() {}, "OT departments fetched successfully");
+    }
+
+    @Override
+    public ApiResponse<Page<PacPendingResponse>> getPacPendingList(String search, String type, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<PacPendingResponse> pendingCases = otBookingRepository.findPacPendingList(search, type, pageable)
+                .map(row -> {
+                    PacPendingResponse response = new PacPendingResponse();
+                    response.setOtBookingId(row.getOtBookingId());
+                    response.setBookingNo(row.getBookingNo());
+                    response.setOtBookingRequestId(row.getOtBookingRequestId());
+                    response.setPatientId(row.getPatientId());
+                    response.setPatientName(row.getPatientName());
+                    response.setUhidNo(row.getUhidNo());
+                    response.setIpNo(row.getIpNo());
+                    response.setPatientType(row.getPatientType());
+                    response.setDepartmentName(row.getDepartmentName());
+                    response.setPrimarySurgeonName(row.getPrimarySurgeonName());
+                    response.setDiagnosis(row.getDiagnosis());
+                    response.setScheduledDate(row.getScheduledDate());
+                    response.setScheduledStartTime(row.getScheduledStartTime());
+                    response.setScheduledEndTime(row.getScheduledEndTime());
+                    response.setOtName(row.getOtName());
+                    response.setWardName(row.getWardName());
+                    response.setBedNumber(row.getBedNumber());
+                    try {
+                        response.setSurgeries(row.getSurgeries() == null
+                                ? List.of()
+                                : objectMapper.readValue(row.getSurgeries(),
+                                        new TypeReference<List<PacPendingResponse.SurgeryResponse>>() {}));
+                    } catch (JsonProcessingException e) {
+                        throw new IllegalStateException("Failed to parse PAC pending surgery details", e);
+                    }
+                    return response;
+                });
+        return ResponseUtils.createSuccessResponse(pendingCases, new TypeReference<>() {}, "PAC pending list fetched successfully");
     }
 
     @Transactional
@@ -460,6 +499,12 @@ public class OtServiceImpl implements OtService {
         LocalDateTime now = LocalDateTime.now();
         String currentUser = userContext.getUserFullName();
 
+        boolean anesthesiaRequired = dtRepository.findByOtBookingRequest(request).stream()
+                .map(OtBookingRequestDt::getSurgeryId)
+                .filter(Objects::nonNull)
+                .map(MasSurgery::getIsAnesthesiaRequired)
+                .anyMatch("Y"::equalsIgnoreCase);
+
         OtBooking booking = OtBooking.builder()
                 .bookingNo(transactionSequenceService.generateTransactionNumber(HMISTransaction.OT_BOOKING_NO, userContext.getHospitalId()))
                 .otBookingRequest(request)
@@ -473,9 +518,9 @@ public class OtServiceImpl implements OtService {
                 .status("Y")
                 .lastChgBy(currentUser)
                 .lastChgDate(now)
-                .isPacRequired("N")
+                .isPacRequired(anesthesiaRequired ? "Y" : "N")
                 .isPacDone("N")
-                .pacStatus("NOT_REQUIRED")
+                .pacStatus(anesthesiaRequired ? "PENDING" : "NOT_REQUIRED")
                 .build();
 
         booking = otBookingRepository.save(booking);

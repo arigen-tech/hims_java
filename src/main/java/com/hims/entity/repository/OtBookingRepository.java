@@ -5,6 +5,7 @@ import com.hims.projection.OtBookingHistoryProjection;
 import com.hims.projection.OtDashboardProjection;
 import com.hims.projection.OtDepartmentProjection;
 import com.hims.projection.OtBookingScheduleProjection;
+import com.hims.projection.PacPendingProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,6 +15,106 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface OtBookingRepository extends JpaRepository<OtBooking,Long> {
+
+    @Query(value = """
+            SELECT ob.ot_booking_id AS otBookingId,
+                   ob.booking_no AS bookingNo,
+                   obrh.ot_booking_request_id AS otBookingRequestId,
+                   p.patient_id AS patientId,
+                   CONCAT_WS(' ', NULLIF(TRIM(p.p_fn), ''), NULLIF(TRIM(p.p_mn), ''), NULLIF(TRIM(p.p_ln), '')) AS patientName,
+                   CASE WHEN UPPER(COALESCE(obrh.request_source, '')) = 'IPD' THEN NULL ELSE p.uhid_no END AS uhidNo,
+                   CASE WHEN UPPER(COALESCE(obrh.request_source, '')) = 'IPD' THEN ip.admission_no ELSE NULL END AS ipNo,
+                   obrh.request_source AS patientType,
+                   md.department_name AS departmentName,
+                   CONCAT_WS(' ', NULLIF(TRIM(surg.first_name), ''), NULLIF(TRIM(surg.middle_name), ''), NULLIF(TRIM(surg.last_name), '')) AS primarySurgeonName,
+                   obrh.diagnosis AS diagnosis,
+                   ob.scheduled_date AS scheduledDate,
+                   ob.scheduled_start_time AS scheduledStartTime,
+                   ob.scheduled_end_time AS scheduledEndTime,
+                   mot.ot_name AS otName,
+                   CASE WHEN UPPER(COALESCE(obrh.request_source, '')) = 'IPD' THEN COALESCE(iba.ward_name, ipw.ward_name) ELSE NULL END AS wardName,
+                   CASE WHEN UPPER(COALESCE(obrh.request_source, '')) = 'IPD' THEN COALESCE(iba.bed_number, ipb.bed_number) ELSE NULL END AS bedNumber,
+                   (SELECT CAST(JSON_AGG(JSON_BUILD_OBJECT('surgeryId', surgery.surgery_id,
+                                                           'surgeryName', surgery.surgery_name)
+                                         ORDER BY surgery.surgery_name) AS text)
+                    FROM (SELECT DISTINCT ms.surgery_id, ms.surgery_name
+                          FROM ot_booking_request_dt dt
+                          LEFT JOIN mas_surgery ms ON ms.surgery_id = dt.surgery_id
+                          WHERE dt.ot_booking_request_id = obrh.ot_booking_request_id
+                            AND ms.surgery_id IS NOT NULL) surgery) AS surgeries
+            FROM ot_booking ob
+            JOIN mas_ot_booking_status obs ON obs.booking_status_id = ob.booking_status_id
+            JOIN ot_booking_request_hd obrh ON obrh.ot_booking_request_id = ob.ot_booking_request_id
+            JOIN patient p ON p.patient_id = obrh.patient_id
+            LEFT JOIN visit v ON v.visit_id = obrh.visit_id
+            LEFT JOIN inpatient ip ON ip.inpatient_id = obrh.admission_id
+            LEFT JOIN mas_department md ON md.department_id = obrh.department_id
+            LEFT JOIN users surg ON surg.user_id = obrh.primary_surgeon_id
+            LEFT JOIN mas_operation_theatre mot ON mot.ot_id = ob.ot_id
+            LEFT JOIN LATERAL (
+                SELECT w.ward_name, b.bed_number
+                FROM ip_bed_allocation a
+                LEFT JOIN mas_ward w ON w.ward_id = a.ward_id
+                LEFT JOIN mas_bed b ON b.bed_id = a.bed_id
+                WHERE a.ip_admission_id = ip.inpatient_id
+                  AND a.allocation_end_date IS NULL
+                ORDER BY a.allocation_start_date DESC NULLS LAST, a.bed_allocation_id DESC
+                LIMIT 1
+            ) iba ON TRUE
+            LEFT JOIN mas_ward ipw ON ipw.ward_id = ip.admitting_ward_id
+            LEFT JOIN mas_bed ipb ON ipb.bed_id = ip.bed_id
+            WHERE UPPER(obs.status_code) = 'SCHEDULED'
+              AND ob.is_pac_required = 'Y'
+              AND ob.is_pac_done = 'N'
+              AND UPPER(COALESCE(ob.status, 'N')) = 'Y'
+              AND ob.cancelled_date IS NULL
+              AND ob.cancelled_by IS NULL
+              AND (NULLIF(TRIM(:patientType), '') IS NULL
+                   OR UPPER(:patientType) = 'ALL'
+                   OR UPPER(obrh.request_source) = UPPER(:patientType))
+              AND (NULLIF(TRIM(:search), '') IS NULL
+                   OR LOWER(COALESCE(p.uhid_no, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+                   OR LOWER(COALESCE(ip.admission_no, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+                   OR LOWER(CONCAT_WS(' ', NULLIF(TRIM(p.p_fn), ''), NULLIF(TRIM(p.p_mn), ''), NULLIF(TRIM(p.p_ln), ''))) LIKE LOWER(CONCAT('%', :search, '%'))
+                   OR LOWER(CONCAT_WS(' ', NULLIF(TRIM(surg.first_name), ''), NULLIF(TRIM(surg.middle_name), ''), NULLIF(TRIM(surg.last_name), ''))) LIKE LOWER(CONCAT('%', :search, '%'))
+                   OR EXISTS (SELECT 1
+                              FROM ot_booking_request_dt search_dt
+                              LEFT JOIN mas_surgery search_s ON search_s.surgery_id = search_dt.surgery_id
+                              WHERE search_dt.ot_booking_request_id = obrh.ot_booking_request_id
+                                AND LOWER(COALESCE(search_s.surgery_name, '')) LIKE LOWER(CONCAT('%', :search, '%'))))
+            ORDER BY ob.scheduled_date, ob.scheduled_start_time, ob.ot_booking_id
+            """,
+            countQuery = """
+            SELECT COUNT(*)
+            FROM ot_booking ob
+            JOIN mas_ot_booking_status obs ON obs.booking_status_id = ob.booking_status_id
+            JOIN ot_booking_request_hd obrh ON obrh.ot_booking_request_id = ob.ot_booking_request_id
+            JOIN patient p ON p.patient_id = obrh.patient_id
+            LEFT JOIN inpatient ip ON ip.inpatient_id = obrh.admission_id
+            LEFT JOIN users surg ON surg.user_id = obrh.primary_surgeon_id
+            WHERE UPPER(obs.status_code) = 'SCHEDULED'
+              AND ob.is_pac_required = 'Y'
+              AND ob.is_pac_done = 'N'
+              AND UPPER(COALESCE(ob.status, 'N')) = 'Y'
+              AND ob.cancelled_date IS NULL
+              AND ob.cancelled_by IS NULL
+              AND (NULLIF(TRIM(:patientType), '') IS NULL
+                   OR UPPER(:patientType) = 'ALL'
+                   OR UPPER(obrh.request_source) = UPPER(:patientType))
+              AND (NULLIF(TRIM(:search), '') IS NULL
+                   OR LOWER(COALESCE(p.uhid_no, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+                   OR LOWER(COALESCE(ip.admission_no, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+                   OR LOWER(CONCAT_WS(' ', NULLIF(TRIM(p.p_fn), ''), NULLIF(TRIM(p.p_mn), ''), NULLIF(TRIM(p.p_ln), ''))) LIKE LOWER(CONCAT('%', :search, '%'))
+                   OR LOWER(CONCAT_WS(' ', NULLIF(TRIM(surg.first_name), ''), NULLIF(TRIM(surg.middle_name), ''), NULLIF(TRIM(surg.last_name), ''))) LIKE LOWER(CONCAT('%', :search, '%'))
+                   OR EXISTS (SELECT 1
+                              FROM ot_booking_request_dt search_dt
+                              LEFT JOIN mas_surgery search_s ON search_s.surgery_id = search_dt.surgery_id
+                              WHERE search_dt.ot_booking_request_id = obrh.ot_booking_request_id
+                                AND LOWER(COALESCE(search_s.surgery_name, '')) LIKE LOWER(CONCAT('%', :search, '%'))))
+            """, nativeQuery = true)
+    Page<PacPendingProjection> findPacPendingList(@Param("search") String search,
+                                                  @Param("patientType") String patientType,
+                                                  Pageable pageable);
 
     @Query(value = """
             SELECT ob.ot_booking_id AS otBookingId,
