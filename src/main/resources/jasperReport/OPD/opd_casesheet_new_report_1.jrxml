@@ -582,7 +582,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 		<band splitType="Stretch"/>
 	</columnFooter>
 	<summary>
-		<band height="193" splitType="Stretch">
+		<band height="225" splitType="Stretch">
 			<subreport isUsingCache="true">
 				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="5" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="26155b52-9de3-4371-81a0-ffaa2397c4f2"/>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -619,7 +619,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Diagnosis_report_1.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-4" positionType="Float" mode="Transparent" x="1" y="75" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="6728596c-7088-4dac-b2be-48df64074c48"/>
+				<reportElement key="subreport-4" positionType="Float" mode="Transparent" x="1" y="108" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="6728596c-7088-4dac-b2be-48df64074c48"/>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -630,7 +630,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Investigation_SubReport1_report_1.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport>
-				<reportElement positionType="Float" x="1" y="85" width="359" height="11" uuid="e960f502-d44c-43ce-bd88-1ff987e276d2"/>
+				<reportElement positionType="Float" x="1" y="118" width="359" height="11" isRemoveLineWhenBlank="true" uuid="e960f502-d44c-43ce-bd88-1ff987e276d2"/>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -663,7 +663,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Family_history.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement positionType="Float" x="1" y="96" width="359" height="11" uuid="dc20d74e-9107-46c6-8321-a12567def484">
+				<reportElement positionType="Float" x="1" y="140" width="359" height="11" isRemoveLineWhenBlank="true" uuid="dc20d74e-9107-46c6-8321-a12567def484">
 					<printWhenExpression><![CDATA["y".equalsIgnoreCase($F{admission_flag})]]></printWhenExpression>
 				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -676,7 +676,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Admission_advice.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement positionType="Float" x="1" y="107" width="359" height="11" uuid="df1a1aa7-961e-4a89-ac07-6193bbca977b">
+				<reportElement positionType="Float" x="1" y="151" width="359" height="11" isRemoveLineWhenBlank="true" uuid="df1a1aa7-961e-4a89-ac07-6193bbca977b">
 					<printWhenExpression><![CDATA["y".equalsIgnoreCase($F{referral_flag})]]></printWhenExpression>
 				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -689,7 +689,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Referral_advice.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="129" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="5f79e2ad-10d8-4dc2-b518-d1de58779f7e">
+				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="173" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="5f79e2ad-10d8-4dc2-b518-d1de58779f7e">
 					<printWhenExpression><![CDATA[$F{final_medical_advice} != null]]></printWhenExpression>
 				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -702,7 +702,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Final_medical_advice.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement positionType="Float" x="1" y="118" width="359" height="11" uuid="52ac575c-4c3f-4ccf-a52f-eb1d5a4a28c9">
+				<reportElement positionType="Float" x="1" y="162" width="359" height="11" isRemoveLineWhenBlank="true" uuid="52ac575c-4c3f-4ccf-a52f-eb1d5a4a28c9">
 					<printWhenExpression><![CDATA["y".equalsIgnoreCase($F{follow_up_flag})]]></printWhenExpression>
 				</reportElement>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -715,42 +715,42 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Follow_up.jasper"]]></subreportExpression>
 			</subreport>
 			<staticText>
-				<reportElement positionType="Float" x="230" y="152" width="124" height="10" uuid="725ea85c-2f14-4985-b97a-bc1798612a6b"/>
+				<reportElement positionType="Float" x="230" y="185" width="124" height="10" uuid="725ea85c-2f14-4985-b97a-bc1798612a6b"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="8" isBold="true"/>
 				</textElement>
 				<text><![CDATA[OPD Submitted By]]></text>
 			</staticText>
 			<textField isBlankWhenNull="true">
-				<reportElement positionType="Float" x="230" y="162" width="123" height="10" uuid="68ecaae3-b127-4c6b-a3e6-919c49d1258b"/>
+				<reportElement positionType="Float" x="230" y="195" width="123" height="10" uuid="68ecaae3-b127-4c6b-a3e6-919c49d1258b"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Dr. " + $F{doc_name}]]></textFieldExpression>
 			</textField>
 			<textField isBlankWhenNull="true">
-				<reportElement positionType="Float" x="230" y="172" width="123" height="10" uuid="7948ca96-13d3-4dfe-99fa-0982604a7d6d"/>
+				<reportElement positionType="Float" x="230" y="205" width="123" height="10" uuid="7948ca96-13d3-4dfe-99fa-0982604a7d6d"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{qualification}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement positionType="Float" x="230" y="182" width="30" height="10" uuid="2d88fe63-27bb-4f57-bf97-5e44f8ca396e"/>
+				<reportElement positionType="Float" x="230" y="215" width="30" height="10" uuid="2d88fe63-27bb-4f57-bf97-5e44f8ca396e"/>
 				<textElement>
 					<font size="6"/>
 				</textElement>
 				<text><![CDATA[Reg No. -]]></text>
 			</staticText>
 			<textField isBlankWhenNull="true">
-				<reportElement positionType="Float" x="259" y="182" width="94" height="10" uuid="a91b1ce9-e50c-4176-8536-6c5e389275ab"/>
+				<reportElement positionType="Float" x="259" y="215" width="94" height="10" uuid="a91b1ce9-e50c-4176-8536-6c5e389275ab"/>
 				<textElement textAlignment="Left">
 					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{medical_registration_no}]]></textFieldExpression>
 			</textField>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="55" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="7539caaf-cb88-4abb-a25d-8d4487d48e78"/>
+				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="68" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="7539caaf-cb88-4abb-a25d-8d4487d48e78"/>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -761,7 +761,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "OBG_report.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="65" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="00f05fa5-db95-4bfb-93c2-361a605befd2"/>
+				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="78" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="00f05fa5-db95-4bfb-93c2-361a605befd2"/>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>
@@ -770,6 +770,54 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				</subreportParameter>
 				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "opthal_report.jasper"]]></subreportExpression>
+			</subreport>
+			<subreport isUsingCache="true">
+				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="88" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="8c6db808-3574-4288-8b88-14dc91045ba6"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="visit_id">
+					<subreportParameterExpression><![CDATA[$P{visit_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "ENT_subreport.jasper"]]></subreportExpression>
+			</subreport>
+			<subreport isUsingCache="true">
+				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="98" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="2739fe55-13de-43c0-8095-766baf592ff9"/>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="visit_id">
+					<subreportParameterExpression><![CDATA[$P{visit_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "dental_subreport.jasper"]]></subreportExpression>
+			</subreport>
+			<subreport isUsingCache="true">
+				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="57" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="6083b6cc-46a2-40b6-831d-83b82d8ac4b4">
+					<printWhenExpression><![CDATA[$F{working_diag} != null]]></printWhenExpression>
+				</reportElement>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="visit_id">
+					<subreportParameterExpression><![CDATA[$P{visit_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "allergy_report.jasper"]]></subreportExpression>
+			</subreport>
+			<subreport isUsingCache="true">
+				<reportElement positionType="Float" x="1" y="129" width="359" height="11" isRemoveLineWhenBlank="true" uuid="034261c7-a65d-4161-a745-333e44b9fff8">
+					<printWhenExpression><![CDATA["y".equalsIgnoreCase($F{referral_flag})]]></printWhenExpression>
+				</reportElement>
+				<subreportParameter name="SUBREPORT_DIR">
+					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="visit_id">
+					<subreportParameterExpression><![CDATA[$P{visit_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Surgery_advise.jasper"]]></subreportExpression>
 			</subreport>
 		</band>
 	</summary>
