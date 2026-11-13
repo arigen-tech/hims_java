@@ -28,14 +28,18 @@ where visit_id=$P{visit_id}]]>
 	<pageHeader>
 		<band height="30" splitType="Stretch">
 			<textField textAdjust="StretchHeight">
-				<reportElement x="0" y="14" width="350" height="16" uuid="6a06963b-82b9-4455-864b-ec2bb63faa6d"/>
+				<reportElement positionType="Float" x="0" y="14" width="350" height="16" isRemoveLineWhenBlank="true" uuid="6a06963b-82b9-4455-864b-ec2bb63faa6d">
+					<printWhenExpression><![CDATA[$F{clinical_examination} != null && !$F{clinical_examination}.trim().isEmpty()]]></printWhenExpression>
+				</reportElement>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="6"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{clinical_examination}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="0" y="1" width="256" height="16" backcolor="#FFFFFF" uuid="9dbcc9d5-7318-4a48-ade3-f8118f81b931"/>
+				<reportElement positionType="Float" x="0" y="1" width="256" height="16" isRemoveLineWhenBlank="true" backcolor="#FFFFFF" uuid="9dbcc9d5-7318-4a48-ade3-f8118f81b931">
+					<printWhenExpression><![CDATA[$F{clinical_examination} != null && !$F{clinical_examination}.trim().isEmpty()]]></printWhenExpression>
+				</reportElement>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
 				</textElement>
