@@ -5,6 +5,7 @@ import com.hims.request.OtRequest;
 import com.hims.request.OtTeamMemberRequest;
 import com.hims.request.OtBookingRescheduleRequest;
 import com.hims.request.OtBookingCancelRequest;
+import com.hims.request.OtPacAssessmentRequest;
 import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ActiveAdmissionResponse;
 import com.hims.response.ApiResponse;
@@ -14,7 +15,9 @@ import com.hims.response.OtTeamMemberResponse;
 import com.hims.response.OtDashboardResponse;
 import com.hims.response.OtDepartmentResponse;
 import com.hims.response.PacPendingResponse;
+import com.hims.response.OtPacAssessmentResponse;
 import com.hims.service.OtService;
+import com.hims.service.OtPacAssessmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,6 +32,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
 
@@ -41,6 +45,7 @@ import java.time.LocalDate;
 public class OTController {
 
     private final OtService otService;
+    private final OtPacAssessmentService otPacAssessmentService;
 
 
     @GetMapping("/activeAdmissionList")
@@ -190,6 +195,24 @@ public class OTController {
     @GetMapping("/teamMember")
     public ApiResponse<OtTeamMemberResponse> getOtTeamMembers(@RequestParam @Positive Long otBookingId) {
         return otService.getOtTeamMembers(otBookingId);
+    }
+
+    @PostMapping(value = "/pacAssessment", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse<OtPacAssessmentResponse>> savePacAssessment(
+            @RequestPart("request") @Valid OtPacAssessmentRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @RequestParam(value = "documentNames", required = false) List<String> documentNames) {
+        return ResponseEntity.ok(otPacAssessmentService.save(request, files, documentNames));
+    }
+
+    @GetMapping("/pacAssessment/{assessmentId}")
+    public ResponseEntity<ApiResponse<OtPacAssessmentResponse>> getPacAssessment(@PathVariable @Positive Long assessmentId) {
+        return ResponseEntity.ok(otPacAssessmentService.getById(assessmentId));
+    }
+
+    @GetMapping("/pacAssessment/booking/{otBookingId}")
+    public ResponseEntity<ApiResponse<OtPacAssessmentResponse>> getPacAssessmentByBooking(@PathVariable @Positive Long otBookingId) {
+        return ResponseEntity.ok(otPacAssessmentService.getByBookingId(otBookingId));
     }
 
 }
