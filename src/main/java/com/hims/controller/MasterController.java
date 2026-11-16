@@ -351,6 +351,8 @@ public class MasterController {
     @Autowired
     private MasAnaesthesiaTypeService masAnaesthesiaTypeService;
     @Autowired
+    private MasAsaGradeService masAsaGradeService;
+    @Autowired
     private MasAnaesthesiaInstructionService masAnaesthesiaInstructionService;
     @Autowired
     private MasOtScheduleChangeReasonService masOtScheduleChangeReasonService;
@@ -5848,6 +5850,29 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
     @GetMapping("/result-flag/all")
     public  ResponseEntity<?> getAllResultFlag(){
         return  ResponseEntity.ok(resultFlagService.getResultFlagDropdown());
+    }
+
+    //--------------------------------------MasAsaGrade--------------------------------------------
+
+    @GetMapping("/masAsaGrade/getAll/{flag}")
+    public ResponseEntity<?> getAllMasAsaGrade(
+            @PathVariable int flag,
+            @RequestParam(required = false) String gradeName,
+            @RequestParam(required = false) String gradeCode,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        if ((page == null) != (size == null) || (page != null && (page < 0 || size <= 0))) {
+            return ResponseEntity.badRequest().body("Provide both page and size; page must be >= 0 and size > 0");
+        }
+        if (page == null) {
+            return ResponseEntity.ok(masAsaGradeService.getAll(flag, gradeName, gradeCode));
+        }
+        return ResponseEntity.ok(masAsaGradeService.getAll(flag, gradeName, gradeCode, page, size));
+    }
+
+    @GetMapping("/masAsaGrade/getById/{gradeId}")
+    public ResponseEntity<?> getMasAsaGradeById(@PathVariable Long gradeId) {
+        return ResponseEntity.ok(masAsaGradeService.getById(gradeId));
     }
 
 }

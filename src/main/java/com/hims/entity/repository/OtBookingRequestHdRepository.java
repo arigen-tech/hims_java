@@ -36,6 +36,18 @@ public interface OtBookingRequestHdRepository extends JpaRepository<OtBookingReq
                 ot.ot_name AS otName,
                 CAST(h.requested_date AS date) AS requestedDate,
                 CAST(h.requested_date AS time) AS requestedTime,
+                h.preferred_date AS preferredDate,
+                h.preferred_start_time AS preferredStartTime,
+                h.preferred_end_time AS preferredEndTime,
+                (SELECT rh.remarks
+                   FROM ot_booking_reschedule_cancel_history rh
+                   JOIN ot_booking rb ON rb.ot_booking_id = rh.ot_booking_id
+                  WHERE rb.ot_booking_request_id = h.ot_booking_request_id
+                    AND rh.action_type = 'RESCHEDULE'
+                    AND rh.review_status = 'PENDING'
+                    AND rh.status = 'Y'
+                  ORDER BY rh.requested_date DESC
+                  LIMIT 1) AS rescheduleRemarks,
                 h.requested_by AS requestedBy,
                 h.request_no AS requestedNo
             
@@ -52,7 +64,17 @@ public interface OtBookingRequestHdRepository extends JpaRepository<OtBookingReq
                 ON ot.ot_id = h.preferred_ot_id          
             LEFT JOIN ot_booking_request_dt d
                 ON d.ot_booking_request_id = h.ot_booking_request_id   
-         WHERE h.booking_status_id =:surgeryBookingStatusRequested
+         WHERE (h.booking_status_id = :surgeryBookingStatusRequested
+               OR EXISTS (
+                    SELECT 1
+                    FROM ot_booking_reschedule_cancel_history pending_reschedule
+                    JOIN ot_booking pending_booking
+                      ON pending_booking.ot_booking_id = pending_reschedule.ot_booking_id
+                    WHERE pending_booking.ot_booking_request_id = h.ot_booking_request_id
+                      AND pending_reschedule.action_type = 'RESCHEDULE'
+                      AND pending_reschedule.review_status = 'PENDING'
+                      AND pending_reschedule.status = 'Y'
+               ))
                AND (
                     :patientName IS NULL
                     OR LOWER(CONCAT(
@@ -78,7 +100,17 @@ public interface OtBookingRequestHdRepository extends JpaRepository<OtBookingReq
                     LEFT JOIN patient p
                         ON p.patient_id = h.patient_id
                     
-                    WHERE h.booking_status_id =:surgeryBookingStatusRequested
+                    WHERE (h.booking_status_id = :surgeryBookingStatusRequested
+                      OR EXISTS (
+                            SELECT 1
+                            FROM ot_booking_reschedule_cancel_history pending_reschedule
+                            JOIN ot_booking pending_booking
+                              ON pending_booking.ot_booking_id = pending_reschedule.ot_booking_id
+                            WHERE pending_booking.ot_booking_request_id = h.ot_booking_request_id
+                              AND pending_reschedule.action_type = 'RESCHEDULE'
+                              AND pending_reschedule.review_status = 'PENDING'
+                              AND pending_reschedule.status = 'Y'
+                      ))
                       AND (
                             :patientName IS NULL
                             OR LOWER(CONCAT(

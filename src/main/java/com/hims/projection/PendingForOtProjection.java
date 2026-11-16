@@ -42,6 +42,14 @@ public interface PendingForOtProjection {
 
     LocalTime getRequestedTime();
 
+    LocalDate getPreferredDate();
+
+    LocalTime getPreferredStartTime();
+
+    LocalTime getPreferredEndTime();
+
+    String getRescheduleRemarks();
+
     String getPriority();
 
     String getRequestedBy();

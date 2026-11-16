@@ -3,6 +3,9 @@ package com.hims.controller;
 import com.hims.request.OpdOpthDetailsRequest;
 import com.hims.request.OtRequest;
 import com.hims.request.OtTeamMemberRequest;
+import com.hims.request.OtBookingRescheduleRequest;
+import com.hims.request.OtBookingCancelRequest;
+import com.hims.request.OtPacAssessmentRequest;
 import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ActiveAdmissionResponse;
 import com.hims.response.ApiResponse;
@@ -11,12 +14,16 @@ import com.hims.response.OtBookingHistoryResponse;
 import com.hims.response.OtTeamMemberResponse;
 import com.hims.response.OtDashboardResponse;
 import com.hims.response.OtDepartmentResponse;
+import com.hims.response.PacPendingResponse;
+import com.hims.response.OtPacAssessmentResponse;
 import com.hims.service.OtService;
+import com.hims.service.OtPacAssessmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +32,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
 
@@ -37,6 +45,7 @@ import java.time.LocalDate;
 public class OTController {
 
     private final OtService otService;
+    private final OtPacAssessmentService otPacAssessmentService;
 
 
     @GetMapping("/activeAdmissionList")
@@ -85,10 +94,24 @@ public class OTController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate scheduledDate,
             @RequestParam(required = false) Boolean ipd,
             @RequestParam(required = false) @Positive Long statusId,
+            @RequestParam(required = false) @Positive Long otId,
+            @RequestParam(required = false) @Positive Long departmentId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size) {
         ApiResponse<Page<OtBookingHistoryResponse>> response =
-                otService.getOtBookingHistory(patient, patientId, scheduledDate, ipd, statusId, page, size);
+                otService.getOtBookingHistory(patient, patientId, scheduledDate, ipd, statusId, otId, departmentId, page, size);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/patientReceiptList")
+    @Operation(summary = "Get paginated OT patient receipt list (sent to OT)")
+    public ResponseEntity<ApiResponse<Page<OtBookingHistoryResponse>>> getPatientReceiptList(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Positive Long departmentId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size) {
+        ApiResponse<Page<OtBookingHistoryResponse>> response =
+                otService.getPatientReceiptList(search, departmentId, page, size);
         return ResponseEntity.ok(response);
     }
 
@@ -108,6 +131,16 @@ public class OTController {
     public ResponseEntity<ApiResponse<List<OtDepartmentResponse>>> getOtDepartments(
             @RequestParam @Positive Long hospitalId) {
         return ResponseEntity.ok(otService.getOtDepartments(hospitalId));
+    }
+
+    @GetMapping("/pacPendingList")
+    @Operation(summary = "Get pending PAC cases for scheduled OT bookings")
+    public ResponseEntity<ApiResponse<Page<PacPendingResponse>>> getPacPendingList(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "All") String type,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size) {
+        return ResponseEntity.ok(otService.getPacPendingList(search, type, page, size));
     }
     /**
      * Accept or reject an OT booking request.
@@ -133,6 +166,27 @@ public class OTController {
         return response;
     }
 
+    @PutMapping("/otPatientTransaction")
+    @Operation(summary = "Update OT booking status for patient transaction")
+    public ApiResponse<String> updateOtPatientTransaction(
+            @RequestParam @Positive Long otBookingId,
+            @RequestParam @NotBlank String status,
+            @RequestParam(required = false) String remark) {
+        return otService.updateOtPatientTransaction(otBookingId, status, remark);
+    }
+
+    @PostMapping("/reschedule")
+    @Operation(summary = "Request rescheduling of an OT booking")
+    public ApiResponse<String> rescheduleOtBooking(@Valid @RequestBody OtBookingRescheduleRequest request) {
+        return otService.rescheduleOtBooking(request);
+    }
+
+    @PostMapping("/cancel")
+    @Operation(summary = "Cancel an OT booking")
+    public ApiResponse<String> cancelOtBooking(@Valid @RequestBody OtBookingCancelRequest request) {
+        return otService.cancelOtBooking(request);
+    }
+
     @PostMapping("/teamMember")
     public ApiResponse<OtTeamMemberResponse> saveOtTeamMember(@Valid @RequestBody OtTeamMemberRequest request) {
         return otService.saveOtTeamMember(request);
@@ -141,6 +195,24 @@ public class OTController {
     @GetMapping("/teamMember")
     public ApiResponse<OtTeamMemberResponse> getOtTeamMembers(@RequestParam @Positive Long otBookingId) {
         return otService.getOtTeamMembers(otBookingId);
+    }
+
+    @PostMapping(value = "/pacAssessment", consumes = "multipart/form-data")
+    public ResponseEntity<ApiResponse<OtPacAssessmentResponse>> savePacAssessment(
+            @RequestPart("request") @Valid OtPacAssessmentRequest request,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            @RequestParam(value = "documentNames", required = false) List<String> documentNames) {
+        return ResponseEntity.ok(otPacAssessmentService.save(request, files, documentNames));
+    }
+
+    @GetMapping("/pacAssessment/{assessmentId}")
+    public ResponseEntity<ApiResponse<OtPacAssessmentResponse>> getPacAssessment(@PathVariable @Positive Long assessmentId) {
+        return ResponseEntity.ok(otPacAssessmentService.getById(assessmentId));
+    }
+
+    @GetMapping("/pacAssessment/booking/{otBookingId}")
+    public ResponseEntity<ApiResponse<OtPacAssessmentResponse>> getPacAssessmentByBooking(@PathVariable @Positive Long otBookingId) {
+        return ResponseEntity.ok(otPacAssessmentService.getByBookingId(otBookingId));
     }
 
 }

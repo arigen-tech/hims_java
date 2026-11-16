@@ -7,9 +7,12 @@ import com.hims.response.ApiResponse;
 import com.hims.response.PendingForOtResponse;
 import com.hims.response.OtBookingHistoryResponse;
 import com.hims.request.OtTeamMemberRequest;
+import com.hims.request.OtBookingRescheduleRequest;
+import com.hims.request.OtBookingCancelRequest;
 import com.hims.response.OtTeamMemberResponse;
 import com.hims.response.OtDashboardResponse;
 import com.hims.response.OtDepartmentResponse;
+import com.hims.response.PacPendingResponse;
 import java.util.List;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -24,9 +27,16 @@ public interface OtService {
 
     ApiResponse<Page<PendingForOtResponse>> pendingForReviewOt(int page, int size, String patientName, String mobileNo, String patientType);
 
-    ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(String patient, Long patientId, java.time.LocalDate scheduledDate, Boolean ipd, Long statusId, int page, int size);
+    ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(String patient, Long patientId, java.time.LocalDate scheduledDate, Boolean ipd, Long statusId, Long otId, Long departmentId, int page, int size);
+    ApiResponse<Page<OtBookingHistoryResponse>> getPatientReceiptList(String search, Long departmentId, int page, int size);
 
     ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark);
+
+    ApiResponse<String> updateOtPatientTransaction(Long otBookingId, String statusCode, String remark);
+
+    ApiResponse<String> rescheduleOtBooking(OtBookingRescheduleRequest request);
+
+    ApiResponse<String> cancelOtBooking(OtBookingCancelRequest request);
 
     void deleteOtBookingRequest(Long otBookingRequestId,Long patientId,Long visitId);
 
@@ -37,4 +47,6 @@ public interface OtService {
     ApiResponse<List<OtDashboardResponse>> getOtDashboard(int month, int year, Long otId, Long departmentId);
 
     ApiResponse<List<OtDepartmentResponse>> getOtDepartments(Long hospitalId);
+
+    ApiResponse<Page<PacPendingResponse>> getPacPendingList(String search, String type, int page, int size);
 }
