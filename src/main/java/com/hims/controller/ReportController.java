@@ -1583,6 +1583,7 @@ public class ReportController {
             @RequestParam (required = false) Long componentId,
             @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long inventoryStatus,
             @RequestParam String flag) {
 
         List<Long> bloodGroupIds = null;
@@ -1601,12 +1602,14 @@ public class ReportController {
         }
 
         Long safeComponentId = componentId != null ? componentId: 0L;
+        Long safeInventoryStatus = inventoryStatus != null ? inventoryStatus: 0L;
 
         Map<String, Object> params = new HashMap<>();
         params.put("blood_group_id", bloodGroupIds);
         params.put("component_id", safeComponentId);
         params.put("from_date", fromDate);
         params.put("to_date", toDate);
+        params.put("inventory_status", safeInventoryStatus);
         params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
 
         try{

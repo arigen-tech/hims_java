@@ -30,7 +30,7 @@ public class JasperReportCompiler {
     public static void main(String[] args) {
         String sourceDirPath = args.length > 0
                 ? args[0]
-                : new File("src/main/resources/jasperReport").getAbsolutePath();
+                : new File("src/main/resources/jasperReport/BloodBank").getAbsolutePath();
         compileAllReports(sourceDirPath);
     }
 }

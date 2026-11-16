@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="adult_tooth_subreport" pageWidth="450" pageHeight="842" columnWidth="450" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="6b08a8d1-a003-4aa2-99f7-b890a00fbffd">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<subDataset name="tooth" uuid="2d460d04-9be7-4351-80f0-1e8a1d621cb5">
+		<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+		<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+		<parameter name="visit_id" class="java.lang.Long"/>
+		<parameter name="tooth_type" class="java.lang.String"/>
+		<queryString>
+			<![CDATA[SELECT
+    tm.tooth_id,
+    tm.tooth_number,
+    tm.tooth_type,
+    tm.quadrant,
+    tm.display_order,
+
+    pc.patient_id,
+    pc.visit_id,
+
+    COALESCE(pc.condition_id, 1) AS condition_id,
+
+    STRING_AGG(
+        DISTINCT mc.condition_name,
+        ', ' ORDER BY mc.condition_name
+    ) AS condition_names,
+
+    STRING_AGG(
+        DISTINCT NULLIF(TRIM(pc.remarks), ''),
+        '; '
+    ) AS remarks,
+
+    CASE
+        WHEN tm.quadrant IN (1, 2) THEN 'Upper Jaw'
+        WHEN tm.quadrant IN (3, 4) THEN 'Lower Jaw'
+        ELSE ''
+    END AS jaw
+
+FROM public.opd_tooth_patient_condition pc
+RIGHT JOIN public.mas_tooth_master tm
+    ON tm.tooth_id = pc.tooth_id
+   AND pc.visit_id = $P{visit_id}
+LEFT JOIN public.mas_tooth_condition mc
+    ON mc.condition_id = pc.condition_id
+where tm.tooth_type = $P{tooth_type}
+
+GROUP BY
+    tm.tooth_id,
+    tm.tooth_number,
+    tm.tooth_type,
+    tm.quadrant,
+    tm.display_order,
+    pc.patient_id,
+    pc.visit_id,
+    pc.condition_id
+
+ORDER BY tm.display_order]]>
+		</queryString>
+		<field name="tooth_id" class="java.lang.Long">
+			<property name="com.jaspersoft.studio.field.name" value="tooth_id"/>
+			<property name="com.jaspersoft.studio.field.label" value="tooth_id"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="mas_tooth_master"/>
+		</field>
+		<field name="tooth_number" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="tooth_number"/>
+			<property name="com.jaspersoft.studio.field.label" value="tooth_number"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="mas_tooth_master"/>
+		</field>
+		<field name="tooth_type" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="tooth_type"/>
+			<property name="com.jaspersoft.studio.field.label" value="tooth_type"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="mas_tooth_master"/>
+		</field>
+		<field name="quadrant" class="java.lang.Integer">
+			<property name="com.jaspersoft.studio.field.name" value="quadrant"/>
+			<property name="com.jaspersoft.studio.field.label" value="quadrant"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="mas_tooth_master"/>
+		</field>
+		<field name="display_order" class="java.lang.Integer">
+			<property name="com.jaspersoft.studio.field.name" value="display_order"/>
+			<property name="com.jaspersoft.studio.field.label" value="display_order"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="mas_tooth_master"/>
+		</field>
+		<field name="patient_id" class="java.lang.Long">
+			<property name="com.jaspersoft.studio.field.name" value="patient_id"/>
+			<property name="com.jaspersoft.studio.field.label" value="patient_id"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="opd_tooth_patient_condition"/>
+		</field>
+		<field name="visit_id" class="java.lang.Long">
+			<property name="com.jaspersoft.studio.field.name" value="visit_id"/>
+			<property name="com.jaspersoft.studio.field.label" value="visit_id"/>
+			<property name="com.jaspersoft.studio.field.tree.path" value="opd_tooth_patient_condition"/>
+		</field>
+		<field name="condition_id" class="java.lang.Long">
+			<property name="com.jaspersoft.studio.field.name" value="condition_id"/>
+			<property name="com.jaspersoft.studio.field.label" value="condition_id"/>
+		</field>
+		<field name="condition_names" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="condition_names"/>
+			<property name="com.jaspersoft.studio.field.label" value="condition_names"/>
+		</field>
+		<field name="remarks" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="remarks"/>
+			<property name="com.jaspersoft.studio.field.label" value="remarks"/>
+		</field>
+		<field name="jaw" class="java.lang.String">
+			<property name="com.jaspersoft.studio.field.name" value="jaw"/>
+			<property name="com.jaspersoft.studio.field.label" value="jaw"/>
+		</field>
+	</subDataset>
+	<parameter name="visit_id" class="java.lang.Long"/>
+	<queryString language="SQL">
+		<![CDATA[select
+	dpt.created_date,
+	mtm.tooth_number,
+	mp.procedure_name,
+	pd.planned_session_count ,
+	pd.remarks
+from dental_procedure_tooth dpt 
+left join mas_tooth_master mtm on dpt.tooth_id = mtm.tooth_id 
+left join procedure_dt pd on dpt.procedure_dt_id = pd.procedure_dt_id 
+left join procedure_hd ph on pd.procedure_hd_id = ph.procedure_hd_id
+left join mas_procedure mp on pd.procedure_id = mp.procedure_id
+where ph.visit_id = $P{visit_id}
+order by pd.sequence_no]]>
+	</queryString>
+	<field name="created_date" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="created_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="created_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="dental_procedure_tooth"/>
+	</field>
+	<field name="tooth_number" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="tooth_number"/>
+		<property name="com.jaspersoft.studio.field.label" value="tooth_number"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_tooth_master"/>
+	</field>
+	<field name="procedure_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="procedure_name"/>
+		<property name="com.jaspersoft.studio.field.label" value="procedure_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_procedure"/>
+	</field>
+	<field name="planned_session_count" class="java.lang.Integer">
+		<property name="com.jaspersoft.studio.field.name" value="planned_session_count"/>
+		<property name="com.jaspersoft.studio.field.label" value="planned_session_count"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="procedure_dt"/>
+	</field>
+	<field name="remarks" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="remarks"/>
+		<property name="com.jaspersoft.studio.field.label" value="remarks"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="procedure_dt"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<columnHeader>
+		<band height="14">
+			<line>
+				<reportElement key="line-5" positionType="Float" stretchType="RelativeToTallestObject" x="0" y="2" width="1" height="12" isPrintWhenDetailOverflows="true" uuid="e502d3c6-b36a-4f2d-9268-c30afbb398b6"/>
+			</line>
+			<line>
+				<reportElement key="line-21" positionType="Float" stretchType="RelativeToTallestObject" x="42" y="2" width="1" height="12" isPrintWhenDetailOverflows="true" uuid="515c7f3c-6f6a-4994-9b10-e6993a7e3026"/>
+			</line>
+			<line>
+				<reportElement key="line-7" positionType="Float" stretchType="RelativeToTallestObject" x="81" y="2" width="1" height="12" isPrintWhenDetailOverflows="true" uuid="c945a72f-b3ba-443d-a1e4-5e81d917b27c"/>
+			</line>
+			<line>
+				<reportElement key="line-23" positionType="Float" stretchType="RelativeToTallestObject" x="176" y="2" width="1" height="12" isPrintWhenDetailOverflows="true" uuid="14a98ca1-c424-4af4-b5f2-e77a7e3b63bb"/>
+			</line>
+			<line>
+				<reportElement key="line-9" positionType="Float" stretchType="RelativeToTallestObject" x="226" y="2" width="1" height="12" isPrintWhenDetailOverflows="true" uuid="e2470bc2-9e42-4c41-beb4-45e5b98b3d68"/>
+			</line>
+			<line>
+				<reportElement key="line-10" positionType="Float" stretchType="RelativeToTallestObject" x="275" y="2" width="1" height="12" isPrintWhenDetailOverflows="true" uuid="12d3d4f6-e565-47da-8af9-72cdb46e4cc8"/>
+			</line>
+			<line>
+				<reportElement key="line-1" x="0" y="13" width="276" height="1" uuid="06aa5825-2c91-44c2-9944-bf09c68e6abd">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+			<staticText>
+				<reportElement x="2" y="4" width="39" height="7" uuid="ec0b40fe-156f-4860-98c3-584b11f75e70">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Date]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="45" y="4" width="34" height="7" uuid="04b81b62-4c79-4103-92b1-987fb19d8c69">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tooth No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="179" y="4" width="45" height="7" uuid="4310da3e-37de-48bd-9324-743d5cf2cece">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Session]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="84" y="4" width="88" height="7" uuid="13838bb8-9bd6-48bd-b3a2-44159565c546">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Procedure Name]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="228" y="4" width="45" height="7" uuid="41ae24f0-4e25-43b6-8b00-000f0c62fac0">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Remarks]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-3" positionType="Float" x="0" y="1" width="276" height="1" uuid="e989e0e7-bbae-42a4-9207-f3d8f45e9b0b">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="13">
+			<line>
+				<reportElement key="line-2" x="0" y="12" width="276" height="1" uuid="2a0dd425-042c-4510-9908-2fdd64fb69e0">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</line>
+			<line>
+				<reportElement key="line-13" stretchType="RelativeToTallestObject" x="81" y="0" width="1" height="12" uuid="e322a44c-e504-4b4f-9da4-672ea2067d1b"/>
+			</line>
+			<line>
+				<reportElement key="line-15" stretchType="RelativeToTallestObject" x="0" y="0" width="1" height="12" uuid="dd57f15f-ec3a-4487-ac66-94b46bbbdd09"/>
+			</line>
+			<line>
+				<reportElement key="line-17" stretchType="RelativeToTallestObject" x="226" y="0" width="1" height="12" uuid="ccb94e2c-3a5e-40c6-8b5e-f1288a8d3412"/>
+			</line>
+			<line>
+				<reportElement key="line-18" stretchType="RelativeToTallestObject" x="275" y="0" width="1" height="12" uuid="803b57d6-5de9-419b-9058-1be8b637b534"/>
+			</line>
+			<line>
+				<reportElement key="line-20" stretchType="RelativeToTallestObject" x="42" y="0" width="1" height="12" uuid="18b3986c-360a-4e35-85f2-4ab87f81b4fa"/>
+			</line>
+			<line>
+				<reportElement key="line-22" stretchType="RelativeToTallestObject" x="176" y="0" width="1" height="12" uuid="b5a53d84-e828-4e18-baf1-c5af1fe01f05"/>
+			</line>
+			<textField pattern="dd/MM/yy">
+				<reportElement x="2" y="2" width="39" height="7" uuid="e6a948ad-fd07-46a7-9969-607d875eac5f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{created_date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="45" y="2" width="34" height="7" uuid="461a868c-47d0-4546-8cc0-398305534fa4">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tooth_number}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="84" y="2" width="88" height="7" uuid="7cfafdac-157c-4206-8d59-2c5bc56d63fc">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{procedure_name}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="179" y="2" width="45" height="7" uuid="717dabde-7cf4-4340-b58e-1ba06286f56a">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{planned_session_count}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="228" y="2" width="45" height="7" uuid="d46194f0-16bd-4ea1-8c0b-e16edcc8e670">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" size="6" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{remarks}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

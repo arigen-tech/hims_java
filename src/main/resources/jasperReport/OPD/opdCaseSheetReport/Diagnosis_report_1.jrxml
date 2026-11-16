@@ -36,13 +36,13 @@ where v.visit_id = $P{visit_id}]]>
 	</title>
 	<pageHeader>
 		<band height="28" splitType="Stretch">
-			<staticText>
-				<reportElement x="0" y="1" width="256" height="14" backcolor="#FFFFFF" uuid="0fe26c31-6b5a-4c45-bbdc-5004cc34b155"/>
+			<textField>
+				<reportElement positionType="Float" x="0" y="1" width="256" height="14" isRemoveLineWhenBlank="true" backcolor="#FFFFFF" uuid="d33e0808-564a-462c-96f2-1d38b9160316"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
 				</textElement>
-				<text><![CDATA[Diagnosis Notes :]]></text>
-			</staticText>
+				<textFieldExpression><![CDATA["Diagnosis Notes :"]]></textFieldExpression>
+			</textField>
 			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
 				<reportElement key="textField-3" positionType="Float" mode="Transparent" x="0" y="14" width="350" height="14" isRemoveLineWhenBlank="true" isPrintWhenDetailOverflows="true" uuid="77acad1c-49ee-40b6-a741-39846afc5825"/>
 				<box>

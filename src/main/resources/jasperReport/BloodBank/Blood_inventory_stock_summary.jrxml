@@ -8,6 +8,7 @@
 	<parameter name="from_date" class="java.util.Date"/>
 	<parameter name="to_date" class="java.util.Date"/>
 	<parameter name="path" class="java.lang.String"/>
+	<parameter name="inventory_status" class="java.lang.Long"/>
 	<queryString>
 		<![CDATA[select
     mbg.blood_group_name,
@@ -20,8 +21,7 @@ from blood_donation_dt dt
 inner join mas_blood_component mbc on dt.component_id = mbc.component_id
 inner join blood_component_inventory bci on dt.component_id = bci.component_id
 inner join mas_blood_group mbg on bci.blood_group_id = mbg.blood_group_id
-where dt.expiry_date >= current_date
-and $X{IN, bci.blood_group_id, blood_group_id}
+where $X{IN, bci.blood_group_id, blood_group_id}
 and ($P{component_id} = 0 or dt.component_id = $P{component_id})
 and ($P{from_date} is null or dt.expiry_date >= $P{from_date})
 and ($P{to_date} is null or dt.expiry_date <= $P{to_date})
