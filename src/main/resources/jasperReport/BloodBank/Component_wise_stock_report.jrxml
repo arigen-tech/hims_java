@@ -8,7 +8,6 @@
 	<parameter name="from_date" class="java.util.Date"/>
 	<parameter name="to_date" class="java.util.Date"/>
 	<parameter name="path" class="java.lang.String"/>
-	<parameter name="inventory_status" class="java.lang.Long"/>
 	<queryString>
 		<![CDATA[select
     mbg.blood_group_name,
@@ -24,7 +23,6 @@ where $X{IN, bci.blood_group_id, blood_group_id}
 and ($P{component_id} = 0 or bci.component_id = $P{component_id})
 and ($P{from_date} is null or bci.expiry_date >= $P{from_date})
 and ($P{to_date} is null or bci.expiry_date <= $P{to_date})
-and (bci.inventory_status = $P{inventory_status} or $P{inventory_status} = 0)
 group by mbg.blood_group_name, mbc.component_code]]>
 	</queryString>
 	<field name="blood_group_name" class="java.lang.String">
@@ -70,7 +68,7 @@ group by mbg.blood_group_name, mbc.component_code]]>
 				<text><![CDATA[Component-wise Stock Report]]></text>
 			</staticText>
 			<image>
-				<reportElement x="5" y="3" width="135" height="50" uuid="311d8581-9944-49c4-87f5-da4fa3b2dade"/>
+				<reportElement x="5" y="3" width="135" height="50" uuid="89d09d86-fcff-403d-8003-379f1577f10e"/>
 				<imageExpression><![CDATA[$P{path}]]></imageExpression>
 			</image>
 		</band>

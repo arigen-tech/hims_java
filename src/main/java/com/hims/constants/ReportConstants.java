@@ -207,4 +207,13 @@ public final class ReportConstants {
 
     public static final String BILLING_REFUND_DETAILS_JASPER = "Billing_refund_details";
     public static final String BILLING_REFUND_DETAILS_REPORT = "BillingRefundDetails";
+
+    public static final String COMPONENT_EXPIRY_JASPER = "Component_expiry_monitoring";
+    public static final String COMPONENT_EXPIRY_REPORT = "ComponentExpiryMonitoring";
+
+    public static final String DONOR_DEFERRAL_JASPER = "Donor_deferral_history_report";
+    public static final String DONOR_DEFERRAL_REPORT = "DonorDeferralHistoryReport";
+
+    public static final String WARD_OT_JASPER = "Ward_ot_blood_usage";
+    public static final String WARD_OT_REPORT = "WardOtBloodUsage";
 }
