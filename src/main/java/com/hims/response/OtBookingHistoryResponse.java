@@ -24,6 +24,10 @@ public class OtBookingHistoryResponse {
     private String otName;
     private String pacRequired;
     private String pacDone;
+    private String isChecklistDone;
+    private LocalDate scheduledDate;
+    private LocalTime scheduledStartTime;
+    private LocalDateTime receivedTime;
     private LocalDateTime bookedDate;
     private String bookingNo;
     private Long primarySurgeonId;

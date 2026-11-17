@@ -404,7 +404,7 @@ public class OtServiceImpl implements OtService {
         Pageable pageable = PageRequest.of(page, size);
         Page<OtBookingHistoryProjection> projectionPage = otBookingRepository.findBookingHistory(
                 patient == null || patient.isBlank() ? null : patient.trim(), patientId, scheduledDate, ipd,
-                statusId, otId, departmentId, pageable);
+                statusId, null, otId, departmentId, pageable);
         List<Long> requestIds = projectionPage.getContent().stream()
                 .map(OtBookingHistoryProjection::getHeaderid)
                 .filter(Objects::nonNull)
@@ -437,7 +437,7 @@ public class OtServiceImpl implements OtService {
                 ? Page.empty(pageable)
                 : otBookingRepository.findBookingHistory(
                         search == null || search.isBlank() ? null : search.trim(), null, null, null,
-                        sentToOtStatusId, null, departmentId, pageable);
+                        sentToOtStatusId, null, null, departmentId, pageable);
         List<Long> requestIds = projectionPage.getContent().stream()
                 .map(OtBookingHistoryProjection::getHeaderid)
                 .filter(Objects::nonNull)
@@ -456,6 +456,46 @@ public class OtServiceImpl implements OtService {
             return response;
         });
         return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<Page<OtBookingHistoryResponse>> getPatientReceivedInOtList(
+            String search, Long departmentId, String checklistStatus, int page, int size) {
+        Long receivedStatusId = otBookingRepository.findActiveBookingStatusId(otBookingStatusReceivedInOt).orElse(null);
+        Pageable pageable = PageRequest.of(page, size);
+        String normalizedChecklistStatus = normalizeChecklistStatus(checklistStatus);
+        Page<OtBookingHistoryProjection> projectionPage = receivedStatusId == null
+                ? Page.empty(pageable)
+                : otBookingRepository.findBookingHistory(
+                        search == null || search.isBlank() ? null : search.trim(), null, null, null,
+                        receivedStatusId, normalizedChecklistStatus, null, departmentId, pageable);
+        List<Long> requestIds = projectionPage.getContent().stream()
+                .map(OtBookingHistoryProjection::getHeaderid)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, List<OtBookingHistoryResponse.SurgeryDetail>> surgeryDetailsByRequestId = requestIds.isEmpty()
+                ? Collections.emptyMap()
+                : dtRepository.findSurgeriesByRequestIds(requestIds).stream()
+                        .collect(Collectors.groupingBy(
+                                PendingForOtSurgeryProjection::getOtBookingRequestId,
+                                Collectors.mapping(otBookingHistoryMapper::toSurgeryResponse, Collectors.toList())));
+        Page<OtBookingHistoryResponse> responsePage = projectionPage.map(projection -> {
+            OtBookingHistoryResponse response = otBookingHistoryMapper.toResponse(projection);
+            response.setSurgeries(surgeryDetailsByRequestId.getOrDefault(
+                    projection.getHeaderid(), Collections.emptyList()));
+            return response;
+        });
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+    }
+
+    private String normalizeChecklistStatus(String checklistStatus) {
+        if (checklistStatus == null || checklistStatus.isBlank() || "ALL".equalsIgnoreCase(checklistStatus)) return null;
+        String value = checklistStatus.trim();
+        if ("Y".equalsIgnoreCase(value) || "COMPLETED".equalsIgnoreCase(value) || "DONE".equalsIgnoreCase(value)) return "Y";
+        if ("N".equalsIgnoreCase(value) || "PENDING".equalsIgnoreCase(value)) return "N";
+        throw new IllegalArgumentException("checklistStatus must be ALL, Y/N, Pending or Completed");
     }
 
     @Override

@@ -29,6 +29,7 @@ public interface OtService {
 
     ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(String patient, Long patientId, java.time.LocalDate scheduledDate, Boolean ipd, Long statusId, Long otId, Long departmentId, int page, int size);
     ApiResponse<Page<OtBookingHistoryResponse>> getPatientReceiptList(String search, Long departmentId, int page, int size);
+    ApiResponse<Page<OtBookingHistoryResponse>> getPatientReceivedInOtList(String search, Long departmentId, String checklistStatus, int page, int size);
 
     ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark);
 

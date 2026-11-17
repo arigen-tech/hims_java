@@ -19,6 +19,10 @@ public interface OtBookingHistoryProjection {
     String getOtName();
     String getPacRequired();
     String getPacDone();
+    String getChecklistDone();
+    LocalDate getScheduledDate();
+    LocalTime getScheduledStartTime();
+    LocalDateTime getReceivedTime();
     LocalDateTime getBookedDate();
     String getBookingNo();
     Long getPrimarySurgeonId();

@@ -10,6 +10,7 @@ import org.mapstruct.Mapping;
 public interface OtBookingHistoryMapper {
     @Mapping(target = "otBookingId", source = "id")
     @Mapping(target = "otBookingRequestId", source = "headerid")
+    @Mapping(target = "isChecklistDone", source = "checklistDone")
     @Mapping(target = "surgeries", ignore = true)
     OtBookingHistoryResponse toResponse(OtBookingHistoryProjection projection);
 

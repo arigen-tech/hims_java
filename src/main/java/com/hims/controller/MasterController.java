@@ -5899,10 +5899,13 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
             @PathVariable int flag,
             @RequestParam(required = false) String checklistStage,
             @RequestParam(required = false) String checklistName,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
-        if (page < 0 || size <= 0) {
-            return ResponseEntity.badRequest().body("page must be >= 0 and size must be > 0");
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        if ((page == null) != (size == null) || (page != null && (page < 0 || size <= 0))) {
+            return ResponseEntity.badRequest().body("Provide both page and size; page must be >= 0 and size must be > 0");
+        }
+        if (page == null) {
+            return ResponseEntity.ok(masOtChecklistService.getAll(flag, checklistStage, checklistName));
         }
         return ResponseEntity.ok(masOtChecklistService.getAll(flag, checklistStage, checklistName, page, size));
     }

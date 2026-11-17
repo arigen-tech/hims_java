@@ -115,6 +115,17 @@ public class OTController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/patientReceivedInOtList")
+    @Operation(summary = "Get paginated OT checklist list for patients received in OT")
+    public ResponseEntity<ApiResponse<Page<OtBookingHistoryResponse>>> getPatientReceivedInOtList(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Positive Long departmentId,
+            @RequestParam(required = false) String checklistStatus,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size) {
+        return ResponseEntity.ok(otService.getPatientReceivedInOtList(search, departmentId, checklistStatus, page, size));
+    }
+
     @GetMapping("/dashboard")
     @Operation(summary = "Get date-wise OT booking dashboard counts")
     public ResponseEntity<ApiResponse<List<OtDashboardResponse>>> getOtDashboard(
