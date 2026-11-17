@@ -2074,6 +2074,126 @@ public class ReportController {
         }
     }
 
+    @GetMapping(value = "/bloodComponentExpiry", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintComponentExpiryReport(
+            @RequestParam (required = false) Long bloodGroupId,
+            @RequestParam (required = false) Long componentId,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam (required = false) Long inventoryStatus,
+            @RequestParam String flag) {
+
+
+        Long safeBloodGroupId = bloodGroupId != null ? bloodGroupId: 0L;
+        Long safeComponentId = componentId != null ? componentId: 0L;
+        Long safeInventoryStatus = inventoryStatus != null ? inventoryStatus: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("blood_group_id", safeBloodGroupId);
+        params.put("component_id", safeComponentId);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("inventory_status_id", safeInventoryStatus);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.COMPONENT_EXPIRY_JASPER, params, dataSource);
+                return buildPdfResponse(viewPdf, ReportConstants.COMPONENT_EXPIRY_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.COMPONENT_EXPIRY_JASPER, params, dataSource);
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/bloodDonorDeferral", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintDonorDeferralReport(
+            @RequestParam (required = false) Long donorId,
+            @RequestParam (required = false) String deferralType,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+
+        Long safeDonorId = donorId != null ? donorId: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("donor_id", safeDonorId);
+        params.put("deferral_type", deferralType);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.DONOR_DEFERRAL_JASPER, params, dataSource);
+                return buildPdfResponse(viewPdf, ReportConstants.DONOR_DEFERRAL_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.DONOR_DEFERRAL_JASPER, params, dataSource);
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/bloodWardOT", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintWardOtReport(
+            @RequestParam (required = false) Long bloodGroupId,
+            @RequestParam (required = false) Long componentId,
+            @RequestParam (required = false) Long wardOt,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+
+        Long safeBloodGroupId = bloodGroupId != null ? bloodGroupId: 0L;
+        Long safeComponentId = componentId != null ? componentId: 0L;
+        Long safeWardOt = wardOt != null ? wardOt: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("blood_group_id", safeBloodGroupId);
+        params.put("component_id", safeComponentId);
+        params.put("ward_ot", safeWardOt);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.WARD_OT_JASPER, params, dataSource);
+                return buildPdfResponse(viewPdf, ReportConstants.WARD_OT_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.WARD_OT_JASPER, params, dataSource);
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
     private ResponseEntity<byte[]> buildPdfResponse(
             byte[] pdfData,
             String fileName) {
