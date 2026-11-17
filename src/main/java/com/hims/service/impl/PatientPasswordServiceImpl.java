@@ -43,7 +43,8 @@ public class PatientPasswordServiceImpl implements PatientPasswordService {
     @Transactional
     public ApiResponse<AuthResponse> login(PatientPasswordLoginRequest request) {
         List<PatientLogin> logins = patientLoginRepository
-                .findByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo());
+                .findByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo()).stream()
+                .filter(this::isActive).toList();
         if (logins.isEmpty()) {
             return failure("Invalid mobile number or password", HttpStatus.UNAUTHORIZED);
         }
@@ -80,7 +81,7 @@ public class PatientPasswordServiceImpl implements PatientPasswordService {
     @Override
     @Transactional(readOnly = true)
     public ApiResponse<MobileLoginResponce> requestPasswordReset(ForgotPatientPasswordRequest request) {
-        if (patientLoginRepository.findByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo()).isEmpty()) {
+        if (activeLogins(request.getMobileNo()).isEmpty()) {
             // Same response prevents enumeration of registered mobile numbers.
             MobileLoginResponce response = new MobileLoginResponce();
             response.setMobileNo(request.getMobileNo());
@@ -105,7 +106,8 @@ public class PatientPasswordServiceImpl implements PatientPasswordService {
     @Transactional
     public ApiResponse<String> resetPassword(ResetPatientPasswordRequest request) {
         List<PatientLogin> logins = patientLoginRepository
-                .findByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo());
+                .findByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo()).stream()
+                .filter(this::isActive).toList();
         if (logins.isEmpty()) {
             return failure("Invalid mobile number or OTP", HttpStatus.BAD_REQUEST);
         }
@@ -121,5 +123,14 @@ public class PatientPasswordServiceImpl implements PatientPasswordService {
 
     private <T> ApiResponse<T> failure(String message, HttpStatus status) {
         return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, message, status.value());
+    }
+
+    private List<PatientLogin> activeLogins(String mobileNo) {
+        return patientLoginRepository.findByMobileNoOrderByPatientLoginIdDesc(mobileNo).stream()
+                .filter(this::isActive).toList();
+    }
+
+    private boolean isActive(PatientLogin login) {
+        return login.getStatus() == null || !"N".equalsIgnoreCase(login.getStatus());
     }
 }

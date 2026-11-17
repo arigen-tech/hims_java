@@ -367,7 +367,8 @@ public class AuthServiceImpl implements AuthService {
         Long patientId = helper.getPatientIdFromToken(refreshToken);
         String mobileNo = helper.getMobileNoFromToken(refreshToken);
         if (patientId == null || mobileNo == null || mobileNo.isBlank()
-            || !patientLoginRepository.existsByMobileNoAndPatientId(mobileNo, patientId)) {
+            || patientLoginRepository.findByMobileNoAndPatientIdOrderByPatientLoginIdDesc(mobileNo, patientId)
+                .stream().noneMatch(login -> login.getStatus() == null || !"N".equalsIgnoreCase(login.getStatus()))) {
             return ResponseUtils.createFailureResponse(
                 null, new TypeReference<>() {}, "PATIENT IS NOT LINKED TO THIS MOBILE NUMBER", 401);
         }

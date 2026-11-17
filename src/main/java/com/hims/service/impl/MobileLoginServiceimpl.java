@@ -49,9 +49,9 @@ public class MobileLoginServiceimpl implements MobileLoginService {
     {
         try {
             boolean patientBelongsToMobile = patientLoginRepository
-                .findByMobileNoOrderByPatientLoginIdDesc(mobileNumber)
+                .findByMobileNoAndPatientIdOrderByPatientLoginIdDesc(mobileNumber, patientId)
                 .stream()
-                .anyMatch(patientLogin -> patientId.equals(patientLogin.getPatientId()));
+                .anyMatch(this::isActive);
 
             if (!patientBelongsToMobile) {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
@@ -75,6 +75,23 @@ public class MobileLoginServiceimpl implements MobileLoginService {
             return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                 "Unable to switch patient. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> deactivatePatient(Long patientId) {
+        PatientLogin login = patientLoginRepository.findByPatientId(patientId).orElse(null);
+        if (login == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Patient login account not found", HttpStatus.NOT_FOUND.value());
+        }
+        login.setStatus("N");
+        patientLoginRepository.save(login);
+        return ResponseUtils.createSuccessResponse("Patient login deactivated successfully", new TypeReference<>() {});
+    }
+
+    private boolean isActive(PatientLogin login) {
+        return login.getStatus() == null || !"N".equalsIgnoreCase(login.getStatus());
     }
 
     private PatientIdResponse toPatientIdResponse(Patient patient) 
@@ -103,7 +120,7 @@ public class MobileLoginServiceimpl implements MobileLoginService {
         try {
             List<PatientLogin> patientLoginList = patientLoginRepository.findByMobileNoOrderByPatientLoginIdDesc(
                             request.getMobileNo()
-                    );
+                    ).stream().filter(this::isActive).toList();
             if (patientLoginList == null || patientLoginList.isEmpty()) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Mobile number not registered",

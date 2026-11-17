@@ -93,12 +93,21 @@ public class MobileController {
         return mobileLoginService.switchPatient(patientId, mobileNumber);
     }
 
+    @PutMapping("/patientInactive/{patientId}")
+    public ApiResponse<String> patientInactive(@PathVariable Long patientId) {
+        return mobileLoginService.deactivatePatient(patientId);
+    }
+
     @PostMapping("/verifyOtp")
     public ApiResponse<?>  verifyOtp(@RequestBody @Valid OtpRequest otpRequest) {
         try {
             List<PatientLogin> patientLoginList = patientLoginRepository.findByMobileNoOrderByPatientLoginIdDesc(
                     otpRequest.getMobileNo()
-            );
+            ).stream().filter(this::isActivePatientLogin).toList();
+            if (patientLoginList.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "No active patient is linked to this mobile number", HttpStatus.UNAUTHORIZED.value());
+            }
             String otp = otpRequest.getOtp();
             String sessionId = otpRequest.getSessionId();
 
@@ -146,6 +155,10 @@ public class MobileController {
                     HttpStatus.INTERNAL_SERVER_ERROR.value()
             );
         }
+    }
+
+    private boolean isActivePatientLogin(PatientLogin patientLogin) {
+        return patientLogin.getStatus() == null || !"N".equalsIgnoreCase(patientLogin.getStatus());
     }
 
     @PostMapping("/refreshToken")

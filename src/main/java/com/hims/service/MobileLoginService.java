@@ -12,5 +12,7 @@ public interface MobileLoginService {
 
     ApiResponse<AuthResponse> switchPatient(Long patientId, String mobileNumber);
 
+    ApiResponse<String> deactivatePatient(Long patientId);
+
 
 }
