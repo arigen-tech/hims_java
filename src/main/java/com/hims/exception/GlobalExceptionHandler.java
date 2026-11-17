@@ -11,6 +11,7 @@ import com.hims.utils.ResponseUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -18,6 +19,20 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(DuplicateOtChecklistException.class)
+    public ResponseEntity<ApiResponse<String>> handleDuplicateOtChecklist(DuplicateOtChecklistException ex) {
+        ApiResponse<String> response = ResponseUtils.createFailureResponse(
+                null, ex.getMessage(), HttpStatus.CONFLICT.value());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<String>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        ApiResponse<String> response = ResponseUtils.createFailureResponse(
+                null, "A record conflicts with an existing database constraint", HttpStatus.CONFLICT.value());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
 
     @ExceptionHandler(BillingException.class)
     public ResponseEntity<ApiResponse<?>> handleBillingException(BillingException ex) {

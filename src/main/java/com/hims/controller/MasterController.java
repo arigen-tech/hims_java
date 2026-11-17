@@ -369,6 +369,9 @@ public class MasterController {
     @Autowired
     private ResultFlagService resultFlagService;
 
+    @Autowired
+    private MasOtChecklistService masOtChecklistService;
+
 
     //    ================================Mas Application Controller================================//
 
@@ -5873,6 +5876,41 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
     @GetMapping("/masAsaGrade/getById/{gradeId}")
     public ResponseEntity<?> getMasAsaGradeById(@PathVariable Long gradeId) {
         return ResponseEntity.ok(masAsaGradeService.getById(gradeId));
+    }
+
+    //======================================= OT Checklist ========================================
+
+    /** checklistId omitted creates a row; supplied checklistId updates that row. */
+    @PostMapping("/otChecklist/save")
+    public ResponseEntity<ApiResponse<MasOtChecklistResponse>> saveOtChecklist(
+            @Valid @RequestBody MasOtChecklistRequest request) {
+        ApiResponse<MasOtChecklistResponse> response = masOtChecklistService.save(request);
+        return ResponseEntity.status(request.getChecklistId() == null ? HttpStatus.CREATED : HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/otChecklist/getById/{checklistId}")
+    public ResponseEntity<ApiResponse<MasOtChecklistResponse>> getOtChecklistById(@PathVariable Long checklistId) {
+        return ResponseEntity.ok(masOtChecklistService.getById(checklistId));
+    }
+
+    /** flag 0 returns all rows; flag 1 returns active rows only. */
+    @GetMapping("/otChecklist/getAll/{flag}")
+    public ResponseEntity<?> getAllOtChecklists(
+            @PathVariable int flag,
+            @RequestParam(required = false) String checklistStage,
+            @RequestParam(required = false) String checklistName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        if (page < 0 || size <= 0) {
+            return ResponseEntity.badRequest().body("page must be >= 0 and size must be > 0");
+        }
+        return ResponseEntity.ok(masOtChecklistService.getAll(flag, checklistStage, checklistName, page, size));
+    }
+
+    @PutMapping("/otChecklist/status/{checklistId}")
+    public ResponseEntity<ApiResponse<MasOtChecklistResponse>> changeOtChecklistStatus(
+            @PathVariable Long checklistId, @RequestParam String status) {
+        return ResponseEntity.ok(masOtChecklistService.changeStatus(checklistId, status));
     }
 
 }
