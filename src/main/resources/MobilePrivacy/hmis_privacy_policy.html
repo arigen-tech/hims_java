@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Privacy Policy for the HMIS mobile application.">
+  <meta name="theme-color" content="#105b67">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Privacy Policy | HMIS">
+  <meta property="og:description" content="Privacy Policy for the HMIS mobile application.">
+  <!-- Add your public URL once hosted:
+  <link rel="canonical" href="https://YOUR-DOMAIN/privacy">
+  <meta property="og:url" content="https://YOUR-DOMAIN/privacy">
+  -->
+  <title>Privacy Policy | HMIS</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #19324a;
+      --muted: #526579;
+      --brand: #146c72;
+      --link: #075f83;
+      --line: #dce7eb;
+      --paper: #ffffff;
+      --wash: #f3f8f8;
+      --callout-bg: #eaf5f4;
+      --callout-line: #b9dcd9;
+      --focus: #0b5cad;
+      --hero-from: #105b67;
+      --hero-to: #238c86;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+    body {
+      margin: 0;
+      background: var(--wash);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 1rem;
+      top: -4rem;
+      padding: .6rem 1rem;
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--link);
+      font-weight: 600;
+      z-index: 10;
+    }
+    .skip-link:focus { top: 1rem; }
+
+    a:focus-visible, summary:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+      border-radius: 3px;
+    }
+
+    header {
+      padding: 3.5rem 1.25rem 2.5rem;
+      background: linear-gradient(135deg, var(--hero-from), var(--hero-to));
+      color: #fff;
+    }
+
+    .header-inner, main, footer {
+      width: min(860px, calc(100% - 2rem));
+      margin-inline: auto;
+    }
+
+    .eyebrow {
+      margin: 0 0 .4rem;
+      color: #d7f3ef;
+      font-size: .85rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 6vw, 3.1rem);
+      line-height: 1.15;
+    }
+
+    .updated { margin: .9rem 0 0; color: #e6f4f3; }
+
+    main {
+      margin-block: 2rem;
+      padding: clamp(1.25rem, 5vw, 3rem);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--paper);
+      box-shadow: 0 10px 30px rgb(22 57 70 / 6%);
+    }
+
+    h2 {
+      margin: 2rem 0 .5rem;
+      color: var(--brand);
+      font-size: 1.28rem;
+      line-height: 1.35;
+      scroll-margin-top: 1.5rem;
+    }
+
+    h2:first-child { margin-top: 0; }
+    p { margin: .65rem 0; }
+    ul { margin: .5rem 0 1rem; padding-left: 1.35rem; }
+    li { margin: .35rem 0; }
+    a { color: var(--link); overflow-wrap: anywhere; }
+    .placeholder { font-weight: 700; color: #8c3d00; }
+
+    .key-points {
+      margin: 1.5rem 0;
+      padding: 1.1rem 1.25rem;
+      border: 1px solid var(--callout-line);
+      border-radius: 12px;
+      background: var(--callout-bg);
+    }
+    .key-points h2 { margin: 0 0 .4rem; font-size: 1.1rem; }
+    .key-points ul { margin-bottom: 0; }
+
+    .toc {
+      margin: 0 0 2rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: .25rem 1.25rem;
+    }
+    .toc summary {
+      cursor: pointer;
+      padding: .75rem 0;
+      color: var(--brand);
+      font-weight: 700;
+    }
+    .toc ol {
+      margin: 0 0 1rem;
+      padding-left: 1.35rem;
+      columns: 2 240px;
+      column-gap: 2rem;
+    }
+    .toc li { margin: .25rem 0; break-inside: avoid; }
+
+    footer {
+      padding: 0 0 2rem;
+      color: var(--muted);
+      font-size: .9rem;
+      text-align: center;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .skip-link { display: none; }
+      header { padding: 1.5rem 0; background: #fff; color: var(--ink); }
+      .eyebrow, .updated { color: var(--muted); }
+      main { width: 100%; margin: 0; padding: 0; border: 0; box-shadow: none; }
+      .toc { display: none; }
+      footer { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+
+  <header>
+    <div class="header-inner">
+      <p class="eyebrow">HMIS Mobile Application</p>
+      <h1>Privacy Policy</h1>
+      <p class="updated">Effective date: <time datetime="2026-11-16">November 16, 2026</time></p>
+    </div>
+  </header>
+
+  <main id="content">
+    <p>
+      This Privacy Policy explains how HMIS ("we", "us", or "our") collects, uses,
+      and shares information when you use the HMIS mobile application ("the App").
+      This policy should be read together with any notices and consent requests
+      shown in the App.
+    </p>
+
+    <section class="key-points" aria-labelledby="key-points-title">
+      <h2 id="key-points-title">Key points</h2>
+      <ul>
+        <li>We do not sell personal information, and we do not use health information for advertising.</li>
+        <li>Your health records come from your healthcare provider and are shown in the App. We share relevant information with the providers involved in your care and with Razorpay for payments.</li>
+        <li>Location access is optional. You can deny or revoke it in your device settings.</li>
+        <li>To request account deletion, email <a href="mailto:support@arihealth.com">support@arihealth.com</a>. Deleting the App from your device does not delete your information.</li>
+      </ul>
+    </section>
+
+    <details class="toc">
+      <summary>Contents</summary>
+      <ol>
+        <li><a href="#information">Information we handle</a></li>
+        <li><a href="#use">How we use information</a></li>
+        <li><a href="#sharing">How information is shared</a></li>
+        <li><a href="#choices">Permissions and your choices</a></li>
+        <li><a href="#retention">Data retention</a></li>
+        <li><a href="#deletion">Account deletion and privacy requests</a></li>
+        <li><a href="#security">Security</a></li>
+        <li><a href="#children">Children and family members</a></li>
+        <li><a href="#third-party">Third-party services and links</a></li>
+        <li><a href="#changes">Changes to this policy</a></li>
+        <li><a href="#contact">Contact us</a></li>
+      </ol>
+    </details>
+
+    <h2 id="information">Information we handle</h2>
+    <p>Depending on the features you use, the App may collect or process:</p>
+    <ul>
+      <li><strong>Account and contact details:</strong> mobile number, name, email address, and login or verification information used to register and access an account.</li>
+      <li><strong>Patient and family details:</strong> date of birth, gender, address, hospital or patient identifiers, and details you provide for family members or other patients you are authorized to manage.</li>
+      <li><strong>Health and care information:</strong> appointment and doctor details, laboratory and radiology orders or results, prescriptions, discharge summaries, and other records made available by your healthcare provider. Some report results may be formatted for display in the App.</li>
+      <li><strong>Payment information:</strong> payment status, transaction identifiers, and information needed to arrange or verify a payment. Payments are handled through Razorpay; its <a href="https://razorpay.com/privacy/">privacy policy</a> also applies.</li>
+      <li><strong>Location:</strong> approximate or precise device location, only if you grant permission, to help show nearby hospitals or sort hospital results by distance.</li>
+      <li><strong>App and device information:</strong> information needed to operate the App, maintain your signed-in session, remember preferences, and display records. Authentication tokens are stored using platform secure storage. Selected-patient details and in-app alert data are stored on your device. Downloaded reports are kept in the App's private document storage until removed by the operating system or App.</li>
+    </ul>
+
+    <h2 id="use">How we use information</h2>
+    <p>We use information as needed to:</p>
+    <ul>
+      <li>create and secure accounts, verify contact details, and support sign-in;</li>
+      <li>show patient profiles and records, including records for family members you manage;</li>
+      <li>help you find hospitals and doctors, book or manage appointments, and request laboratory or radiology services;</li>
+      <li>show healthcare reports and documents provided by the relevant healthcare organization, including formatted report results and PDF reports you choose to view or download;</li>
+      <li>process and confirm payments, refunds, or appointment and service status;</li>
+      <li>respond to support requests, maintain the App, and meet legal obligations.</li>
+    </ul>
+
+    <h2 id="sharing">How information is shared</h2>
+    <p>We may share relevant information:</p>
+    <ul>
+      <li>with the hospital, clinic, doctors, laboratories, or other healthcare providers involved in the care or services you request;</li>
+      <li>with Razorpay and relevant payment providers to process and verify payments;</li>
+      <li>with service providers who help operate the App or its backend, subject to appropriate safeguards;</li>
+      <li>with other apps or services you choose when you download or share a report from your device;</li>
+      <li>when required by law, to protect users or the public, or to respond to valid legal requests.</li>
+    </ul>
+    <p>We do not sell personal information. We do not use health information for advertising.</p>
+
+    <h2 id="choices">Permissions and your choices</h2>
+    <ul>
+      <li><strong>Location:</strong> optional. You can deny or revoke location permission in your device settings; hospital search will still be available without distance-based sorting.</li>
+      <li>You can correct profile information through available App features or by contacting us. You may sign out to end your local session.</li>
+    </ul>
+
+    <h2 id="retention">Data retention</h2>
+    <p>
+      We retain information for as long as needed to provide the App and related
+      healthcare services, and as required for medical-record, accounting, legal,
+      or security purposes. Retention periods may depend on the healthcare provider
+      that maintains your records.
+    </p>
+
+    <h2 id="deletion">Account deletion and privacy requests</h2>
+    <p>
+      The App does not currently provide an in-app account-deletion flow or a
+      public online deletion request page. To submit a deletion request, email
+      <a href="mailto:support@arihealth.com">support@arihealth.com</a>. We may
+      ask you to verify your identity before responding. Before publishing this
+      policy for Google Play, the developer must also publish a publicly
+      reachable account-deletion request page and provide the required links in
+      Google Play Console.
+    </p>
+    <p>
+      We will delete or de-identify information that we are not required to retain.
+      Healthcare providers may need to keep medical records under applicable law
+      or professional obligations. Deleting the App from your device does not by
+      itself delete information held by us or by a healthcare provider.
+    </p>
+
+    <h2 id="security">Security</h2>
+    <p>
+      We use reasonable safeguards designed to protect information. No method of
+      storage or transmission is completely secure, so we cannot guarantee absolute
+      security. Please keep your sign-in details private and contact us if you
+      believe your account has been used without authorization.
+    </p>
+
+    <h2 id="children">Children and family members</h2>
+    <p>
+      The App is intended for patients and their authorized representatives.
+      An account holder who adds another person, including a child, is responsible
+      for having the authority to provide that person's information and manage
+      their records. Contact us if information has been provided without proper
+      authorization.
+    </p>
+
+    <h2 id="third-party">Third-party services and links</h2>
+    <p>
+      The App connects to healthcare services and payment services, including
+      Razorpay. Those organizations may process information under their own privacy
+      policies and terms. We encourage you to review the applicable policies.
+    </p>
+
+    <h2 id="changes">Changes to this policy</h2>
+    <p>
+      We may update this policy when the App or applicable requirements change.
+      We will post the revised policy here and update its effective date. Please
+      review it periodically.
+    </p>
+
+    <h2 id="contact">Contact us</h2>
+    <p>For privacy questions, data-access or deletion requests, or complaints, contact:</p>
+    <ul>
+      <li><strong>App operator:</strong> HMIS</li>
+      <li><strong>Privacy contact:</strong> <a href="mailto:support@arihealth.com">support@arihealth.com</a></li>
+      <li><strong>Support phone:</strong> <a href="tel:+911204149597">+91 120 414 9597</a> or <a href="tel:+919971009929">+91 99710 09929</a></li>
+    </ul>
+  </main>
+
+  <footer>
+    <p>HMIS Mobile Application · Privacy Policy</p>
+  </footer>
+</body>
+</html>

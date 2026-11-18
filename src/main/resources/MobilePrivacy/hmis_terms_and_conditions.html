@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Terms and Conditions for the HMIS mobile application.">
+  <meta name="theme-color" content="#105b67">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Terms and Conditions | HMIS">
+  <meta property="og:description" content="Terms and Conditions for the HMIS mobile application.">
+  <!-- Add your public URL once hosted:
+  <link rel="canonical" href="https://YOUR-DOMAIN/terms">
+  <meta property="og:url" content="https://YOUR-DOMAIN/terms">
+  -->
+  <title>Terms and Conditions | HMIS</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #19324a;
+      --muted: #526579;
+      --brand: #146c72;
+      --link: #075f83;
+      --line: #dce7eb;
+      --paper: #ffffff;
+      --wash: #f3f8f8;
+      --callout-bg: #eaf5f4;
+      --callout-line: #b9dcd9;
+      --alert-bg: #fff4e5;
+      --alert-line: #f0c78a;
+      --focus: #0b5cad;
+      --hero-from: #105b67;
+      --hero-to: #238c86;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+    body {
+      margin: 0;
+      background: var(--wash);
+      color: var(--ink);
+      font: 16px/1.7 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 1rem;
+      top: -4rem;
+      padding: .6rem 1rem;
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--link);
+      font-weight: 600;
+      z-index: 10;
+    }
+    .skip-link:focus { top: 1rem; }
+
+    a:focus-visible, summary:focus-visible {
+      outline: 3px solid var(--focus);
+      outline-offset: 2px;
+      border-radius: 3px;
+    }
+
+    header {
+      padding: 3.5rem 1.25rem 2.5rem;
+      background: linear-gradient(135deg, var(--hero-from), var(--hero-to));
+      color: #fff;
+    }
+
+    .header-inner, main, footer {
+      width: min(860px, calc(100% - 2rem));
+      margin-inline: auto;
+    }
+
+    .eyebrow {
+      margin: 0 0 .4rem;
+      color: #d7f3ef;
+      font-size: .85rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 6vw, 3.1rem);
+      line-height: 1.15;
+    }
+
+    .updated { margin: .9rem 0 0; color: #e6f4f3; }
+
+    main {
+      margin-block: 2rem;
+      padding: clamp(1.25rem, 5vw, 3rem);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--paper);
+      box-shadow: 0 10px 30px rgb(22 57 70 / 6%);
+    }
+
+    h2 {
+      margin: 2rem 0 .5rem;
+      color: var(--brand);
+      font-size: 1.28rem;
+      line-height: 1.35;
+      scroll-margin-top: 1.5rem;
+    }
+
+    h2:first-child { margin-top: 0; }
+    p { margin: .65rem 0; }
+    ul { margin: .5rem 0 1rem; padding-left: 1.35rem; }
+    li { margin: .35rem 0; }
+    a { color: var(--link); overflow-wrap: anywhere; }
+
+    .key-points {
+      margin: 0 0 1.5rem;
+      padding: 1.1rem 1.25rem;
+      border: 1px solid var(--callout-line);
+      border-radius: 12px;
+      background: var(--callout-bg);
+    }
+    .key-points h2 { margin: 0 0 .4rem; font-size: 1.1rem; }
+    .key-points ul { margin-bottom: 0; }
+
+    .emergency {
+      margin: 0 0 1.5rem;
+      padding: .9rem 1.25rem;
+      border: 1px solid var(--alert-line);
+      border-radius: 12px;
+      background: var(--alert-bg);
+    }
+    .emergency p { margin: 0; }
+
+    .toc {
+      margin: 0 0 2rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: .25rem 1.25rem;
+    }
+    .toc summary {
+      cursor: pointer;
+      padding: .75rem 0;
+      color: var(--brand);
+      font-weight: 700;
+    }
+    .toc ol {
+      margin: 0 0 1rem;
+      padding-left: 1.35rem;
+      columns: 2 240px;
+      column-gap: 2rem;
+    }
+    .toc li { margin: .25rem 0; break-inside: avoid; }
+
+    footer {
+      padding: 0 0 2rem;
+      color: var(--muted);
+      font-size: .9rem;
+      text-align: center;
+    }
+
+    @media print {
+      :root {
+        --ink: #19324a; --muted: #526579; --brand: #146c72; --link: #075f83;
+        --paper: #fff; --wash: #fff; --line: #dce7eb;
+      }
+      body { background: #fff; }
+      .skip-link { display: none; }
+      header { padding: 1.5rem 0; background: #fff; color: var(--ink); }
+      .eyebrow, .updated { color: var(--muted); }
+      main { width: 100%; margin: 0; padding: 0; border: 0; box-shadow: none; }
+      .toc { display: none; }
+      footer { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+
+  <header>
+    <div class="header-inner">
+      <p class="eyebrow">HMIS Mobile Application</p>
+      <h1>Terms and Conditions</h1>
+      <p class="updated">Effective date: <time datetime="2026-11-17">November 17, 2026</time></p>
+    </div>
+  </header>
+
+  <main id="content">
+    <p>
+      These Terms and Conditions ("Terms") apply to your access to and use of
+      the HMIS mobile application ("the App"). By using the App, you agree to
+      these Terms. If you do not agree, do not use the App. These Terms govern
+      use of the App and do not replace the terms, consent forms, or policies
+      of a hospital, doctor, laboratory, payment provider, or other service
+      provider.
+    </p>
+
+    <div class="emergency" role="note">
+      <p><strong>Not for emergencies.</strong> For urgent or emergency medical help, contact local emergency services or go to the nearest emergency department.</p>
+    </div>
+
+    <section class="key-points" aria-labelledby="key-points-title">
+      <h2 id="key-points-title">Key points</h2>
+      <ul>
+        <li>The App is a tool for accessing services and information. It is not a healthcare provider and does not provide diagnosis, treatment, or emergency care.</li>
+        <li>Appointments and service requests are confirmed by the healthcare provider, not by the request itself.</li>
+        <li>Payments may be processed by Razorpay or another payment service. Refunds depend on the provider's and payment service's rules.</li>
+        <li>Location access is optional and can be changed in your device settings.</li>
+        <li>To close or delete your account, email <a href="mailto:support@arihealth.com">support@arihealth.com</a>. Removing the App from your device does not delete your account.</li>
+      </ul>
+    </section>
+
+    <details class="toc">
+      <summary>Contents</summary>
+      <ol>
+        <li><a href="#about">About the App</a></li>
+        <li><a href="#accounts">Eligibility and accounts</a></li>
+        <li><a href="#family">Family members and authorized representatives</a></li>
+        <li><a href="#healthcare-info">Healthcare information and medical care</a></li>
+        <li><a href="#appointments">Appointments and healthcare services</a></li>
+        <li><a href="#payments">Payments</a></li>
+        <li><a href="#permissions">Location and device permissions</a></li>
+        <li><a href="#acceptable-use">Acceptable use</a></li>
+        <li><a href="#availability">Availability and third-party services</a></li>
+        <li><a href="#ip">Intellectual property</a></li>
+        <li><a href="#privacy">Privacy</a></li>
+        <li><a href="#deletion">Account closure and deletion requests</a></li>
+        <li><a href="#liability">Disclaimers and liability</a></li>
+        <li><a href="#changes">Changes to these Terms</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ol>
+    </details>
+
+    <h2 id="about">About the App</h2>
+    <p>
+      The App provides digital access to certain healthcare-related services
+      and information made available by participating healthcare providers.
+      Depending on availability, features may include account access, patient
+      and family profiles, hospital and doctor discovery, appointment requests
+      and management, laboratory and radiology services, medical reports,
+      notifications, and payments.
+    </p>
+    <p>
+      Features, participating providers, and information may vary. Some
+      services depend on the healthcare provider's systems, records, decisions,
+      and availability.
+    </p>
+
+    <h2 id="accounts">Eligibility and accounts</h2>
+    <ul>
+      <li>You must be legally able to accept these Terms or use the App through a parent, guardian, or authorized representative.</li>
+      <li>Provide accurate information and keep your contact details up to date. Do not impersonate another person or create an account using information you are not authorized to use.</li>
+      <li>Keep your password, one-time verification codes, and device secure. You are responsible for activity performed through your account, except where applicable law provides otherwise.</li>
+      <li>Notify us promptly at <a href="mailto:support@arihealth.com">support@arihealth.com</a> if you suspect unauthorized access to your account.</li>
+      <li>We may restrict or suspend access when reasonably needed to protect users, providers, the App, or the security of an account, or to comply with law.</li>
+    </ul>
+
+    <h2 id="family">Family members and authorized representatives</h2>
+    <p>
+      If you add or manage a family member or another patient's profile, you
+      confirm that you have the authority and any required consent to provide
+      their information, access their records, and use the App on their behalf.
+      Use only the access permitted by that person or by law. Contact support
+      if information has been added or accessed without proper authorization.
+    </p>
+
+    <h2 id="healthcare-info">Healthcare information and medical care</h2>
+    <p>
+      The App is a tool for accessing services and information; it is not a
+      healthcare provider and does not provide diagnosis, treatment, or
+      emergency care. Information displayed in the App, including reports,
+      prescriptions, and formatted results, is supplied by or derived from
+      healthcare-provider systems and may be delayed, incomplete, or subject to
+      correction. The App's presentation of a report does not replace the
+      provider's original medical record or a clinician's interpretation.
+    </p>
+    <p>
+      Do not use the App for emergencies. For urgent or emergency medical help,
+      contact local emergency services or go to the nearest emergency
+      department. For questions about a result, diagnosis, or treatment, contact
+      your healthcare provider.
+    </p>
+
+    <h2 id="appointments">Appointments and healthcare services</h2>
+    <p>
+      An appointment or service request made through the App is subject to
+      confirmation by the relevant healthcare provider. A request is not
+      confirmed until the provider or the App clearly indicates confirmation.
+      Availability, schedules, services, and charges may change or be
+      unavailable. The provider is responsible for delivering healthcare
+      services and for its clinical decisions.
+    </p>
+    <p>
+      Cancellation, rescheduling, refunds, and other appointment terms are
+      subject to the applicable provider's policies and the information shown
+      for the transaction. Contact the provider or HMIS support for help with a
+      booking; contacting us does not itself cancel or change an appointment
+      unless the change is confirmed.
+    </p>
+
+    <h2 id="payments">Payments</h2>
+    <p>
+      Where payment is available, payment processing and verification may be
+      provided by Razorpay or another payment service. Your payment may also be
+      subject to that provider's terms and privacy policy. Review the amount and
+      payee shown before confirming a transaction. The App may display payment
+      status based on information received from the payment service or
+      healthcare provider.
+    </p>
+    <p>
+      Refund eligibility, amount, and timing depend on the relevant provider's
+      and payment service's rules and processing. We do not promise a refund or
+      a specific processing time through these Terms. If a payment appears
+      incorrect or remains unresolved, contact <a href="mailto:support@arihealth.com">support@arihealth.com</a>
+      with the transaction details; never email passwords, one-time codes, or
+      full payment-card details.
+    </p>
+
+    <h2 id="permissions">Location and device permissions</h2>
+    <p>
+      The App may request location permission to help find nearby hospitals or
+      sort results by distance. Location access is optional and can be changed
+      in your device settings. Without it, distance-based features may not be
+      available. Other device settings may affect the operation of App features.
+    </p>
+
+    <h2 id="acceptable-use">Acceptable use</h2>
+    <p>You agree not to:</p>
+    <ul>
+      <li>use the App unlawfully, fraudulently, or to harm another person;</li>
+      <li>access another person's account or health information without authorization;</li>
+      <li>interfere with, disrupt, probe, or attempt to bypass the App's security or systems;</li>
+      <li>upload malicious code or use the App to transmit unlawful, misleading, or abusive material; or</li>
+      <li>copy, modify, distribute, or exploit the App except as permitted by law or with our written permission.</li>
+    </ul>
+
+    <h2 id="availability">Availability and third-party services</h2>
+    <p>
+      We aim to keep the App available and useful, but do not guarantee
+      uninterrupted, error-free access. The App may be changed, suspended, or
+      discontinued, and some features may depend on network access, devices,
+      healthcare-provider systems, or third-party services outside our
+      control. Third-party services are governed by their own terms and
+      policies.
+    </p>
+
+    <h2 id="ip">Intellectual property</h2>
+    <p>
+      The App and its design, software, and content are owned by or licensed to
+      the relevant rights holders and are protected by applicable laws. These
+      Terms give you a limited, personal, non-transferable right to use the App
+      for its intended purpose. They do not transfer ownership to you.
+    </p>
+
+    <h2 id="privacy">Privacy</h2>
+    <p>
+      Our handling of personal information is described in the HMIS Privacy
+      Policy. Use of the App is also subject to that policy and to applicable
+      notices presented when you use particular features.
+    </p>
+    <!-- To link the policy, wrap the words "HMIS Privacy Policy" above in:
+         <a href="https://YOUR-DOMAIN/privacy">HMIS Privacy Policy</a> -->
+
+    <h2 id="deletion">Account closure and deletion requests</h2>
+    <p>
+      The App currently does not provide an in-app account-deletion flow. You
+      may contact <a href="mailto:support@arihealth.com">support@arihealth.com</a>
+      to request account closure or deletion and may be asked to verify your
+      identity. Some information, including medical or transaction records,
+      may need to be retained by us or a healthcare provider where required by
+      law or legitimate recordkeeping obligations. Removing the App from your
+      device does not delete your account or provider-held records. See the
+      Privacy Policy for more information.
+    </p>
+
+    <h2 id="liability">Disclaimers and liability</h2>
+    <p>
+      To the extent permitted by applicable law, the App is provided on an
+      "as available" basis. We do not guarantee that information supplied by a
+      third-party healthcare provider is complete, current, or error-free, and
+      we are not responsible for clinical care or decisions made by that
+      provider. Nothing in these Terms excludes rights or remedies that cannot
+      lawfully be excluded or limits liability where such limitation is not
+      permitted by law.
+    </p>
+
+    <h2 id="changes">Changes to these Terms</h2>
+    <p>
+      We may update these Terms as the App, services, or applicable
+      requirements change. The revised Terms will be posted with an updated
+      effective date. If a change materially affects your use, we will provide
+      notice through the App or another appropriate channel where required.
+      Continued use after the updated Terms take effect means you accept them,
+      to the extent permitted by law.
+    </p>
+
+    <h2 id="contact">Contact</h2>
+    <p>For questions or support relating to these Terms, contact:</p>
+    <ul>
+      <li><strong>App:</strong> HMIS</li>
+      <li><strong>Email:</strong> <a href="mailto:support@arihealth.com">support@arihealth.com</a></li>
+      <li><strong>Phone:</strong> <a href="tel:+911204149597">+91 120 414 9597</a> or <a href="tel:+919971009929">+91 99710 09929</a></li>
+    </ul>
+  </main>
+
+  <footer>
+    <p>HMIS Mobile Application · Terms and Conditions</p>
+  </footer>
+</body>
+</html>
