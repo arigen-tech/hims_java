@@ -13,6 +13,17 @@ import java.util.List;
 public interface MasOtChecklistRepository extends JpaRepository<MasOtChecklist, Long> {
     Optional<MasOtChecklist> findByChecklistCodeIgnoreCase(String checklistCode);
 
+    @Query(value = """
+            SELECT *
+            FROM public.mas_ot_checklist
+            WHERE UPPER(checklist_stage) = UPPER(:checklistStage)
+              AND UPPER(status) = UPPER(:status)
+            ORDER BY display_order ASC, checklist_id ASC
+            """, nativeQuery = true)
+    List<MasOtChecklist> findActiveByStageOrderByDisplayOrder(
+            @Param("checklistStage") String checklistStage,
+            @Param("status") String status);
+
 
     @Query("""
     SELECT c FROM MasOtChecklist c

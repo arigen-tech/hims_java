@@ -6,6 +6,7 @@ import com.hims.request.OtTeamMemberRequest;
 import com.hims.request.OtBookingRescheduleRequest;
 import com.hims.request.OtBookingCancelRequest;
 import com.hims.request.OtPacAssessmentRequest;
+import com.hims.request.OtChecklistSubmitRequest;
 import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ActiveAdmissionResponse;
 import com.hims.response.ApiResponse;
@@ -16,8 +17,10 @@ import com.hims.response.OtDashboardResponse;
 import com.hims.response.OtDepartmentResponse;
 import com.hims.response.PacPendingResponse;
 import com.hims.response.OtPacAssessmentResponse;
+import com.hims.response.OtChecklistSubmitResponse;
 import com.hims.service.OtService;
 import com.hims.service.OtPacAssessmentService;
+import com.hims.service.OtChecklistSubmissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -46,6 +49,7 @@ public class OTController {
 
     private final OtService otService;
     private final OtPacAssessmentService otPacAssessmentService;
+    private final OtChecklistSubmissionService otChecklistSubmissionService;
 
 
     @GetMapping("/activeAdmissionList")
@@ -224,6 +228,20 @@ public class OTController {
     @GetMapping("/pacAssessment/booking/{otBookingId}")
     public ResponseEntity<ApiResponse<OtPacAssessmentResponse>> getPacAssessmentByBooking(@PathVariable @Positive Long otBookingId) {
         return ResponseEntity.ok(otPacAssessmentService.getByBookingId(otBookingId));
+    }
+
+    @PostMapping("/submitOtChecklist")
+    @Operation(summary = "Save an OT checklist as draft or submit it as completed")
+    public ResponseEntity<ApiResponse<OtChecklistSubmitResponse>> submitOtChecklist(
+            @Valid @RequestBody OtChecklistSubmitRequest request) {
+        return ResponseEntity.ok(otChecklistSubmissionService.submit(request));
+    }
+
+    @GetMapping("/getOtChecklist/{otBookingId}")
+    @Operation(summary = "Get saved OT checklists by OT booking ID")
+    public ResponseEntity<ApiResponse<List<OtChecklistSubmitResponse>>> getOtChecklistByBookingId(
+            @PathVariable @Positive Long otBookingId) {
+        return ResponseEntity.ok(otChecklistSubmissionService.getByBookingId(otBookingId));
     }
 
 }
