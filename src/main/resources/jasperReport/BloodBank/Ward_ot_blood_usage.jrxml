@@ -28,7 +28,8 @@ and (brh.blood_group_id = $P{blood_group_id} or $P{blood_group_id} = 0)
 and (brd.issued_date >= $P{from_date} or $P{from_date} is null)
 and (brd.issued_date <= $P{to_date} or $P{to_date} is null)
 and (brd.component_id = $P{component_id} or $P{component_id} = 0)
-and (brh.request_ward_id = $P{ward_ot} or $P{ward_ot} = 0)]]>
+and (brh.request_ward_id = $P{ward_ot} or $P{ward_ot} = 0)
+order by brd.issued_date desc, brd.request_dt_id desc]]>
 	</queryString>
 	<field name="ward_name" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="ward_name"/>
