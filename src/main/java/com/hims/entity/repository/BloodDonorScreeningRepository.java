@@ -1,14 +1,18 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.BloodDonorScreening;
+import com.hims.projection.BloodDonorDeferralProjection;
 import com.hims.projection.BloodDonorDetailsProjection;
 import com.hims.projection.BloodDonorPreviousScreeningProjection;
 import com.hims.projection.DonorProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -81,4 +85,111 @@ public interface BloodDonorScreeningRepository extends JpaRepository<BloodDonorS
     """, nativeQuery = true)
     List<BloodDonorPreviousScreeningProjection> getDonorPreviousScreenings(@Param("donorId") Long donorId,
                                                                            @Param("hospitalId") Long hospitalId   );
+
+    @Query(
+            value = """
+        SELECT
+            bd.donor_id AS "donorId",
+            bd.donor_code AS "donorCode",
+
+            CONCAT_WS(' ', bd.first_name, bd.last_name) AS "donorName",
+
+            CASE
+                WHEN bds.deferral_type = 'T' THEN 'Temporary'
+                WHEN bds.deferral_type = 'P' THEN 'Permanent'
+                ELSE bds.deferral_type
+            END AS "deferralType",
+
+            bds.deferral_reason AS "deferralReason",
+
+            bds.screening_date AS "startDate",
+
+            bds.deferral_upto_date AS "endDate",
+
+            bds.created_by AS "screenedBy"
+
+        FROM blood_donor_screening bds
+
+        INNER JOIN blood_donor bd
+            ON bd.donor_id = bds.donor_id
+
+        WHERE
+            bds.deferral_type IS NOT NULL
+
+            AND (
+                CAST(:search AS TEXT) IS NULL
+                OR TRIM(CAST(:search AS TEXT)) = ''
+                OR CAST(bd.donor_id AS TEXT) ILIKE
+                    CONCAT('%', CAST(:search AS TEXT), '%')
+                OR bd.donor_code ILIKE
+                    CONCAT('%', CAST(:search AS TEXT), '%')
+                OR CONCAT_WS(' ', bd.first_name, bd.last_name) ILIKE
+                    CONCAT('%', CAST(:search AS TEXT), '%')
+            )
+
+            AND (
+                :deferralType IS NULL
+                OR bds.deferral_type = :deferralType
+            )
+
+           AND (
+                 CAST(:fromDate AS DATE) IS NULL
+                 OR bds.deferral_upto_date >= CAST(:fromDate AS DATE)
+             )
+             
+             AND (
+                 CAST(:toDate AS DATE) IS NULL
+                 OR bds.deferral_upto_date <= CAST(:toDate AS DATE)
+             )
+
+        ORDER BY bds.screening_date DESC, bds.screening_id DESC
+        """,
+
+            countQuery = """
+        SELECT COUNT(*)
+
+        FROM blood_donor_screening bds
+
+        INNER JOIN blood_donor bd
+            ON bd.donor_id = bds.donor_id
+
+        WHERE
+            bds.deferral_type IS NOT NULL
+
+            AND (
+                CAST(:search AS TEXT) IS NULL
+                OR TRIM(CAST(:search AS TEXT)) = ''
+                OR CAST(bd.donor_id AS TEXT) ILIKE
+                    CONCAT('%', CAST(:search AS TEXT), '%')
+                OR bd.donor_code ILIKE
+                    CONCAT('%', CAST(:search AS TEXT), '%')
+                OR CONCAT_WS(' ', bd.first_name, bd.last_name) ILIKE
+                    CONCAT('%', CAST(:search AS TEXT), '%')
+            )
+
+            AND (
+                :deferralType IS NULL
+                OR bds.deferral_type = :deferralType
+            )
+
+            AND (
+                 CAST(:fromDate AS DATE) IS NULL
+                 OR bds.deferral_upto_date >= CAST(:fromDate AS DATE)
+             )
+             
+             AND (
+                 CAST(:toDate AS DATE) IS NULL
+                 OR bds.deferral_upto_date <= CAST(:toDate AS DATE)
+             )
+        """,
+
+            nativeQuery = true
+    )
+    Page<BloodDonorDeferralProjection> getDonorDeferralReport(
+            @Param("search") String search,
+            @Param("deferralType") String deferralType,
+            @Param("fromDate") LocalDate fromDate,
+            @Param("toDate") LocalDate toDate,
+            Pageable pageable
+    );
 }

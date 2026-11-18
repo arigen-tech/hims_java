@@ -372,6 +372,9 @@ public class MasterController {
     @Autowired
     private MasOtChecklistService masOtChecklistService;
 
+    @Autowired
+    private MasBloodDiscardReasonService masBloodDiscardReasonService;
+
 
     //    ================================Mas Application Controller================================//
 
@@ -2217,6 +2220,15 @@ public class MasterController {
             @RequestParam(required = false) String opdStatus,
             @RequestParam(required = false) String ipdStatus) {
         return masProcedureService.getAllProceduresWIthFilter(flag, page, size,nursingStatus,opdStatus,ipdStatus, search);
+    }
+
+    @GetMapping("masProcedures/{deptId}")
+    public ApiResponse<Page<MasProcedureResponse>> getAllProceduresWrtDept(
+            @PathVariable Long  deptId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return masProcedureService.getAllProceduresWrtDept(deptId,page,size);
     }
 
     @GetMapping("masProcedure/getById/{id}")
@@ -5911,6 +5923,13 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
     public ResponseEntity<ApiResponse<MasOtChecklistResponse>> changeOtChecklistStatus(
             @PathVariable Long checklistId, @RequestParam String status) {
         return ResponseEntity.ok(masOtChecklistService.changeStatus(checklistId, status));
+    }
+
+    //----------------------------MasBloodDiscardReason---------------------------------------------//
+
+    @GetMapping("/discard-reason/getAll/{flag}")
+    public ResponseEntity<?> getMasBloodDiscardReasons(@PathVariable int flag) {
+        return ResponseEntity.ok(masBloodDiscardReasonService.getAllReasons(flag));
     }
 
 }
