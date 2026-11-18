@@ -216,4 +216,7 @@ public final class ReportConstants {
 
     public static final String WARD_OT_JASPER = "Ward_ot_blood_usage";
     public static final String WARD_OT_REPORT = "WardOtBloodUsage";
+
+    public static final String DISCARD_ANALYSIS_JASPER = "";
+    public static final String DISCARD_ANALYSIS_REPORT = "";
 }
