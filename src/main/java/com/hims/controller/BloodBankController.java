@@ -2,30 +2,36 @@ package com.hims.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hims.projection.BloodComponentIssueProjection;
 import com.hims.request.*;
 import com.hims.response.*;
 import com.hims.service.BloodBankService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
 @Tag(name = "BloodBankController", description = "This controller is used for Blood Bank Related task.")
 @RequestMapping("/bloodBank")
 @Slf4j
+@RequiredArgsConstructor
 public class BloodBankController {
 
-    @Autowired
-    private BloodBankService bloodBankService;
+    private final BloodBankService bloodBankService;
+
 
     /**
      * Registers a new blood donor with personal, screening, and donation details.
@@ -389,6 +395,249 @@ public class BloodBankController {
             @PathVariable Long bloodInventoryId
             ) {
         return ResponseEntity.ok(bloodBankService.isCrossMatchFailedPreviously(patientId, bloodInventoryId));
+    }
+
+
+    @GetMapping("/stocks")
+    public ResponseEntity<?> getAvailableInventoryStocks(
+
+            @RequestParam(required = false) Long bloodGroupId,
+            @RequestParam(required = false) Long componentId,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate toDate
+    ) {
+
+        return ResponseEntity.ok(
+                bloodBankService.getAvailableInventoryStocks(
+                        bloodGroupId,
+                        componentId,
+                        fromDate,
+                        toDate
+                )
+        );
+    }
+
+    @GetMapping("/stock-detail")
+    public ResponseEntity<?> getBloodInventoryStockDetail(
+
+            @RequestParam(defaultValue =  "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) Long bloodGroupId,
+            @RequestParam(required = false) Long componentId,
+            @RequestParam(required = false) Long inventoryStatusId,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate toDate
+    ) {
+
+        return ResponseEntity.ok(
+                bloodBankService.getBloodInventoryStockDetail(
+                        page,
+                        size,
+                        bloodGroupId,
+                        componentId,
+                        inventoryStatusId,
+                        fromDate,
+                        toDate
+                )
+        );
+    }
+
+    @GetMapping("/stock-summary")
+    public ResponseEntity<?> getBloodInventoryStockSummary(
+
+            @RequestParam(defaultValue =  "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(required = false) Long bloodGroupId,
+            @RequestParam(required = false) Long componentId,
+            @RequestParam(required = false) Long inventoryStatusId,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate toDate
+    ) {
+
+        return ResponseEntity.ok(
+                bloodBankService.getBloodInventoryStockSummary(
+                        page,
+                        size,
+                        bloodGroupId,
+                        componentId,
+                        inventoryStatusId,
+                        fromDate,
+                        toDate
+                )
+        );
+    }
+
+    @GetMapping("/component-wise-stock")
+    public ResponseEntity<?> getComponentWiseStockReport(
+
+            @RequestParam(defaultValue = "0") Long componentId,
+
+            @RequestParam(defaultValue = "0") Long bloodGroupId,
+
+            @RequestParam(defaultValue = "0") Long filterStatusId,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate toDate,
+
+            @RequestParam(defaultValue = "0") int page,
+
+            @RequestParam(defaultValue = "5") int size
+    ) {
+
+
+        return ResponseEntity.ok(bloodBankService.getComponentWiseStockReport(
+                    page,
+                    size,
+                    componentId == 0 ? null : componentId,
+                    bloodGroupId == 0 ? null : bloodGroupId,
+                    filterStatusId == 0 ? null : filterStatusId,
+                    fromDate,
+                    toDate
+            )
+        );
+    }
+
+    @GetMapping("/component-expiry")
+    public ResponseEntity<?> getBloodComponentExpiryReport(
+
+            @RequestParam(defaultValue =  "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate expiryFromDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate expiryToDate,
+
+            @RequestParam(required = false)
+            Long componentId,
+
+            @RequestParam(required = false)
+            Long bloodGroupId,
+
+            @RequestParam(required = false, defaultValue = "1")
+            Long inventoryStatus
+    ) {
+            return ResponseEntity.ok(bloodBankService.getBloodComponentExpiryReport(
+                    page,
+                    size,
+                    expiryFromDate,
+                    expiryToDate,
+                    componentId,
+                    bloodGroupId,
+                    inventoryStatus
+            )
+        );
+    }
+
+    @GetMapping("/donor-deferral")
+    public ResponseEntity<?> getDonorDeferralReport(
+
+            @RequestParam(required = false)
+            String search,
+
+            @RequestParam(required = false)
+            String deferralType,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate toDate,
+
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @RequestParam(defaultValue = "5")
+            int size
+    ) {
+
+
+
+                return ResponseEntity.ok(bloodBankService.getDonorDeferralReport(
+                        page,
+                        size,
+                        search,
+                        deferralType,
+                        fromDate,
+                        toDate
+                )
+        );
+    }
+
+    @GetMapping("/ot-usage")
+    public ApiResponse<Page<BloodComponentIssueProjection>> getBloodComponentIssueReport(
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate issueFromDate,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate issueToDate,
+
+            @RequestParam(required = false)
+            Long wardId,
+
+            @RequestParam(required = false)
+            Long componentId,
+
+            @RequestParam(required = false)
+            Long bloodGroupId,
+
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @RequestParam(defaultValue = "5")
+            int size
+    ) {
+
+
+
+        return bloodBankService.getBloodComponentIssueReport(
+                page,
+                size,
+                issueFromDate,
+                issueToDate,
+                wardId,
+                componentId,
+                bloodGroupId
+        );
+    }
+
+    @PostMapping("/discard")
+    public ResponseEntity<?> discardBloodComponents(
+            @RequestBody List<BloodComponentDiscardRequest> requests) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(bloodBankService.discardBloodComponents(requests));
     }
 
 }

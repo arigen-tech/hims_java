@@ -1,15 +1,16 @@
 package com.hims.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.constants.AppConstants;
 import com.hims.entity.OpdPatientDentalSummary;
 import com.hims.entity.OpdToothPatientCondition;
 import com.hims.entity.Patient;
 import com.hims.entity.Visit;
 import com.hims.entity.repository.*;
+import com.hims.exception.SDDException;
 import com.hims.request.DentalDetailsRequest;
 import com.hims.request.DentalExaminationRequest;
-import com.hims.response.ApiResponse;
-import com.hims.response.UserContext;
+import com.hims.response.*;
 import com.hims.service.DentalService;
 import com.hims.service.UserContextService;
 import com.hims.utils.AuthUtil;
@@ -18,10 +19,16 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -35,6 +42,8 @@ public class DentalServiceImpl implements DentalService {
     private final MasToothConditionRepository masToothConditionRepository;
 
     private final AuthUtil authUtil;
+
+    private final ProcedureSessionRepository procedureSessionRepository;
 
     @Autowired
     private UserContextService userContextService;
@@ -199,6 +208,109 @@ public class DentalServiceImpl implements DentalService {
         }
         log.info("Dental details saved successfully for patientId={}, visitId={}", patientId, visitId);
         return ResponseUtils.createSuccessResponse("Dental details saved successfully", null);
+    }
+
+    @Override
+    public ApiResponse<Page<DentalSummaryResponse>> getPreviousDentalDetails(Long patientId,int page,int size) {
+        try {
+            log.info("getPreviousDentalDetails method started for patientId={}", patientId);
+            Pageable pageable= PageRequest.of(page, size);
+            Page<DentalSummaryResponse> response=dentalSummaryRepository.findByPatientId(patientId,pageable);
+            log.info("getPreviousDentalDetails method ended for patientId={}", patientId);
+
+            return  ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        }catch (SDDException e) {
+            log.error("Error getPreviousDentalDetails for patientId={}", patientId, e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {},
+                    e.getMessage(),
+                    HttpStatus.BAD_REQUEST.value());
+        }catch (Exception e) {
+            log.error("Error getPreviousDentalDetails for patientId={}", patientId, e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    new TypeReference<>() {
+                    },
+                    "An unexpected error occurred while retrieving previous dental details.",
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+    }
+
+    public ApiResponse<Page<DentalProcedureHistoryResponse>> getDentalProcedureHistory(Long patientId, int page, int size) {
+
+        try {
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Long> idPage = dentalProcedureToothRepository.findProcedureDtIdsByPatient(patientId, pageable);
+
+        if (idPage.isEmpty()) {
+            return ResponseUtils.createSuccessResponse(
+                    new PageImpl<>(Collections.emptyList(), pageable, idPage.getTotalElements()),
+                    new TypeReference<>() {});
+        }
+
+        List<DentalProcedureHistoryRow> rows =
+                dentalProcedureToothRepository.findDentalProcedureHistoryRowsByDtIds(idPage.getContent());
+
+
+        Map<Long, DentalProcedureHistoryResponse> resultMap = new HashMap<>();
+        Map<Long, Set<String>> teethMap = new HashMap<>();
+
+        for (DentalProcedureHistoryRow row : rows) {
+            DentalProcedureHistoryResponse resp = resultMap.get(row.getProcedureDtId());
+            if (resp == null) {
+                resp = new DentalProcedureHistoryResponse();
+                resp.setProcedureDtId(row.getProcedureDtId());
+                resp.setProcedureHdId(row.getProcedureHdId());
+                resp.setProcedureName(row.getProcedureName());
+                resp.setAdvisedBy(row.getAdvisedBy());
+                resp.setAdvisedDate(row.getAdvisedDate());
+                resp.setPlannedSittings(row.getPlannedSittings());
+                resp.setCompletedSittings(row.getCompletedSittings());
+                resp.setStatus(row.getStatus());
+                resp.setFirstSittingDate(row.getFirstSittingDate());
+                resultMap.put(row.getProcedureDtId(), resp);
+                teethMap.put(row.getProcedureDtId(), new LinkedHashSet<>());
+            }
+            if (row.getTeethNumber() != null) {
+                teethMap.get(row.getProcedureDtId()).add(row.getTeethNumber());
+            }
+        }
+
+        List<DentalProcedureHistoryResponse> content = new ArrayList<>();
+        for (Long dtId : idPage.getContent()) {
+            DentalProcedureHistoryResponse resp = resultMap.get(dtId);
+            if (resp != null) {
+                resp.setTeethNumber(String.join(",", teethMap.get(dtId)));
+                content.add(resp);
+            }
+        }
+
+        return ResponseUtils.createSuccessResponse(
+                new PageImpl<>(content, pageable, idPage.getTotalElements()),
+                new TypeReference<>() {});
+      }catch (Exception e) {
+        log.error("Error getPreviousDentalDetails for patientId={}", patientId, e);
+        return ResponseUtils.createFailureResponse(
+                null,
+                new TypeReference<>() {
+                },
+                "An unexpected error occurred while retrieving previous dental details.",
+                HttpStatus.INTERNAL_SERVER_ERROR.value());
+     }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<List<ProcedureSessionHistoryResponse>> getProcedureSessionHistory(
+            Long procedureDtId) {
+
+        return ResponseUtils.createSuccessResponse(
+                procedureSessionRepository.findSessionHistoryByProcedureDtId(procedureDtId),
+                new TypeReference<>() {}
+        );
     }
 
 

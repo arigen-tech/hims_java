@@ -2,7 +2,9 @@ package com.hims.entity.repository;
 
 import com.hims.entity.MasProcedure;
 import com.hims.projection.MasProcedureProjection;
+import com.hims.response.MasProcedureResponse;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Range;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -184,4 +186,16 @@ public interface MasProcedureRepository extends JpaRepository<MasProcedure, Long
             @Param("search") String search, Pageable pageable);
 
 
+
+    @Query("""
+    SELECT mp
+    FROM MasProcedure mp
+    WHERE LOWER(mp.status) = LOWER(:status)
+      AND mp.procedureType.department.id = :departmentId
+    """)
+    Page<MasProcedure> findByStatusAndDepartmentId(
+            @Param("status") String status,
+            @Param("departmentId") Long departmentId,
+            Pageable pageable
+    );
 }
