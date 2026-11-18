@@ -495,7 +495,8 @@ public class OtServiceImpl implements OtService {
         String value = checklistStatus.trim();
         if ("Y".equalsIgnoreCase(value) || "COMPLETED".equalsIgnoreCase(value) || "DONE".equalsIgnoreCase(value)) return "Y";
         if ("N".equalsIgnoreCase(value) || "PENDING".equalsIgnoreCase(value)) return "N";
-        throw new IllegalArgumentException("checklistStatus must be ALL, Y/N, Pending or Completed");
+        if ("D".equalsIgnoreCase(value) || "DRAFT".equalsIgnoreCase(value)) return "D";
+        throw new IllegalArgumentException("checklistStatus must be ALL, Y/N/D, Pending or Completed");
     }
 
     @Override
