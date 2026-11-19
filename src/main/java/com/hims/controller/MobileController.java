@@ -1,218 +1,100 @@
 package com.hims.controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.hims.entity.Patient;
-import com.hims.entity.PatientLogin;
-import com.hims.entity.repository.PatientLoginRepository;
-import com.hims.entity.repository.PatientRepository;
-import com.hims.jwt.JwtHelper;
 import com.hims.projection.PatientVisitStatusCountProjection;
-import com.hims.request.LoginRequest;
-import com.hims.request.OtpRequest;
-import com.hims.request.ForgotPatientPasswordRequest;
-import com.hims.request.PatientPasswordLoginRequest;
-import com.hims.request.ResetPatientPasswordRequest;
-import com.hims.request.RefreshTokenRequest;
+import com.hims.request.*;
 import com.hims.response.*;
-import com.hims.service.MasEmployeeService;
-import com.hims.service.BillingService;
-import com.hims.service.AuthService;
-import com.hims.service.MobileLoginService;
-import com.hims.service.PatientPasswordService;
-import com.hims.utils.ResponseUtils;
+import com.hims.service.MobileService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @RestController
 @Tag(name = "MobileController", description = "This controller is used for any ")
 @RequestMapping("/mobileController")
-@Slf4j
 @RequiredArgsConstructor
 public class MobileController {
-
-    
-    private final MobileLoginService mobileLoginService;
-    
-    private final JwtHelper jwtUtil;
-    
-    private final MasEmployeeService masEmployeeService;
-    
-    private final BillingService billingService;
-
-    private final AuthService authService;
-    
-    private final PatientLoginRepository patientLoginRepository;
-    private final PatientRepository patientRepository;
-    private final PatientPasswordService patientPasswordService;
-
-    @Value("${sms.otp.base-url}${sms.otp.verify-path}")
-    private String otpVerifyUrl;
-
-
-
+    private final MobileService mobileService;
 
     @PostMapping("/mLogin")
-    public ResponseEntity<ApiResponse> loginResponse(@RequestBody LoginRequest request) {
-        return new ResponseEntity<>(mobileLoginService.loginRequest(request), HttpStatus.OK);
+    public ResponseEntity<ApiResponse<MobileLoginResponce>> loginResponse(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(mobileService.login(request));
     }
 
     @PostMapping("/patientPasswordLogin")
-    public ApiResponse<AuthResponse> patientPasswordLogin(
-            @RequestBody @Valid PatientPasswordLoginRequest request) {
-        return patientPasswordService.login(request);
+    public ApiResponse<AuthResponse> patientPasswordLogin(@RequestBody @Valid PatientPasswordLoginRequest request) {
+        return mobileService.passwordLogin(request);
     }
 
     @PostMapping("/forgotPatientPassword")
-    public ApiResponse<MobileLoginResponce> forgotPatientPassword(
-            @RequestBody @Valid ForgotPatientPasswordRequest request) {
-        return patientPasswordService.requestPasswordReset(request);
+    public ApiResponse<MobileLoginResponce> forgotPatientPassword(@RequestBody @Valid ForgotPatientPasswordRequest request) {
+        return mobileService.forgotPassword(request);
     }
 
     @PostMapping("/resetPatientPassword")
-    public ApiResponse<String> resetPatientPassword(
-            @RequestBody @Valid ResetPatientPasswordRequest request) {
-        return patientPasswordService.resetPassword(request);
+    public ApiResponse<String> resetPatientPassword(@RequestBody @Valid ResetPatientPasswordRequest request) {
+        return mobileService.resetPassword(request);
     }
 
     @PostMapping("/switchPatient")
-    public ApiResponse<AuthResponse> switchPatient(
-            @RequestParam Long patientId,
-            @RequestParam String mobileNumber) {
-        return mobileLoginService.switchPatient(patientId, mobileNumber);
+    public ApiResponse<AuthResponse> switchPatient(@RequestParam Long patientId, @RequestParam String mobileNumber) {
+        return mobileService.switchPatient(patientId, mobileNumber);
     }
 
     @PutMapping("/patientInactive/{patientId}")
     public ApiResponse<String> patientInactive(@PathVariable Long patientId) {
-        return mobileLoginService.deactivatePatient(patientId);
+        return mobileService.deactivatePatient(patientId);
+    }
+
+    @GetMapping("/patientsForActivation")
+    public ApiResponse<List<PatientIdResponse>> getPatientsForActivation(@RequestParam String mobileNo) {
+        return mobileService.getPatientsForActivation(mobileNo);
+    }
+
+    @PostMapping("/sendPatientActivationOtp")
+    public ApiResponse<MobileLoginResponce> sendPatientActivationOtp(
+            @RequestBody @Valid PatientActivationOtpRequest request) {
+        return mobileService.sendPatientActivationOtp(request);
+    }
+
+    @PostMapping("/verifyPatientActivationOtp")
+    public ApiResponse<String> verifyPatientActivationOtp(@RequestBody @Valid PatientActivationOtpRequest request) {
+        return mobileService.verifyPatientActivationOtp(request);
     }
 
     @PostMapping("/verifyOtp")
-    public ApiResponse<?>  verifyOtp(@RequestBody @Valid OtpRequest otpRequest) {
-        try {
-            List<PatientLogin> patientLoginList = patientLoginRepository.findByMobileNoOrderByPatientLoginIdDesc(
-                    otpRequest.getMobileNo()
-            ).stream().filter(this::isActivePatientLogin).toList();
-            if (patientLoginList.isEmpty()) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "No active patient is linked to this mobile number", HttpStatus.UNAUTHORIZED.value());
-            }
-            String otp = otpRequest.getOtp();
-            String sessionId = otpRequest.getSessionId();
-
-            String uri = otpVerifyUrl.replace("{sessionId}", sessionId).replace("{otp}", otp);
-
-            HttpResponse<String> response = Unirest.post(uri)
-                    .header("content-type", "application/x-www-form-urlencoded")
-                    .asString();
-
-            JSONObject json = new JSONObject(response.getBody());
-            String status = json.getString("Status");
-
-            //  Invalid OTP
-            if (!"Success".equalsIgnoreCase(status)) {
-                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
-                        "Invalid OTP", 400);
-            }
-
-            // OTP verified generate JWT
-                Long patientId = patientLoginList.stream()
-                    .map(PatientLogin::getPatientId)
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Patient not found for mobile number"));
-                String token = jwtUtil.mobileGenerateToken(otpRequest.getMobileNo(), patientId);
-                String refreshToken = jwtUtil.mobileGenerateRefreshToken(otpRequest.getMobileNo(), patientId);
-
-            AuthResponse authResponse = new AuthResponse();
-            List<PatientIdResponse> patientIdList = patientLoginList.stream()
-                    .map(pl -> {
-                        Patient patient = patientRepository.findById(pl.getPatientId()).orElse(null);
-                        if (patient == null) return null;
-                    return toPatientIdResponse(patient);
-                    })
-                    .toList();
-            authResponse.setPatientIdResponseList(patientIdList);
-            authResponse.setToken(token);
-            authResponse.setRefreshToken(refreshToken);
-            authResponse.setMessage("OTP verified successfully");
-            return ResponseUtils.createSuccessResponse( authResponse, new TypeReference<>() {});
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {}, "Unable to verify OTP Please try again.",
-                    HttpStatus.INTERNAL_SERVER_ERROR.value()
-            );
-        }
-    }
-
-    private boolean isActivePatientLogin(PatientLogin patientLogin) {
-        return patientLogin.getStatus() == null || !"N".equalsIgnoreCase(patientLogin.getStatus());
+    public ApiResponse<?> verifyOtp(@RequestBody @Valid OtpRequest request) {
+        return mobileService.verifyOtp(request);
     }
 
     @PostMapping("/refreshToken")
     public ApiResponse<?> refreshToken(@RequestBody @Valid RefreshTokenRequest request) {
-        return authService.refreshToken(request);
+        return mobileService.refreshToken(request);
     }
 
-    private PatientIdResponse toPatientIdResponse(Patient patient) {
-            PatientIdResponse patientResponse = new PatientIdResponse();
-            patientResponse.setPatientId(patient.getId());
-            String fullName = Stream.of(patient.getPatientFn(), patient.getPatientMn(), patient.getPatientLn())
-                .filter(Objects::nonNull)
-                .filter(name -> !name.trim().isEmpty())
-                .collect(Collectors.joining(" "));
-            patientResponse.setPatientName(fullName.isEmpty() ? null : fullName);
-            patientResponse.setAge(patient.getPatientAge());
-            patientResponse.setGender(patient.getPatientGender() != null
-                ? patient.getPatientGender().getGenderName() : null);
-            patientResponse.setPatientPhoneNumber(patient.getPatientMobileNumber());
-            patientResponse.setRelation(patient.getPatientRelation() != null
-                ? patient.getPatientRelation().getRelationName() : null);
-            return patientResponse;
-            }
-    private ResponseEntity<ApiResponse> createErrorResponse(String message) {
-        return ResponseEntity.badRequest().body(new ApiResponse("error", message, null));
-    }
     @GetMapping("/searchBySpecialityAndDoctor")
     public ApiResponse<List<SpecialitiesAndDoctorResponse>> searchBySpecialityAndDoctor(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long hospitalId) {
-        return masEmployeeService.getDepartmentAndDoctor(search, hospitalId);
+        return mobileService.searchBySpecialityAndDoctor(search, hospitalId);
     }
+
     @GetMapping("/getAllDoctorBySpecialityWise")
-    public ApiResponse<List<SpecialityResponse>> getAllDoctorBySpecialityWise(@RequestParam(required = false) Long specialityId) {
-        return masEmployeeService.getSpecialityAndDoctor(specialityId);
+    public ApiResponse<List<SpecialityResponse>> getAllDoctorBySpecialityWise(
+            @RequestParam(required = false) Long specialityId) {
+        return mobileService.getAllDoctorBySpecialityWise(specialityId);
     }
+
     @GetMapping("/getDoctorDetailById")
     public ApiResponse<DoctorDetailResponse> getDoctorDetailById(@RequestParam(required = false) Long doctorId) {
-       return masEmployeeService.getDoctor(doctorId);
+        return mobileService.getDoctorDetailById(doctorId);
     }
-    /**
-     * Fetches appointment history for a patient.
-     *
-     * @param hospitalId Hospital ID (required)
-     * @param patientId Patient ID (optional if mobileNo provided)
-     * @param mobileNo Mobile number (optional if patientId provided)
-     * @param deptTypeCode Department type code(s), comma-separated when multiple types are needed
-     * @param includeAllHistory true (default) = all appointments (past + future), false = only future appointments
-    * @param visitStatus Visit status code(s): c (cancelled), y (completed), n (pending), x (closed); comma-separated
-     * @return Appointment history based on flag
-     */
+
     @GetMapping("/getAppointmentHistoryList")
     public ApiResponse<List<AppointmentBookingHistoryResponseDetails>> getAppointmentHistoryList(
             @RequestParam Long hospitalId,
@@ -223,17 +105,15 @@ public class MobileController {
             @RequestParam(required = false) String deptTypeCode,
             @RequestParam(required = false, defaultValue = "true") Boolean includeAllHistory,
             @RequestParam(required = false) String payment,
-            @RequestParam(required = false) String visitStatus
-    ) {
-        String resolvedPatientName = patientName != null ? patientName : name;
-        return masEmployeeService.appointmentHistoryList(hospitalId, patientId, mobileNo, resolvedPatientName, deptTypeCode, includeAllHistory, payment, visitStatus);
+            @RequestParam(required = false) String visitStatus) {
+        return mobileService.getAppointmentHistoryList(hospitalId, patientName, name, patientId, mobileNo,
+                deptTypeCode, includeAllHistory, payment, visitStatus);
     }
 
     @GetMapping("/getPatientVisitStatusCounts")
     public ApiResponse<PatientVisitStatusCountProjection> getPatientVisitStatusCounts(
-            @RequestParam Long hospitalId,
-            @RequestParam Long patientId) {
-        return masEmployeeService.getPatientVisitStatusCounts(hospitalId, patientId);
+            @RequestParam Long hospitalId, @RequestParam Long patientId) {
+        return mobileService.getPatientVisitStatusCounts(hospitalId, patientId);
     }
 
     @GetMapping("/getCancelledRefundAppointments")
@@ -243,10 +123,6 @@ public class MobileController {
             @RequestParam Long patientId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        log.info("Fetching cancelled refund appointments: hospitalId={}, departmentType={}, patientId={}, page={}, size={}",
-                hospitalId, departmentType, patientId, page, size);
-        return billingService.getMobileCancelledRefundAppointments(
-                hospitalId, departmentType, patientId, page, size);
+        return mobileService.getCancelledRefundAppointments(hospitalId, departmentType, patientId, page, size);
     }
-
 }

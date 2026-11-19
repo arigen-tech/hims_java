@@ -10,4 +10,5 @@ public class PatientIdResponse {
     private String age;
     private String gender;
     private String relation;
+    private String status;
 }

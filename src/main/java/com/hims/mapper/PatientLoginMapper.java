@@ -1,6 +1,7 @@
 package com.hims.mapper;
 
 import com.hims.entity.Patient;
+import com.hims.entity.PatientLogin;
 import com.hims.response.PatientIdResponse;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +25,13 @@ public class PatientLoginMapper {
         response.setGender(patient.getPatientGender() == null ? null : patient.getPatientGender().getGenderName());
         response.setPatientPhoneNumber(patient.getPatientMobileNumber());
         response.setRelation(patient.getPatientRelation() == null ? null : patient.getPatientRelation().getRelationName());
+        return response;
+    }
+
+    public PatientIdResponse toPatientIdResponse(Patient patient, PatientLogin login) {
+        PatientIdResponse response = toPatientIdResponse(patient);
+        response.setStatus(login.getStatus() == null || !"N".equalsIgnoreCase(login.getStatus())
+                ? "ACTIVE" : "INACTIVE");
         return response;
     }
 }
