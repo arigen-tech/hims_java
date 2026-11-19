@@ -28,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -59,6 +60,9 @@ public class MobileController {
     private final PatientLoginRepository patientLoginRepository;
     private final PatientRepository patientRepository;
     private final PatientPasswordService patientPasswordService;
+
+    @Value("${sms.otp.base-url}${sms.otp.verify-path}")
+    private String otpVerifyUrl;
 
 
 
@@ -111,8 +115,7 @@ public class MobileController {
             String otp = otpRequest.getOtp();
             String sessionId = otpRequest.getSessionId();
 
-            String uri = "https://2factor.in/API/V1/999a2629-21e1-11ec-a13b-0200cd936042/SMS/VERIFY/"
-                    + sessionId + "/" + otp;
+            String uri = otpVerifyUrl.replace("{sessionId}", sessionId).replace("{otp}", otp);
 
             HttpResponse<String> response = Unirest.post(uri)
                     .header("content-type", "application/x-www-form-urlencoded")

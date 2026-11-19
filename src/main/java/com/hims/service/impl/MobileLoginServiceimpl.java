@@ -41,8 +41,12 @@ public class MobileLoginServiceimpl implements MobileLoginService {
     private PatientLoginRepository patientLoginRepository;
     @Autowired
     private PatientRepository patientRepository;
-    @Value("${sms.login.otp.url}")
-    private String loginOtpUrl;
+    @Value("${sms.otp.base-url}")
+    private String otpBaseUrl;
+    @Value("${sms.otp.send-path}")
+    private String otpSendPath;
+    @Value("${sms.otp.template.login}")
+    private String loginOtpTemplate;
     @Autowired
     private JwtHelper jwtHelper;
 
@@ -134,7 +138,9 @@ public class MobileLoginServiceimpl implements MobileLoginService {
             Long mobile = Long.valueOf(request.getMobileNo());
 
             try {
-                String uri = loginOtpUrl.replace("{mobile}", mobile.toString());
+                String uri = otpBaseUrl + otpSendPath
+                        .replace("{mobile}", mobile.toString())
+                        .replace("{template}", loginOtpTemplate);
 
                 HttpResponse<String> response = Unirest.post(uri).asString();
                 JSONObject jsonObject = new JSONObject(response.getBody());
