@@ -42,10 +42,12 @@ public class PatientPasswordServiceImpl implements PatientPasswordService {
     @Override
     @Transactional
     public ApiResponse<AuthResponse> login(PatientPasswordLoginRequest request) {
-        List<PatientLogin> logins = patientLoginRepository
-                .findByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo()).stream()
-                .filter(this::isActive).toList();
+        List<PatientLogin> allLogins = patientLoginRepository.findByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo());
+        List<PatientLogin> logins = allLogins.stream().filter(this::isActive).toList();
         if (logins.isEmpty()) {
+            if (!allLogins.isEmpty()) {
+                return failure("Patient is Currently Inactive", HttpStatus.FORBIDDEN);
+            }
             return failure("Invalid mobile number or password", HttpStatus.UNAUTHORIZED);
         }
 
@@ -67,12 +69,13 @@ public class PatientPasswordServiceImpl implements PatientPasswordService {
         AuthResponse response = new AuthResponse();
         response.setToken(jwtHelper.mobileGenerateToken(request.getMobileNo(), login.getPatientId()));
         response.setRefreshToken(jwtHelper.mobileGenerateRefreshToken(request.getMobileNo(), login.getPatientId()));
-        response.setPatientIdResponseList(logins.stream()
-                .map(PatientLogin::getPatientId)
-                .distinct()
-                .map(id -> patientRepository.findById(id).orElse(null))
-                .filter(p -> p != null)
-                .map(patientLoginMapper::toPatientIdResponse)
+        response.setPatientIdResponseList(allLogins.stream()
+                .collect(java.util.stream.Collectors.toMap(PatientLogin::getPatientId, loginRow -> loginRow,
+                        (first, ignored) -> first, java.util.LinkedHashMap::new))
+                .values().stream()
+                .map(loginRow -> patientRepository.findById(loginRow.getPatientId())
+                        .map(foundPatient -> patientLoginMapper.toPatientIdResponse(foundPatient, loginRow)).orElse(null))
+                .filter(patientResponse -> patientResponse != null)
                 .toList());
         response.setMessage("Login successful");
         return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});

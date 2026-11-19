@@ -24,6 +24,10 @@ public class OtBookingHistoryResponse {
     private String otName;
     private String pacRequired;
     private String pacDone;
+    private String isChecklistDone;
+    private LocalDate scheduledDate;
+    private LocalTime scheduledStartTime;
+    private LocalDateTime receivedTime;
     private LocalDateTime bookedDate;
     private String bookingNo;
     private Long primarySurgeonId;
@@ -36,6 +40,7 @@ public class OtBookingHistoryResponse {
 
     @Data
     public static class SurgeryDetail {
+        private Long otBookingId;
         private Long otBookingRequestDtId;
         private Long surgeryId;
         private String surgeryName;

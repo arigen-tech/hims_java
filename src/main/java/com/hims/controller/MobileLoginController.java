@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -40,6 +41,8 @@ public class MobileLoginController {
     private JwtHelper jwtUtil;
     @Autowired
     private PatientLoginRepository patientLoginRepository;
+    @Value("${sms.otp.base-url}${sms.otp.verify-path}")
+    private String otpVerifyUrl;
     @PostMapping("/mLogin")
     public ResponseEntity<ApiResponse>  loginResponse(@RequestBody LoginRequest request) {
         return new ResponseEntity<>(mobileLoginService.loginRequest(request), HttpStatus.OK);
@@ -50,8 +53,7 @@ public class MobileLoginController {
             String otp = otpRequest.getOtp();
             String sessionId = otpRequest.getSessionId();
 
-            String uri = "https://2factor.in/API/V1/999a2629-21e1-11ec-a13b-0200cd936042/SMS/VERIFY/"
-                    + sessionId + "/" + otp;
+            String uri = otpVerifyUrl.replace("{sessionId}", sessionId).replace("{otp}", otp);
 
             HttpResponse<String> response = Unirest.post(uri)
                     .header("content-type", "application/x-www-form-urlencoded")

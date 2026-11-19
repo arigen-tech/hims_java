@@ -6,6 +6,8 @@ import com.hims.request.OtTeamMemberRequest;
 import com.hims.request.OtBookingRescheduleRequest;
 import com.hims.request.OtBookingCancelRequest;
 import com.hims.request.OtPacAssessmentRequest;
+import com.hims.request.OtChecklistSubmitRequest;
+import com.hims.request.PatientConsentRequest;
 import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ActiveAdmissionResponse;
 import com.hims.response.ApiResponse;
@@ -16,8 +18,12 @@ import com.hims.response.OtDashboardResponse;
 import com.hims.response.OtDepartmentResponse;
 import com.hims.response.PacPendingResponse;
 import com.hims.response.OtPacAssessmentResponse;
+import com.hims.response.OtChecklistSubmitResponse;
+import com.hims.response.PatientConsentResponse;
 import com.hims.service.OtService;
 import com.hims.service.OtPacAssessmentService;
+import com.hims.service.OtChecklistSubmissionService;
+import com.hims.service.PatientConsentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -30,11 +36,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ContentDisposition;
+import org.springframework.core.io.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @Validated
@@ -46,6 +57,8 @@ public class OTController {
 
     private final OtService otService;
     private final OtPacAssessmentService otPacAssessmentService;
+    private final OtChecklistSubmissionService otChecklistSubmissionService;
+    private final PatientConsentService patientConsentService;
 
 
     @GetMapping("/activeAdmissionList")
@@ -113,6 +126,17 @@ public class OTController {
         ApiResponse<Page<OtBookingHistoryResponse>> response =
                 otService.getPatientReceiptList(search, departmentId, page, size);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/patientReceivedInOtList")
+    @Operation(summary = "Get paginated OT checklist list for patients received in OT")
+    public ResponseEntity<ApiResponse<Page<OtBookingHistoryResponse>>> getPatientReceivedInOtList(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Positive Long departmentId,
+            @RequestParam(required = false) String checklistStatus,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size) {
+        return ResponseEntity.ok(otService.getPatientReceivedInOtList(search, departmentId, checklistStatus, page, size));
     }
 
     @GetMapping("/dashboard")
@@ -213,6 +237,56 @@ public class OTController {
     @GetMapping("/pacAssessment/booking/{otBookingId}")
     public ResponseEntity<ApiResponse<OtPacAssessmentResponse>> getPacAssessmentByBooking(@PathVariable @Positive Long otBookingId) {
         return ResponseEntity.ok(otPacAssessmentService.getByBookingId(otBookingId));
+    }
+
+    @PostMapping("/submitOtChecklist")
+    @Operation(summary = "Save an OT checklist as draft or submit it as completed")
+    public ResponseEntity<ApiResponse<OtChecklistSubmitResponse>> submitOtChecklist(
+            @Valid @RequestBody OtChecklistSubmitRequest request) {
+        return ResponseEntity.ok(otChecklistSubmissionService.submit(request));
+    }
+
+    @GetMapping("/getOtChecklist/{otBookingId}")
+    @Operation(summary = "Get saved OT checklists by OT booking ID")
+    public ResponseEntity<ApiResponse<List<OtChecklistSubmitResponse>>> getOtChecklistByBookingId(
+            @PathVariable @Positive Long otBookingId) {
+        return ResponseEntity.ok(otChecklistSubmissionService.getByBookingId(otBookingId));
+    }
+
+    @GetMapping("/inpatient/{inpatientId}/surgeries")
+    @Operation(summary = "Get surgeries for an inpatient with an active OT booking status")
+    public ResponseEntity<ApiResponse<List<OtBookingHistoryResponse.SurgeryDetail>>> getSurgeriesByInpatientId(
+            @PathVariable @Positive Long inpatientId) {
+        return ResponseEntity.ok(otService.getSurgeriesByInpatientId(inpatientId));
+    }
+
+    @PostMapping(value = "/patientConsent", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload a patient consent document")
+    public ResponseEntity<ApiResponse<PatientConsentResponse>> uploadPatientConsent(
+            @Valid @ModelAttribute PatientConsentRequest request) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(patientConsentService.upload(request));
+    }
+
+    @GetMapping("/patientConsent")
+    @Operation(summary = "Get patient consents by admission ID and/or OT booking ID")
+    public ResponseEntity<ApiResponse<List<PatientConsentResponse>>> getPatientConsents(
+            @RequestParam(required = false) @Positive Long admissionId,
+            @RequestParam(required = false) @Positive Long otBookingId) {
+        return ResponseEntity.ok(patientConsentService.getConsents(admissionId, otBookingId));
+    }
+
+    @GetMapping("/patientConsent/document/{patientConsentId}")
+    @Operation(summary = "Open an uploaded patient consent document")
+    public ResponseEntity<Resource> openPatientConsentDocument(
+            @PathVariable @Positive Long patientConsentId) {
+        PatientConsentService.PatientConsentFile file = patientConsentService.getDocument(patientConsentId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
+                        .filename(file.fileName(), StandardCharsets.UTF_8).build().toString())
+                .header("X-Content-Type-Options", "nosniff")
+                .body(file.resource());
     }
 
 }

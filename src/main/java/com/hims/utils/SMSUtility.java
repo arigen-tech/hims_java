@@ -21,8 +21,14 @@ public class SMSUtility {
     @Value("${sms.api.url}")
     private String smsApiUrl;
 
-    @Value("${sms.otp.url}")
-    private String smsOtpUrl;
+    @Value("${sms.otp.base-url}")
+    private String otpBaseUrl;
+
+    @Value("${sms.otp.send-path}")
+    private String otpSendPath;
+
+    @Value("${sms.otp.verify-path}")
+    private String otpVerifyPath;
 
     @Value("${sms.api.key}")
     private String smsApiKey;
@@ -121,28 +127,20 @@ public class SMSUtility {
     }
 
     public String sendOtp(String mobile, SMSTemplate smsTemplate) {
+        return sendOtp(mobile, smsTemplate.getTemplateName(), smsTemplate.getDescription());
+    }
+
+    public String sendOtp(String mobile, String templateName, String description) {
 
         try {
 
-            StringBuilder uri = new StringBuilder(smsOtpUrl);
-            uri.append(URLEncoder.encode(
-                            smsApiKey,
-                            StandardCharsets.UTF_8
-                    ))
-                    .append("/SMS/")
-                    .append(URLEncoder.encode(
-                            mobile,
-                            StandardCharsets.UTF_8)
-                    )
-                    .append("/AUTOGEN/")
-                    .append(URLEncoder.encode(
-                            smsTemplate.getTemplateName(),
-                            StandardCharsets.UTF_8
-                    ));
+            String uri = otpBaseUrl + otpSendPath
+                    .replace("{mobile}", URLEncoder.encode(mobile, StandardCharsets.UTF_8))
+                    .replace("{template}", URLEncoder.encode(templateName, StandardCharsets.UTF_8));
 
-            log.info("send otp uri :: {}",uri);
+            log.info("Sending {} OTP to mobile: {}", description, mobile);
 
-            HttpResponse<String> response = Unirest.post(uri.toString()).asString();
+            HttpResponse<String> response = Unirest.post(uri).asString();
 
             JSONObject jsonObject = new JSONObject(response.getBody());
 
@@ -151,19 +149,19 @@ public class SMSUtility {
 
                 log.error(
                         "Failed to send {} OTP to mobile: {}. Response: {}",
-                        smsTemplate.getDescription(),
+                        description,
                         mobile,
                         response.getBody()
                 );
 
-                throw  new RuntimeException( "Failed to send "+ smsTemplate.getDescription()+" OTP to mobile: "+mobile+". Response: "+response.getBody());
+                throw  new RuntimeException( "Failed to send "+ description+" OTP to mobile: "+mobile+". Response: "+response.getBody());
             }
 
             String sessionId = jsonObject.getString("Details");
 
             log.info(
                     "{} OTP sent successfully to mobile: {}",
-                    smsTemplate.getDescription(),
+                    description,
                     mobile
             );
 
@@ -173,7 +171,7 @@ public class SMSUtility {
 
             log.error(
                     "Error while sending {} OTP to mobile: {}",
-                    smsTemplate.getDescription(),
+                    description,
                     mobile,
                     e
             );
@@ -186,22 +184,12 @@ public class SMSUtility {
 
                 try {
 
-                    StringBuilder uri = new StringBuilder(smsOtpUrl);
-                    uri.append(URLEncoder.encode(
-                            smsApiKey,
-                            StandardCharsets.UTF_8
-                    ))
-                            .append("/SMS/VERIFY/")
-                            .append(URLEncoder.encode(sessionId,
-                                    StandardCharsets.UTF_8
-                            ))
-                            .append("/")
-                            .append( URLEncoder.encode(otp,
-                                    StandardCharsets.UTF_8
-                            ));
+                    String uri = otpBaseUrl + otpVerifyPath
+                            .replace("{sessionId}", URLEncoder.encode(sessionId, StandardCharsets.UTF_8))
+                            .replace("{otp}", URLEncoder.encode(otp, StandardCharsets.UTF_8));
 
 
-                    log.info("Otp verify Uri :: ",uri);
+                    log.info("Verifying OTP for sessionId: {}", sessionId);
 
                     HttpResponse<String> response = Unirest.post(uri.toString())
                             .header(

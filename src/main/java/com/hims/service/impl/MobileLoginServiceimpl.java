@@ -8,18 +8,21 @@ import com.hims.entity.repository.PatientRepository;
 import com.hims.exception.SDDException;
 import com.hims.jwt.JwtHelper;
 import com.hims.request.LoginRequest;
+import com.hims.request.PatientActivationOtpRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.AuthResponse;
 import com.hims.response.MobileLoginResponce;
 import com.hims.response.PatientIdResponse;
 import com.hims.service.MobileLoginService;
 import com.hims.utils.ResponseUtils;
+import com.hims.utils.SMSUtility;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.stereotype.Service;
@@ -40,6 +43,16 @@ public class MobileLoginServiceimpl implements MobileLoginService {
     private PatientLoginRepository patientLoginRepository;
     @Autowired
     private PatientRepository patientRepository;
+    @Autowired
+    private SMSUtility smsUtility;
+    @Value("${sms.otp.base-url}")
+    private String otpBaseUrl;
+    @Value("${sms.otp.send-path}")
+    private String otpSendPath;
+    @Value("${sms.otp.template.login}")
+    private String loginOtpTemplate;
+    @Value("${sms.otp.template.account-activation}")
+    private String accountActivationOtpTemplate;
     @Autowired
     private JwtHelper jwtHelper;
 
@@ -90,6 +103,55 @@ public class MobileLoginServiceimpl implements MobileLoginService {
         return ResponseUtils.createSuccessResponse("Patient login deactivated successfully", new TypeReference<>() {});
     }
 
+    @Override
+    @Transactional
+    public ApiResponse<MobileLoginResponce> sendPatientActivationOtp(PatientActivationOtpRequest request) {
+        PatientLogin login = patientLoginRepository.findByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo())
+                .stream().filter(row -> row.getPatientId().equals(request.getPatientId())).findFirst().orElse(null);
+        if (login == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Patient is not linked to this mobile number", HttpStatus.NOT_FOUND.value());
+        }
+        if (isActive(login)) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Patient is already active", HttpStatus.BAD_REQUEST.value());
+        }
+        try {
+            MobileLoginResponce response = new MobileLoginResponce();
+            response.setMobileNo(request.getMobileNo());
+            response.setSessionId(smsUtility.sendOtp(request.getMobileNo(), accountActivationOtpTemplate,
+                    "Account Activation"));
+            response.setMessage("OTP sent successfully");
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Unable to send patient activation OTP for patientId={}", request.getPatientId(), e);
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Unable to send OTP. Please try again.", HttpStatus.BAD_GATEWAY.value());
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> verifyPatientActivationOtp(PatientActivationOtpRequest request) {
+        PatientLogin login = patientLoginRepository.findByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo())
+                .stream().filter(row -> row.getPatientId().equals(request.getPatientId())).findFirst().orElse(null);
+        if (login == null) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Patient is not linked to this mobile number", HttpStatus.NOT_FOUND.value());
+        }
+        if (isActive(login)) {
+            return ResponseUtils.createSuccessResponse("Patient is already active", new TypeReference<>() {});
+        }
+        if (request.getSessionId() == null || request.getOtp() == null
+                || !smsUtility.verifyOtp(request.getSessionId(), request.getOtp())) {
+            return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                    "Invalid or expired OTP", HttpStatus.BAD_REQUEST.value());
+        }
+        login.setStatus("Y");
+        patientLoginRepository.save(login);
+        return ResponseUtils.createSuccessResponse("Patient activated successfully", new TypeReference<>() {});
+    }
+
     private boolean isActive(PatientLogin login) {
         return login.getStatus() == null || !"N".equalsIgnoreCase(login.getStatus());
     }
@@ -109,6 +171,7 @@ public class MobileLoginServiceimpl implements MobileLoginService {
         patientResponse.setPatientPhoneNumber(patient.getPatientMobileNumber());
         patientResponse.setRelation(patient.getPatientRelation() != null
             ? patient.getPatientRelation().getRelationName() : null);
+        patientResponse.setStatus("ACTIVE");
         return patientResponse;
     }
 
@@ -118,10 +181,13 @@ public class MobileLoginServiceimpl implements MobileLoginService {
 
         MobileLoginResponce res = new MobileLoginResponce();
         try {
-            List<PatientLogin> patientLoginList = patientLoginRepository.findByMobileNoOrderByPatientLoginIdDesc(
-                            request.getMobileNo()
-                    ).stream().filter(this::isActive).toList();
-            if (patientLoginList == null || patientLoginList.isEmpty()) {
+            List<PatientLogin> allPatientLogins = patientLoginRepository.findByMobileNoOrderByPatientLoginIdDesc(request.getMobileNo());
+            List<PatientLogin> patientLoginList = allPatientLogins.stream().filter(this::isActive).toList();
+            if (patientLoginList.isEmpty() && !allPatientLogins.isEmpty()) {
+                return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
+                        "Patient is Currently Inactive", HttpStatus.FORBIDDEN.value());
+            }
+            if (patientLoginList.isEmpty()) {
                 return ResponseUtils.createFailureResponse(null, new TypeReference<>() {},
                         "Mobile number not registered",
                         HttpStatus.NOT_FOUND.value()
@@ -131,7 +197,9 @@ public class MobileLoginServiceimpl implements MobileLoginService {
             Long mobile = Long.valueOf(request.getMobileNo());
 
             try {
-                String uri = "https://2factor.in/API/V1/999a2629-21e1-11ec-a13b-0200cd936042/SMS/"+ mobile +"/AUTOGEN/ARIHLT_LOGINOTP";
+                String uri = otpBaseUrl + otpSendPath
+                        .replace("{mobile}", mobile.toString())
+                        .replace("{template}", loginOtpTemplate);
 
                 HttpResponse<String> response = Unirest.post(uri).asString();
                 JSONObject jsonObject = new JSONObject(response.getBody());

@@ -21,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class MasOtChecklistServiceImpl implements MasOtChecklistService {
@@ -69,6 +70,15 @@ public class MasOtChecklistServiceImpl implements MasOtChecklistService {
         if (flag != 0 && flag != 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Flag must be 0 or 1");
         Page<MasOtChecklistResponse> result = repository.search(flag, normalize(stage), normalize(name), PageRequest.of(page, size))
                 .map(MasOtChecklistMapper::toResponse);
+        return ResponseUtils.createSuccessResponse(result, new TypeReference<>() {});
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<MasOtChecklistResponse>> getAll(int flag, String stage, String name) {
+        if (flag != 0 && flag != 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Flag must be 0 or 1");
+        List<MasOtChecklistResponse> result = repository.searchAll(flag, normalize(stage), normalize(name))
+                .stream().map(MasOtChecklistMapper::toResponse).toList();
         return ResponseUtils.createSuccessResponse(result, new TypeReference<>() {});
     }
 
