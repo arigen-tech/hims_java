@@ -372,6 +372,9 @@ public class MasterController {
     @Autowired
     private MasOtChecklistService masOtChecklistService;
 
+    @Autowired
+    private MasConsentTypeService masConsentTypeService;
+
 
     //    ================================Mas Application Controller================================//
 
@@ -5914,6 +5917,44 @@ public ResponseEntity<ApiResponse<PackageRateConfigResponse>> savePackageRateCon
     public ResponseEntity<ApiResponse<MasOtChecklistResponse>> changeOtChecklistStatus(
             @PathVariable Long checklistId, @RequestParam String status) {
         return ResponseEntity.ok(masOtChecklistService.changeStatus(checklistId, status));
+    }
+
+    //======================================= Consent Type ========================================
+
+    @PostMapping("/consentType/create")
+    public ResponseEntity<ApiResponse<MasConsentTypeResponse>> createConsentType(
+            @Valid @RequestBody MasConsentTypeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(masConsentTypeService.create(request));
+    }
+
+    @PutMapping("/consentType/update/{id}")
+    public ResponseEntity<ApiResponse<MasConsentTypeResponse>> updateConsentType(
+            @PathVariable Long id, @Valid @RequestBody MasConsentTypeRequest request) {
+        return ResponseEntity.ok(masConsentTypeService.update(id, request));
+    }
+
+    @GetMapping("/consentType/getById/{id}")
+    public ResponseEntity<ApiResponse<MasConsentTypeResponse>> getConsentTypeById(@PathVariable Long id) {
+        return ResponseEntity.ok(masConsentTypeService.getById(id));
+    }
+
+    @GetMapping("/consentType/getAll/{flag}")
+    public ResponseEntity<?> getAllConsentTypes(
+            @PathVariable int flag,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        if ((page == null) != (size == null) || (page != null && (page < 0 || size <= 0))) {
+            return ResponseEntity.badRequest().body("Provide both page and size; page must be >= 0 and size must be > 0");
+        }
+        if (page == null) return ResponseEntity.ok(masConsentTypeService.getAll(flag, search));
+        return ResponseEntity.ok(masConsentTypeService.getAll(flag, search, page, size));
+    }
+
+    @PutMapping("/consentType/status/{id}")
+    public ResponseEntity<ApiResponse<MasConsentTypeResponse>> changeConsentTypeStatus(
+            @PathVariable Long id, @RequestParam String status) {
+        return ResponseEntity.ok(masConsentTypeService.changeStatus(id, status));
     }
 
 }

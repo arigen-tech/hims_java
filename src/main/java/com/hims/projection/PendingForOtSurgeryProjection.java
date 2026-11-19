@@ -1,6 +1,8 @@
 package com.hims.projection;
 public interface PendingForOtSurgeryProjection {
 
+    Long getOtBookingId();
+
     Long getOtBookingDtId();
 
     Long getOtBookingRequestId();

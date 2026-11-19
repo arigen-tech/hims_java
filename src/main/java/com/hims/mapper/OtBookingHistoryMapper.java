@@ -15,6 +15,7 @@ public interface OtBookingHistoryMapper {
     OtBookingHistoryResponse toResponse(OtBookingHistoryProjection projection);
 
     @Mapping(target = "otBookingRequestDtId", source = "otBookingDtId")
+    @Mapping(target = "otBookingId", source = "otBookingId")
     @Mapping(target = "surgeryTypeId", source = "surgeryTypeId")
     @Mapping(target = "surgeryTypeName", source = "surgeryTypeName")
     @Mapping(target = "surgeryLevel", source = "surgeryLevel")

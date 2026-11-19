@@ -490,6 +490,16 @@ public class OtServiceImpl implements OtService {
         return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
     }
 
+    @Override
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public ApiResponse<List<OtBookingHistoryResponse.SurgeryDetail>> getSurgeriesByInpatientId(Long inpatientId) {
+        List<OtBookingHistoryResponse.SurgeryDetail> surgeries = dtRepository
+                .findSurgeriesByInpatientIdAndAllowedBookingStatus(inpatientId).stream()
+                .map(otBookingHistoryMapper::toSurgeryResponse)
+                .toList();
+        return ResponseUtils.createSuccessResponse(surgeries, new TypeReference<>() {});
+    }
+
     private String normalizeChecklistStatus(String checklistStatus) {
         if (checklistStatus == null || checklistStatus.isBlank() || "ALL".equalsIgnoreCase(checklistStatus)) return null;
         String value = checklistStatus.trim();

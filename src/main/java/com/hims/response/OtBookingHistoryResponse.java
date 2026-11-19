@@ -40,6 +40,7 @@ public class OtBookingHistoryResponse {
 
     @Data
     public static class SurgeryDetail {
+        private Long otBookingId;
         private Long otBookingRequestDtId;
         private Long surgeryId;
         private String surgeryName;
