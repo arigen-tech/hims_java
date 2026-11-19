@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 
 import org.springframework.stereotype.Service;
@@ -40,6 +41,8 @@ public class MobileLoginServiceimpl implements MobileLoginService {
     private PatientLoginRepository patientLoginRepository;
     @Autowired
     private PatientRepository patientRepository;
+    @Value("${sms.login.otp.url}")
+    private String loginOtpUrl;
     @Autowired
     private JwtHelper jwtHelper;
 
@@ -131,7 +134,7 @@ public class MobileLoginServiceimpl implements MobileLoginService {
             Long mobile = Long.valueOf(request.getMobileNo());
 
             try {
-                String uri = "https://2factor.in/API/V1/999a2629-21e1-11ec-a13b-0200cd936042/SMS/"+ mobile +"/AUTOGEN/ARIHLT_LOGINOTP";
+                String uri = loginOtpUrl.replace("{mobile}", mobile.toString());
 
                 HttpResponse<String> response = Unirest.post(uri).asString();
                 JSONObject jsonObject = new JSONObject(response.getBody());
