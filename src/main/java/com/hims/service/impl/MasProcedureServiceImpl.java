@@ -220,6 +220,22 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         return ResponseUtils.createSuccessResponse(toResponse(repository.findProcedureViewById(saved.getProcedureId()).orElseThrow()), new TypeReference<>() {});
     }
 
+    @Override
+    public ApiResponse<Page<MasProcedureResponse>> getAllProceduresWrtDept(
+            Long departmentId,
+            int page,
+            int size
+
+    ){
+      return ResponseUtils.createSuccessResponse(repository.findByStatusAndDepartmentId(
+              AppConstants.STATUS_Y,
+              departmentId,
+              PageRequest.of(page,size))
+              .map(this::mapEntityToResponse),
+              new TypeReference<>() {}
+      );
+    }
+
     private Optional<MasProcedureType> findProcedureType(Long procedureTypeId) {
         return procedureTypeId == null ? Optional.empty() : procedureTypeRepository.findById(procedureTypeId);
     }
@@ -265,6 +281,22 @@ public class MasProcedureServiceImpl implements MasProcedureService {
         res.setIsNursing(p.getIsNursing());
         res.setProcedureTypeId(p.getProcedureTypeId());
         res.setProcedureTypeName(p.getProcedureTypeName());
+
+        return res;
+    }
+
+    private MasProcedureResponse mapEntityToResponse(MasProcedure p) {
+
+        MasProcedureResponse res = new MasProcedureResponse();
+
+        res.setProcedureId(p.getProcedureId());
+        res.setProcedureCode(p.getProcedureCode());
+        res.setProcedureName(p.getProcedureName());
+        res.setStatus(p.getStatus());
+
+        res.setOpdAllowed(p.getOpdAllowed());
+        res.setIpdAllowed(p.getIpdAllowed());
+        res.setIsNursing(p.getIsNursing());
 
         return res;
     }

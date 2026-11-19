@@ -2118,16 +2118,16 @@ public class ReportController {
 
     @GetMapping(value = "/bloodDonorDeferral", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<?> viewPrintDonorDeferralReport(
-            @RequestParam (required = false) Long donorId,
+            @RequestParam (required = false) String donorCode,
+            @RequestParam (required = false) String name,
             @RequestParam (required = false) String deferralType,
             @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
             @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
             @RequestParam String flag) {
 
-        Long safeDonorId = donorId != null ? donorId: 0L;
-
         Map<String, Object> params = new HashMap<>();
-        params.put("donor_id", safeDonorId);
+        params.put("donor_code", donorCode);
+        params.put("name", name);
         params.put("deferral_type", deferralType);
         params.put("from_date", fromDate);
         params.put("to_date", toDate);

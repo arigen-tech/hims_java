@@ -39,10 +39,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.Period;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -65,6 +67,7 @@ public class BloodBankServiceImpl implements BloodBankService {
     private MasDistrictRepository masDistrictRepository;
     @Autowired
     private AuthUtil authUtil;
+
     @Autowired
     private UserContextService userContextService;
     @Autowired
@@ -91,6 +94,12 @@ public class BloodBankServiceImpl implements BloodBankService {
     private TransactionSequenceService transactionSequenceService;
     @Autowired
     private BloodRequestDtAllocationRepository bloodRequestDtAllocationRepository;
+
+    @Autowired
+    private BloodComponentDiscardRepository discardRepository;
+
+    @Autowired
+    private MasBloodDiscardReasonRepository discardReasonRepository;
     @Autowired
     private MasWardRepository masWardRepository;
     @Value("${bloodDonationStatusCollected}")
@@ -109,7 +118,7 @@ public class BloodBankServiceImpl implements BloodBankService {
     private int passDays;
     @Value("${inventoryStatusAvailable}")
     private Long inventoryStatusAvailable;
-    @Value(("${inventoryStatusAllocated}"))
+    @Value("${inventoryStatusAllocated}")
     private Long inventoryStatusAllocated;
     @Value("${blood.request.status.requested}")
     private Long requestedStatusId;
@@ -125,6 +134,9 @@ public class BloodBankServiceImpl implements BloodBankService {
     private Long crossmatchCompletedStatusId;
     @Value("${inventoryStatusReserved}")
     private Long inventoryStatusReserved;
+
+    @Value("${inventoryStatusExpired}")
+    private Long inventoryStatusExpired;
     @Value("${inventoryStatusIssued}")
     private Long inventoryStatusIssued;
     @Value("${blood.request.status.rejected}")
@@ -135,6 +147,9 @@ public class BloodBankServiceImpl implements BloodBankService {
 
     @Value("${blood.request.status.partially.issued}")
     private Long bloodRequestStatusPartiallyIssued;
+
+    @Value("${inventoryStatusDiscarded}")
+    private Long inventoryStatusDiscarded;
 
     @Autowired
     private BloodComponentInventoryRepository bloodComponentInventoryRepository;
@@ -1915,4 +1930,530 @@ public class BloodBankServiceImpl implements BloodBankService {
     private List<BloodTrackingStatusMaster> getTrackingStatusByStatusCodeIn(List<String> statusCodes) {
         return bloodTrackingStatusMasterRepository.findByStatusCodeInIgnoreCase(statusCodes);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<BloodInventoryStockDetailResponse>> getBloodInventoryStockDetail(
+            int page,
+            int size,
+            Long bloodGroupId,
+            Long componentId,
+            Long inventoryStatusId,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+        try {
+            log.info("Fetching blood inventory stock detail with parameters - page: {}, size: {}, bloodGroupId: {}, componentId: {}, inventoryStatusId: {}, fromDate: {}, toDate: {}",
+                    page, size, bloodGroupId, componentId, inventoryStatusId, fromDate, toDate);
+
+            Pageable pageable = PageRequest.of(page, size);
+
+            return ResponseUtils.createSuccessResponse(
+                    bloodDonationDtRepository.getBloodInventoryStockDetail(
+                            bloodGroupId,
+                            componentId,
+                            inventoryStatusId,
+                            fromDate,
+                            toDate,
+                            pageable
+                    ),
+                    new TypeReference<>() {});
+
+        }catch (Exception e){
+            log.error("Error while fetching blood inventory stock detail", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    "Failed to fetch blood inventory stock detail: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<BloodInventoryStockSummaryResponse>> getBloodInventoryStockSummary(
+            int page,
+            int size,
+            Long bloodGroupId,
+            Long componentId,
+            Long inventoryStatusId,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+        try {
+
+            log.info("Fetching blood inventory stock summary with parameters - page: {}, size: {}, bloodGroupId: {}, componentId: {}, inventoryStatusId: {}, fromDate: {}, toDate: {}",
+                    page, size, bloodGroupId, componentId, inventoryStatusId, fromDate, toDate);
+
+            Pageable pageable = PageRequest.of(page, size);
+
+            return ResponseUtils.createSuccessResponse(
+                    bloodDonationDtRepository.getBloodInventoryStockSummary(
+                            bloodGroupId,
+                            componentId,
+                            inventoryStatusId,
+                            fromDate,
+                            toDate,
+                            pageable
+                    ),
+                    new TypeReference<>() {});
+
+        }catch (Exception e) {
+            log.error("Error while fetching blood inventory stock summary", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    "Failed to fetch blood inventory stock summary: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+
+    }
+
+    @Override
+    public ApiResponse<Page<ComponentWiseStockProjection>> getComponentWiseStockReport(
+            int page,
+            int size,
+            Long componentId,
+            Long bloodGroupId,
+            Long filterStatusId,
+            LocalDate fromDate,
+            LocalDate toDate
+            ) {
+
+        try {
+            log.info("Fetching component wise stock report with parameters - page: {}, size: {}, componentId: {}, bloodGroupId: {}, filterStatusId: {}, fromDate: {}, toDate: {}",
+                    page, size, componentId, bloodGroupId, filterStatusId, fromDate, toDate);
+            if (fromDate != null && toDate != null
+                    && fromDate.isAfter(toDate)) {
+                throw new SDDException(
+                        "date validation",
+                        HttpStatus.BAD_REQUEST.value(),
+                        "From date cannot be greater than To date"
+                );
+            }
+            Pageable pageable = PageRequest.of(page, size);
+
+            return ResponseUtils.createSuccessResponse(bloodComponentInventoryRepository
+                    .getComponentWiseStockReport(
+                            componentId,
+                            bloodGroupId,
+                            filterStatusId,
+                            inventoryStatusAvailable,
+                            inventoryStatusReserved,
+                            inventoryStatusAllocated,
+                            inventoryStatusExpired,
+                            fromDate,
+                            toDate,
+                            pageable
+                    ), new TypeReference<>() {}
+            );
+        }catch (SDDException e) {
+            log.error("Validation error while fetching component wise stock report", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    e.getMessage(),
+                    e.getStatus()
+            );
+        } catch (Exception e) {
+            log.error("Error while fetching component wise stock report", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    "Failed to fetch component wise stock report: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<BloodComponentExpiryProjection>> getBloodComponentExpiryReport(
+            int page,
+            int size,
+            LocalDate expiryFromDate,
+            LocalDate expiryToDate,
+            Long componentId,
+            Long bloodGroupId,
+            Long inventoryStatus
+            ) {
+
+        try {
+            log.info("Fetching blood component expiry report with parameters - page: {}, size: {}, expiryFromDate: {}, expiryToDate: {}, componentId: {}, bloodGroupId: {}, inventoryStatus: {}",
+                    page, size, expiryFromDate, expiryToDate, componentId, bloodGroupId, inventoryStatus);
+
+            if (expiryFromDate != null && expiryToDate != null
+                    && expiryFromDate.isAfter(expiryToDate)) {
+                throw new SDDException(
+                        "date validation",
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Expiry From date cannot be greater than Expiry To date"
+                );
+            }
+                Pageable pageable= PageRequest.of(page,size);
+                Page<BloodComponentExpiryProjection > result =
+                        bloodComponentInventoryRepository.findBloodComponentExpiryReport(
+                                expiryFromDate,
+                                expiryToDate,
+                                componentId,
+                                bloodGroupId,
+                                inventoryStatus,
+                                pageable
+                        );
+
+
+                return ResponseUtils.createSuccessResponse(result, new TypeReference<>() {});
+        }catch (SDDException e) {
+            log.error("Validation error while fetching blood component expiry report", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    e.getMessage(),
+                    e.getStatus()
+            );
+        } catch (Exception e) {
+            log.error("Error while fetching blood component expiry report", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    "Failed to fetch blood component expiry report: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<BloodDonorDeferralProjection>> getDonorDeferralReport(
+            int page,
+            int size,
+            String search,
+            String deferralType,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+        try {
+            log.info("Fetching donor deferral report with parameters - page: {}, size: {}, search: {}, deferralType: {}, fromDate: {}, toDate: {}",
+                    page, size, search, deferralType, fromDate, toDate);
+            if (fromDate != null && toDate != null
+                    && fromDate.isAfter(toDate)) {
+                throw new IllegalArgumentException(
+                        "From date cannot be greater than To date"
+                );
+            }
+            if (search != null && search.isBlank()) {
+                search = null;
+            }
+
+            if (deferralType != null && !deferralType.isBlank()) {
+                deferralType = deferralType.trim().toLowerCase();
+
+                if (!deferralType.equalsIgnoreCase("T") && !deferralType.equalsIgnoreCase("P")) {
+                    throw new SDDException(
+                            "deferral type",
+                            HttpStatus.BAD_REQUEST.value(),
+                            "Invalid deferral type. Allowed values are T or P"
+                    );
+                }
+            } else {
+                deferralType = null;
+            }
+
+            if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
+                throw new SDDException(
+                        "date validation",
+                        HttpStatus.BAD_REQUEST.value(),
+                        "From date cannot be greater than To date"
+                );
+            }
+
+            Pageable pageable = PageRequest.of(page, size);
+
+            Page<BloodDonorDeferralProjection> result =
+                    bloodDonorScreeningRepository.getDonorDeferralReport(
+                            search,
+                            deferralType,
+                            fromDate,
+                            toDate,
+                            pageable
+                    );
+
+            return ResponseUtils.createSuccessResponse(result, new TypeReference<>() {});
+        }catch (SDDException e) {
+            log.error("Validation error while fetching blood component expiry report", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    e.getMessage(),
+                    e.getStatus()
+            );
+        } catch (Exception e) {
+            log.error("Error while logging parameters for donor deferral report", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    "Failed to fetch blood component expiry report: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+
+    }
+
+    @Override
+    public ApiResponse<Page<BloodComponentIssueProjection>> getBloodComponentIssueReport(int page, int size, LocalDate issueFromDate, LocalDate issueToDate, Long wardId, Long componentId, Long bloodGroupId) {
+
+        try {
+            log.info("Fetching blood component issue report with parameters - page: {}, size: {}, issueFromDate: {}, issueToDate: {}, wardId: {}, componentId: {}, bloodGroupId: {}",
+                    page, size, issueFromDate, issueToDate, wardId, componentId, bloodGroupId);
+            Pageable pageable = PageRequest.of(page, size);
+
+            if (issueFromDate != null && issueToDate != null
+                    && issueFromDate.isAfter(issueToDate)) {
+                throw new SDDException(
+                        "date validation",
+                        HttpStatus.BAD_REQUEST.value(),
+                        "From date cannot be greater than To date"
+                );
+            }
+
+            LocalDateTime fromDateTime = issueFromDate != null
+                    ? issueFromDate.atStartOfDay()
+                    : null;
+
+            LocalDateTime toDateTime = issueToDate != null
+                    ? issueToDate.atTime(LocalTime.MAX)
+                    : null;
+
+            Page<BloodComponentIssueProjection> response =
+                    bloodRequestDtRepository.getBloodComponentIssueReport(
+                            bloodRequestStatusIssued,
+                            fromDateTime,
+                            toDateTime,
+                            wardId,
+                            componentId,
+                            bloodGroupId,
+                            pageable
+                    );
+
+            return ResponseUtils.createSuccessResponse(response, new TypeReference<>() {});
+        }catch (SDDException e) {
+            log.error("Validation error while fetching blood component expiry report", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    e.getMessage(),
+                    e.getStatus()
+            );
+        }catch (Exception e) {
+            log.error("Error while logging parameters for blood component issue report", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    "Failed to fetch blood component issue report: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+
+
+    }
+
+    @Override
+    public ApiResponse<List<BloodInventoryAvailableStockResponse>> getAvailableInventoryStocks(
+            Long bloodGroupId,
+            Long componentId,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+
+        try {
+
+            log.info("Fetching blood component with available with parameters - componentId: {}, bloodGroupId: {}, FromDate: {},  ToDate: {},",
+                    componentId, bloodGroupId,fromDate,toDate);
+
+            if (fromDate != null && toDate != null
+                    && fromDate.isAfter(toDate)) {
+                throw new SDDException(
+                        "date validation",
+                        HttpStatus.BAD_REQUEST.value(),
+                        "From date cannot be greater than To date"
+                );
+            }
+            return ResponseUtils.createSuccessResponse(bloodDonationDtRepository.getAvailableInventoryStocks(
+                    bloodGroupId,
+                    componentId,
+                    inventoryStatusAvailable,
+                    fromDate,
+                    toDate
+            ), new TypeReference<>() {});
+        }catch (SDDException e) {
+            log.error("Validation error while fetching blood component expiry report", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    e.getMessage(),
+                    e.getStatus()
+            );
+        }catch (Exception e) {
+            log.error("Error while logging parameters for blood component issue report", e);
+            return ResponseUtils.createFailureResponse(
+                    null,
+                    "Failed to fetch blood component issue report: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiResponse<List<Long>> discardBloodComponents(
+            List<BloodComponentDiscardRequest> requests) {
+
+        try {
+            if (requests == null || requests.isEmpty()) {
+                throw new SDDException(
+                        "requests",
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Please provide at least one inventory record."
+                );
+            }
+
+            // 1. Validate request fields and duplicate inventory IDs
+
+            Set<Long> inventoryIds = new HashSet<>();
+
+            for (BloodComponentDiscardRequest request : requests) {
+
+                if (request.getInventoryId() == null ||
+                        request.getDiscardReasonId() == null
+                ) {
+
+                    throw new SDDException(
+                            "request",
+                            HttpStatus.BAD_REQUEST.value(),
+                            "Inventory ID, discard reason ID are required."
+                    );
+                }
+
+                if (!inventoryIds.add(request.getInventoryId())) {
+                    throw new SDDException(
+                            "inventoryId",
+                            HttpStatus.BAD_REQUEST.value(),
+                            "Duplicate inventory ID found: " + request.getInventoryId()
+                    );
+                }
+            }
+
+
+
+            List<BloodComponentInventory> inventories =
+                    bloodComponentInventoryRepository.findAllById(inventoryIds);
+
+            Map<Long, BloodComponentInventory> inventoryMap =
+                    inventories.stream().collect(Collectors.toMap(
+                            BloodComponentInventory::getInventoryId,
+                            Function.identity()
+                    ));
+
+            if (inventoryMap.size() != inventoryIds.size()) {
+                throw new SDDException(
+                        "inventoryId",
+                        HttpStatus.NOT_FOUND.value(),
+                        "One or more blood inventory records were not found."
+                );
+            }
+
+            // 3. Check whether any inventory is already discarded
+
+            List<BloodComponentDiscard> existingDiscards =
+                    discardRepository.findAllByInventory_InventoryIdIn(
+                            new ArrayList<>(inventoryIds)
+                    );
+
+            if (!existingDiscards.isEmpty()) {
+                throw new SDDException(
+                        "inventoryId",
+                        HttpStatus.BAD_REQUEST.value(),
+                        "Some inventory records have already been discarded."
+                );
+            }
+
+            // 4. Fetch discarded inventory status (ID = 6)
+
+            MasBloodInventoryStatus discardedStatus =
+                    masBloodInventoryStatusRepository.findById(inventoryStatusDiscarded)
+                            .orElseThrow(() -> new SDDException(
+                                    "inventoryStatus",
+                                    HttpStatus.NOT_FOUND.value(),
+                                    "Discarded inventory status not found."
+                            ));
+
+            // 5. Fetch all discard reasons
+
+            Set<Long> reasonIds = requests.stream()
+                    .map(BloodComponentDiscardRequest::getDiscardReasonId)
+                    .collect(Collectors.toSet());
+
+            Map<Long, MasBloodDiscardReason> reasonMap =
+                    discardReasonRepository.findAllById(reasonIds)
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    MasBloodDiscardReason::getDiscardReasonId,
+                                    Function.identity()
+                            ));
+
+            if (reasonMap.size() != reasonIds.size()) {
+                throw new SDDException(
+                        "discardReasonId",
+                        HttpStatus.NOT_FOUND.value(),
+                        "One or more discard reasons were not found."
+                );
+            }
+
+
+            LocalDateTime currentDateTime = LocalDateTime.now();
+
+            List<BloodComponentDiscard> discardRecords = new ArrayList<>();
+
+            for (BloodComponentDiscardRequest request : requests) {
+
+                BloodComponentInventory inventory =
+                        inventoryMap.get(request.getInventoryId());
+
+                MasBloodDiscardReason reason =
+                        reasonMap.get(request.getDiscardReasonId());
+
+
+                inventory.setInventoryStatus(discardedStatus);
+
+
+                String currentUserFullName = userContextService.getCurrentUserContext().getUserFullName();
+
+                BloodComponentDiscard discard =
+                        BloodComponentDiscard.builder()
+                                .inventory(inventory)
+                                .discardReason(reason)
+                                .discardDatetime(currentDateTime)
+                                .discardedBy(currentUserFullName)
+                                .remarks(request.getRemarks())
+                                .status("Y")
+                                .createdDate(currentDateTime)
+                                .createdBy(currentUserFullName)
+                                .build();
+
+                discardRecords.add(discard);
+            }
+
+
+            List<BloodComponentDiscard> savedRecords =
+                    discardRepository.saveAll(discardRecords);
+
+
+            return ResponseUtils.createSuccessResponse(
+                    savedRecords.stream()
+                            .map(BloodComponentDiscard::getDiscardId)
+                            .toList(),
+                    new TypeReference<>() {
+                    });
+        }catch (Exception e){
+            log.info("Error in discardBloodComponents method for requests size {} ",requests.size(),e);
+            throw  new RuntimeException(e);
+        }
+
+
+    }
+
 }

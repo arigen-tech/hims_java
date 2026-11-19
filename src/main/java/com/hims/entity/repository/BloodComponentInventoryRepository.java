@@ -1,9 +1,8 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.BloodComponentInventory;
-import com.hims.projection.BloodInventoryProjection;
-import com.hims.projection.BloodStockDetailedProjection;
-import com.hims.projection.BloodStockSummaryProjection;
+import com.hims.projection.*;
+import com.hims.response.BloodComponentExpiryResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -288,4 +288,185 @@ public interface BloodComponentInventoryRepository extends JpaRepository<BloodCo
             @Param("status") String status,
             @Param("inventoryStatus") Long inventoryStatus
     );
+    @Query(
+            value = """
+        SELECT
+            mbc.component_code AS componentCode,
+            mbg.blood_group_name AS bloodGroupName,
+
+            COUNT(CASE
+                WHEN bci.inventory_status = :availableStatusId
+                THEN 1
+            END) AS availableUnits,
+
+            COUNT(CASE
+                WHEN bci.inventory_status = :reservedStatusId
+                THEN 1
+            END) AS reservedUnits,
+
+            COUNT(CASE
+                WHEN bci.inventory_status = :allocatedStatusId
+                THEN 1
+            END) AS allocatedUnits,
+
+            COUNT(CASE
+                WHEN bci.inventory_status = :expiredStatusId
+                THEN 1
+            END) AS expiredUnits
+
+        FROM blood_component_inventory bci
+
+        INNER JOIN mas_blood_group mbg
+            ON bci.blood_group_id = mbg.blood_group_id
+
+        INNER JOIN mas_blood_component mbc
+            ON bci.component_id = mbc.component_id
+
+        WHERE
+            (:bloodGroupId IS NULL OR bci.blood_group_id = :bloodGroupId)
+
+            AND (:componentId IS NULL OR bci.component_id = :componentId)
+
+            AND (:filterStatusId IS NULL OR bci.inventory_status = :filterStatusId)
+
+            AND (:fromDate IS NULL OR bci.expiry_date >= :fromDate)
+
+            AND (:toDate IS NULL OR bci.expiry_date <= :toDate)
+
+        GROUP BY
+            mbc.component_code,
+            mbg.blood_group_name
+
+        ORDER BY
+            mbc.component_code,
+            mbg.blood_group_name
+        """,
+            countQuery = """
+        SELECT COUNT(*)
+        FROM (
+            SELECT 1
+            FROM blood_component_inventory bci
+
+            INNER JOIN mas_blood_group mbg
+                ON bci.blood_group_id = mbg.blood_group_id
+
+            INNER JOIN mas_blood_component mbc
+                ON bci.component_id = mbc.component_id
+
+            WHERE
+                (:bloodGroupId IS NULL OR bci.blood_group_id = :bloodGroupId)
+
+                AND (:componentId IS NULL OR bci.component_id = :componentId)
+
+                AND (:filterStatusId IS NULL OR bci.inventory_status = :filterStatusId)
+
+                AND (:fromDate IS NULL OR bci.expiry_date >= :fromDate)
+
+                AND (:toDate IS NULL OR bci.expiry_date <= :toDate)
+
+            GROUP BY
+                mbc.component_code,
+                mbg.blood_group_name
+        ) report_count
+        """,
+            nativeQuery = true
+    )
+    Page<ComponentWiseStockProjection> getComponentWiseStockReport(
+
+            @Param("componentId") Long componentId,
+
+            @Param("bloodGroupId") Long bloodGroupId,
+
+            @Param("filterStatusId") Long filterStatusId,
+
+            @Param("availableStatusId") Long availableStatusId,
+
+            @Param("reservedStatusId") Long reservedStatusId,
+
+            @Param("allocatedStatusId") Long allocatedStatusId,
+
+            @Param("expiredStatusId") Long expiredStatusId,
+
+            @Param("fromDate") LocalDate fromDate,
+
+            @Param("toDate") LocalDate toDate,
+
+            Pageable pageable
+    );
+
+
+    @Query(
+            value = """
+        SELECT
+            bci.inventory_id AS "inventoryId",
+            bci.unit_no AS "unitNo",
+            mbc.component_code AS "componentCode",
+            mbc.component_name AS "componentName",
+            mbg.blood_group_name AS "bloodGroup",
+            bci.expiry_date AS "expiryDate",
+            (bci.expiry_date - CURRENT_DATE) AS "daysLeft",
+            mbis.status_code AS "inventoryStatus"
+
+        FROM blood_component_inventory bci
+
+        LEFT JOIN mas_blood_component mbc
+            ON mbc.component_id = bci.component_id
+
+        LEFT JOIN mas_blood_group mbg
+            ON mbg.blood_group_id = bci.blood_group_id
+
+        LEFT JOIN mas_blood_inventory_status mbis
+            ON mbis.inventory_status_id = bci.inventory_status
+
+        WHERE
+            (CAST(:expiryFromDate AS date) IS NULL
+                OR bci.expiry_date >= CAST(:expiryFromDate AS date))
+
+            AND (CAST(:expiryToDate AS date) IS NULL
+                OR bci.expiry_date <= CAST(:expiryToDate AS date))
+
+            AND (CAST(:componentId AS bigint) IS NULL
+                OR bci.component_id = CAST(:componentId AS bigint))
+
+            AND (CAST(:bloodGroupId AS bigint) IS NULL
+                OR bci.blood_group_id = CAST(:bloodGroupId AS bigint))
+
+            AND (CAST(:inventoryStatus AS bigint) IS NULL
+                OR bci.inventory_status = CAST(:inventoryStatus AS bigint))
+
+        ORDER BY bci.expiry_date ASC
+        """,
+
+            countQuery = """
+        SELECT COUNT(*)
+        FROM blood_component_inventory bci
+
+        WHERE
+            (CAST(:expiryFromDate AS date) IS NULL
+                OR bci.expiry_date >= CAST(:expiryFromDate AS date))
+
+            AND (CAST(:expiryToDate AS date) IS NULL
+                OR bci.expiry_date <= CAST(:expiryToDate AS date))
+
+            AND (CAST(:componentId AS bigint) IS NULL
+                OR bci.component_id = CAST(:componentId AS bigint))
+
+            AND (CAST(:bloodGroupId AS bigint) IS NULL
+                OR bci.blood_group_id = CAST(:bloodGroupId AS bigint))
+
+            AND (CAST(:inventoryStatus AS bigint) IS NULL
+                OR bci.inventory_status = CAST(:inventoryStatus AS bigint))
+        """,
+
+            nativeQuery = true
+    )
+    Page<BloodComponentExpiryProjection> findBloodComponentExpiryReport(
+            @Param("expiryFromDate") LocalDate expiryFromDate,
+            @Param("expiryToDate") LocalDate expiryToDate,
+            @Param("componentId") Long componentId,
+            @Param("bloodGroupId") Long bloodGroupId,
+            @Param("inventoryStatus") Long inventoryStatus,
+            Pageable pageable
+    );
+
 }

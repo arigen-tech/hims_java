@@ -20,4 +20,6 @@ public interface MasProcedureService {
     ApiResponse<MasProcedureResponse> updateMasProcedure(Long id, MasProcedureRequest request);
 
     ApiResponse<MasProcedureResponse> changeStatus(Long id, String status);
+
+    ApiResponse<Page<MasProcedureResponse>> getAllProceduresWrtDept(Long departmentId,int page,int size);
 }

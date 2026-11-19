@@ -3,7 +3,8 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Donor_deferral_history_report" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="1649d50f-ae11-48c9-ad25-001a1aeba687">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
 	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
-	<parameter name="donor_id" class="java.lang.Long"/>
+	<parameter name="donor_code" class="java.lang.String"/>
+	<parameter name="name" class="java.lang.String"/>
 	<parameter name="deferral_type" class="java.lang.String"/>
 	<parameter name="from_date" class="java.util.Date"/>
 	<parameter name="to_date" class="java.util.Date"/>
@@ -22,11 +23,13 @@
 	bds.created_by as screened_by
 from blood_donor bd
 inner join blood_donor_screening bds on bd.donor_id = bds.donor_id
-where (bd.donor_id = $P{donor_id} or $P{donor_id} = 0)
+where bds.deferral_type is not null 
+and ($P{donor_code} is null or bd.donor_code like $P{donor_code})
+and ($P{name} IS NULL OR CONCAT(bd.first_name, ' ', bd.last_name) ILIKE CONCAT('%', $P{name}, '%'))
 and (bds.deferral_type = $P{deferral_type} or $P{deferral_type} is null)
-and (bds.created_date >= $P{from_date} or $P{from_date} is null)
-and (bds.created_date <=$P{to_date} or $P{to_date} is null)
-order by bds.created_date desc]]>
+and (bds.deferral_upto_date >= $P{from_date} or $P{from_date} is null)
+and (bds.deferral_upto_date <=$P{to_date} or $P{to_date} is null)
+order by bds.screening_date desc, bds.screening_id desc]]>
 	</queryString>
 	<field name="donor_code" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="donor_code"/>

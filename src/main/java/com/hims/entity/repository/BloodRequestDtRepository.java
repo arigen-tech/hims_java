@@ -1,12 +1,15 @@
 package com.hims.entity.repository;
 
 import com.hims.entity.BloodRequestDt;
+import com.hims.projection.BloodComponentIssueProjection;
 import com.hims.projection.BloodTrackingProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDateTime;
 
 public interface BloodRequestDtRepository extends JpaRepository<BloodRequestDt, Long> {
 
@@ -424,5 +427,139 @@ AND
             @Param("crossmatchFailedStatusId") Long crossmatchFailedStatusId,
             @Param("rejectedStatusId") Long rejectedStatusId,
             Pageable pageable);
+
+
+    @Query(
+            value = """
+        SELECT
+            brd.request_dt_id AS "requestDtId",
+
+            mw.ward_name AS "wardName",
+
+            mbc.component_name AS "componentName",
+
+            mbc.component_code AS "componentCode",
+
+            mbg.blood_group_name AS "bloodGroup",
+
+            brd.fulfilled_units AS "unitsIssued",
+
+            brd.issued_date AS "issueDate",
+
+            brd.issued_by AS "issuedBy",
+
+            TRIM(CONCAT_WS(' ',
+                NULLIF(TRIM(p.p_fn), ''),
+                NULLIF(TRIM(p.p_mn), ''),
+                NULLIF(TRIM(p.p_ln), '')
+            )) AS "patientName"
+
+        FROM blood_request_dt brd
+
+        INNER JOIN blood_request_hd brh
+            ON brh.request_hd_id = brd.request_hd_id
+
+        INNER JOIN patient p
+            ON p.patient_id = brh.patient_id
+
+        LEFT JOIN mas_ward mw
+            ON mw.ward_id = brh.request_ward_id
+
+        INNER JOIN mas_blood_component mbc
+            ON mbc.component_id = brd.component_id
+
+        INNER JOIN mas_blood_group mbg
+            ON mbg.blood_group_id = brh.blood_group_id
+
+        WHERE
+            brd.tracking_status_id = :issuedTrackingStatusId
+
+            AND brd.issued_date IS NOT NULL
+
+            AND (
+                CAST(:issueFromDate AS timestamp) IS NULL
+                OR brd.issued_date >= :issueFromDate
+            )
+
+            AND (
+                CAST(:issueToDate AS timestamp) IS NULL
+                OR brd.issued_date <= :issueToDate
+            )
+
+            AND (
+                :wardId IS NULL
+                OR brh.request_ward_id = :wardId
+            )
+
+            AND (
+                :componentId IS NULL
+                OR brd.component_id = :componentId
+            )
+
+            AND (
+                :bloodGroupId IS NULL
+                OR brh.blood_group_id = :bloodGroupId
+            )
+
+        ORDER BY brd.issued_date DESC, brd.request_dt_id DESC
+        """,
+
+            countQuery = """
+        SELECT COUNT(*)
+
+        FROM blood_request_dt brd
+
+        INNER JOIN blood_request_hd brh
+            ON brh.request_hd_id = brd.request_hd_id
+
+        WHERE
+            brd.tracking_status_id = :issuedTrackingStatusId
+
+            AND brd.issued_date IS NOT NULL
+
+            AND (
+                CAST(:issueFromDate AS timestamp) IS NULL
+                OR brd.issued_date >= :issueFromDate
+            )
+
+            AND (
+                CAST(:issueToDate AS timestamp) IS NULL
+                OR brd.issued_date <= :issueToDate
+            )
+
+            AND (
+                :wardId IS NULL
+                OR brh.request_ward_id = :wardId
+            )
+
+            AND (
+                :componentId IS NULL
+                OR brd.component_id = :componentId
+            )
+
+            AND (
+                :bloodGroupId IS NULL
+                OR brh.blood_group_id = :bloodGroupId
+            )
+        """,
+
+            nativeQuery = true
+    )
+    Page<BloodComponentIssueProjection> getBloodComponentIssueReport(
+
+            @Param("issuedTrackingStatusId") Long issuedTrackingStatusId,
+
+            @Param("issueFromDate") LocalDateTime issueFromDate,
+
+            @Param("issueToDate") LocalDateTime issueToDate,
+
+            @Param("wardId") Long wardId,
+
+            @Param("componentId") Long componentId,
+
+            @Param("bloodGroupId") Long bloodGroupId,
+
+            Pageable pageable
+    );
 
 }

@@ -1,5 +1,6 @@
 package com.hims.service;
 
+import com.hims.projection.*;
 import com.hims.request.*;
 import com.hims.response.*;
 import org.springframework.data.domain.Page;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface BloodBankService {
@@ -73,4 +75,76 @@ public interface BloodBankService {
    ApiResponse<String> acknowledgeBloodRequest(BloodAcknowledgementRequest request);
 
     ApiResponse<Boolean> isCrossMatchFailedPreviously(Long patientId, Long bloodInventoryId);
+
+   ApiResponse<Page<BloodInventoryStockDetailResponse>> getBloodInventoryStockDetail(
+           int page,
+           int size,
+           Long bloodGroupId,
+           Long componentId,
+           Long inventoryStatusId,
+           LocalDate fromDate,
+           LocalDate toDate
+   );
+
+   ApiResponse<Page<BloodInventoryStockSummaryResponse>> getBloodInventoryStockSummary(
+           int page,
+           int size,
+           Long bloodGroupId,
+           Long componentId,
+           Long inventoryStatusId,
+           LocalDate fromDate,
+           LocalDate toDate
+   );
+
+
+   ApiResponse<Page<ComponentWiseStockProjection>> getComponentWiseStockReport(
+           int page,
+           int size,
+           Long componentId,
+           Long bloodGroupId,
+           Long filterStatusId,
+           LocalDate fromDate,
+           LocalDate toDate
+   );
+
+   ApiResponse<Page<BloodComponentExpiryProjection>> getBloodComponentExpiryReport(
+           int page,
+           int size,
+           LocalDate expiryFromDate,
+           LocalDate expiryToDate,
+           Long componentId,
+           Long bloodGroupId,
+           Long inventoryStatus
+   );
+
+   ApiResponse<Page<BloodDonorDeferralProjection>> getDonorDeferralReport(
+           int page,
+           int size,
+           String search,
+           String deferralType,
+           LocalDate fromDate,
+           LocalDate toDate
+   );
+
+   ApiResponse<Page<BloodComponentIssueProjection>> getBloodComponentIssueReport(
+           int page,
+           int size,
+           LocalDate issueFromDate,
+           LocalDate issueToDate,
+           Long wardId,
+           Long componentId,
+           Long bloodGroupId
+   );
+
+   ApiResponse<List<BloodInventoryAvailableStockResponse>> getAvailableInventoryStocks(
+           Long bloodGroupId,
+           Long componentId,
+           LocalDate fromDate,
+           LocalDate toDate
+   );
+
+
+   ApiResponse<List<Long>> discardBloodComponents(
+           List<BloodComponentDiscardRequest> requests
+   );
 }

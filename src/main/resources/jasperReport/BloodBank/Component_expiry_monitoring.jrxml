@@ -15,7 +15,10 @@
 	mbc.component_code,
 	mbg.blood_group_code,
 	bci.expiry_date,
-	(bci.expiry_date - current_date) as days_left,
+	CASE
+	    WHEN (bci.expiry_date - CURRENT_DATE) < 0 THEN 'EXPIRED'
+	    ELSE (bci.expiry_date - CURRENT_DATE)::text
+	END AS days_left,
 	mbis.status_code
 from blood_component_inventory bci
 inner join mas_blood_component mbc on bci.component_id = mbc.component_id
@@ -25,7 +28,8 @@ where ($P{from_date} is null or bci.expiry_date >= $P{from_date})
 and ($P{to_date} is null or bci.expiry_date <= $P{to_date})
 and (bci.component_id = $P{component_id} or $P{component_id} = 0)
 and (bci.blood_group_id = $P{blood_group_id} or $P{blood_group_id} = 0)
-and (bci.inventory_status = $P{inventory_status_id} or $P{inventory_status_id} = 0)]]>
+and (bci.inventory_status = $P{inventory_status_id} or $P{inventory_status_id} = 0)
+order by bci.expiry_date]]>
 	</queryString>
 	<field name="unit_no" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="unit_no"/>
@@ -47,7 +51,7 @@ and (bci.inventory_status = $P{inventory_status_id} or $P{inventory_status_id} =
 		<property name="com.jaspersoft.studio.field.label" value="expiry_date"/>
 		<property name="com.jaspersoft.studio.field.tree.path" value="blood_component_inventory"/>
 	</field>
-	<field name="days_left" class="java.lang.Integer">
+	<field name="days_left" class="java.lang.String">
 		<property name="com.jaspersoft.studio.field.name" value="days_left"/>
 		<property name="com.jaspersoft.studio.field.label" value="days_left"/>
 	</field>
@@ -66,24 +70,21 @@ and (bci.inventory_status = $P{inventory_status_id} or $P{inventory_status_id} =
 		<groupHeader>
 			<band height="68" splitType="Stretch">
 				<staticText>
-					<reportElement x="317" y="51" width="50" height="14" uuid="60a53c40-e265-4fd4-bdcf-ee6951c5ab6b"/>
+					<reportElement x="370" y="51" width="85" height="14" uuid="60a53c40-e265-4fd4-bdcf-ee6951c5ab6b"/>
 					<textElement>
 						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Days Left]]></text>
 				</staticText>
-				<line>
-					<reportElement key="line-35" x="462" y="47" width="1" height="20" uuid="e641571d-f813-4bd6-b945-8be5a78795ed"/>
-				</line>
 				<staticText>
-					<reportElement x="160" y="51" width="79" height="14" uuid="dbbdf643-e996-45c9-8031-4ee55b2caf79"/>
+					<reportElement x="182" y="51" width="79" height="14" uuid="dbbdf643-e996-45c9-8031-4ee55b2caf79"/>
 					<textElement>
 						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Component]]></text>
 				</staticText>
 				<line>
-					<reportElement key="line-35" x="314" y="47" width="1" height="20" uuid="9b0330a4-5adc-4164-b8b1-19d5d605fb60"/>
+					<reportElement key="line-35" x="367" y="47" width="1" height="20" uuid="9b0330a4-5adc-4164-b8b1-19d5d605fb60"/>
 				</line>
 				<staticText>
 					<reportElement x="3" y="51" width="31" height="14" uuid="6abb7297-b486-47cf-985e-acb15df5d3fb"/>
@@ -96,7 +97,7 @@ and (bci.inventory_status = $P{inventory_status_id} or $P{inventory_status_id} =
 					<reportElement x="0" y="67" width="555" height="1" uuid="84dbc41e-12a5-43ca-86d4-da8bce3fdc53"/>
 				</line>
 				<line>
-					<reportElement key="line-35" x="371" y="47" width="1" height="20" uuid="dc598dc3-ceb3-49f2-8dca-58d34faf8690"/>
+					<reportElement key="line-35" x="458" y="47" width="1" height="20" uuid="dc598dc3-ceb3-49f2-8dca-58d34faf8690"/>
 				</line>
 				<line>
 					<reportElement key="line-35" x="0" y="47" width="1" height="20" uuid="653ba2de-8940-4521-a748-f68409c38a75"/>
@@ -105,16 +106,7 @@ and (bci.inventory_status = $P{inventory_status_id} or $P{inventory_status_id} =
 					<reportElement x="0" y="47" width="555" height="1" uuid="1ec3a095-5a14-472b-adaf-838c63c08aa6"/>
 				</line>
 				<staticText>
-					<reportElement x="465" y="51" width="90" height="14" uuid="57cba08d-3daa-44e4-bebd-37083b03373f">
-						<property name="com.jaspersoft.studio.unit.height" value="px"/>
-					</reportElement>
-					<textElement>
-						<font fontName="DejaVu Sans Condensed" isBold="true"/>
-					</textElement>
-					<text><![CDATA[Storage Location]]></text>
-				</staticText>
-				<staticText>
-					<reportElement x="250" y="51" width="62" height="14" uuid="507cd674-9945-4082-bdc0-39883f54b8f0"/>
+					<reportElement x="281" y="51" width="79" height="14" uuid="507cd674-9945-4082-bdc0-39883f54b8f0"/>
 					<textElement>
 						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
@@ -124,17 +116,17 @@ and (bci.inventory_status = $P{inventory_status_id} or $P{inventory_status_id} =
 					<reportElement key="line-35" x="37" y="47" width="1" height="20" uuid="ea844c55-d0cd-4491-ac90-ee990373b8f8"/>
 				</line>
 				<staticText>
-					<reportElement x="375" y="51" width="85" height="14" uuid="13e82640-34a6-41cc-a557-af3cd3c5fd8c"/>
+					<reportElement x="462" y="51" width="85" height="14" uuid="13e82640-34a6-41cc-a557-af3cd3c5fd8c"/>
 					<textElement>
 						<font fontName="DejaVu Sans Condensed" isBold="true"/>
 					</textElement>
 					<text><![CDATA[Inventory Status]]></text>
 				</staticText>
 				<line>
-					<reportElement key="line-35" x="154" y="47" width="1" height="20" uuid="e7a79ef6-9f0c-4653-b693-eb6abe20ff95"/>
+					<reportElement key="line-35" x="176" y="47" width="1" height="20" uuid="e7a79ef6-9f0c-4653-b693-eb6abe20ff95"/>
 				</line>
 				<line>
-					<reportElement key="line-35" x="246" y="47" width="1" height="20" uuid="60d7a572-ff53-4676-ab1b-4912396dfd6f"/>
+					<reportElement key="line-35" x="277" y="47" width="1" height="20" uuid="60d7a572-ff53-4676-ab1b-4912396dfd6f"/>
 				</line>
 				<staticText>
 					<reportElement x="41" y="51" width="107" height="14" uuid="5e3fcefb-5d92-40d1-9da4-3f0a925ccd3d"/>
@@ -277,55 +269,44 @@ and (bci.inventory_status = $P{inventory_status_id} or $P{inventory_status_id} =
 				<reportElement positionType="Float" x="0" y="20" width="555" height="1" uuid="7e1af346-60b0-4677-a8de-da474c160571"/>
 			</line>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="154" y="-17" width="1" height="37" uuid="47b0daed-147e-4741-a9ea-a8d1da9cf691"/>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="176" y="-17" width="1" height="37" uuid="47b0daed-147e-4741-a9ea-a8d1da9cf691"/>
 			</line>
 			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement x="160" y="4" width="79" height="14" uuid="c8ad5ba2-5aef-4944-b7fc-1cad42b8142b"/>
+				<reportElement x="182" y="4" width="79" height="14" uuid="c8ad5ba2-5aef-4944-b7fc-1cad42b8142b"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{component_code}]]></textFieldExpression>
 			</textField>
 			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
-				<reportElement x="250" y="4" width="62" height="14" uuid="6e6419cd-6364-4c1f-a395-39232e13863d"/>
+				<reportElement x="281" y="4" width="79" height="14" uuid="6e6419cd-6364-4c1f-a395-39232e13863d"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{expiry_date}]]></textFieldExpression>
 			</textField>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="246" y="-17" width="1" height="37" uuid="efc0d509-2c62-4c13-8494-de20df9f4656"/>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="277" y="-17" width="1" height="37" uuid="efc0d509-2c62-4c13-8494-de20df9f4656"/>
 			</line>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="314" y="-17" width="1" height="37" uuid="04c51e2a-0e1a-4537-8428-c2a670ab9a2f"/>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="367" y="-17" width="1" height="37" uuid="04c51e2a-0e1a-4537-8428-c2a670ab9a2f"/>
 			</line>
 			<textField textAdjust="StretchHeight" pattern="#,##0.###;#,##0.###-" isBlankWhenNull="true">
-				<reportElement x="317" y="4" width="50" height="14" uuid="ee84c7b9-28fd-49ac-85e0-fed3f3fdaab7"/>
+				<reportElement x="370" y="4" width="50" height="14" uuid="ee84c7b9-28fd-49ac-85e0-fed3f3fdaab7"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{days_left}]]></textFieldExpression>
 			</textField>
 			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="371" y="-17" width="1" height="37" uuid="39f60f99-3882-436e-8deb-fb5769597429"/>
+				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="458" y="-17" width="1" height="37" uuid="39f60f99-3882-436e-8deb-fb5769597429"/>
 			</line>
 			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement x="375" y="4" width="85" height="14" uuid="114a8ee5-7b7a-477a-a2db-55b3e165adf2"/>
+				<reportElement x="462" y="4" width="85" height="14" uuid="114a8ee5-7b7a-477a-a2db-55b3e165adf2"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$F{status_code}]]></textFieldExpression>
-			</textField>
-			<line>
-				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="462" y="-17" width="1" height="37" uuid="7219fb22-2441-4113-af77-1c2c265d6f08"/>
-			</line>
-			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement x="465" y="4" width="90" height="14" uuid="4cf464dc-cde4-4234-8e26-809bec2a8afe">
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				</reportElement>
-				<textElement>
-					<font fontName="DejaVu Sans Condensed" isBold="false"/>
-				</textElement>
 			</textField>
 			<line>
 				<reportElement key="line-35" positionType="Float" stretchType="RelativeToBandHeight" x="555" y="-17" width="1" height="37" uuid="8da55993-7954-4078-b89f-4401f72cbca2"/>
