@@ -39,7 +39,6 @@ import java.util.UUID;
 
 @Service
 public class PatientConsentServiceImpl implements PatientConsentService {
-    private static final String CONSENT_DIRECTORY = "Patient Consent";
 
     private final PatientConsentRepository consentRepository;
     private final MasConsentTypeRepository consentTypeRepository;
@@ -48,8 +47,8 @@ public class PatientConsentServiceImpl implements PatientConsentService {
     private final PatientConsentMapper mapper;
     private final UserContextService userContextService;
 
-    @Value("${upload.image.path}")
-    private String uploadBasePath;
+    @Value("$(upload.patientConsent.path)")
+    private String CONSENT_DIRECTORY;
 
     public PatientConsentServiceImpl(PatientConsentRepository consentRepository,
                                      MasConsentTypeRepository consentTypeRepository,
@@ -172,7 +171,7 @@ public class PatientConsentServiceImpl implements PatientConsentService {
     }
 
     private Path consentDirectory() {
-        return Paths.get(uploadBasePath, CONSENT_DIRECTORY).toAbsolutePath().normalize();
+        return Paths.get(CONSENT_DIRECTORY).toAbsolutePath().normalize();
     }
 
     private String extensionOf(String filename) {

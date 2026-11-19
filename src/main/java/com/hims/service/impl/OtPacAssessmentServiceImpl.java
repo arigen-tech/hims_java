@@ -32,16 +32,14 @@ import java.util.UUID;
 @Service
 public class OtPacAssessmentServiceImpl implements OtPacAssessmentService {
 
-    private static final String DOCUMENT_FOLDER = "Scanned PAC Copy";
-
     private final OtPacAssessmentRepository assessmentRepository;
     private final OtPacMedicalHistoryRepository historyRepository;
     private final OtPacInstructionRepository instructionRepository;
     private final OtPacDocumentRepository documentRepository;
     private final UserContextService userContextService;
 
-    @Value("${upload.image.path}")
-    private String uploadBasePath;
+    @Value("${upload.pacCopy.path}")
+    private String DOCUMENT_FOLDER;
 
     public OtPacAssessmentServiceImpl(
             OtPacAssessmentRepository assessmentRepository,
@@ -252,7 +250,7 @@ public class OtPacAssessmentServiceImpl implements OtPacAssessmentService {
                     "Provide one document name for each uploaded file");
         }
 
-        Path directory = Paths.get(uploadBasePath, DOCUMENT_FOLDER).toAbsolutePath().normalize();
+        Path directory = Paths.get(DOCUMENT_FOLDER).toAbsolutePath().normalize();
         try {
             Files.createDirectories(directory);
             for (int index = 0; index < files.size(); index++) {
