@@ -2194,6 +2194,47 @@ public class ReportController {
         }
     }
 
+    @GetMapping(value = "/discardAnalysis", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<?> viewPrintDiscardAnalysisReport(
+            @RequestParam (required = false) Long componentId,
+            @RequestParam (required = false) Long discardReasonId,
+            @RequestParam (required = false) Long donationType,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date fromDate,
+            @RequestParam (required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) Date toDate,
+            @RequestParam String flag) {
+
+        Long safeComponentId = componentId != null ? componentId: 0L;
+        Long safeDiscardReasonId = discardReasonId != null ? discardReasonId: 0L;
+        Long safeDonationType = donationType != null ? donationType: 0L;
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("component_id", safeComponentId);
+        params.put("discard_reason_id", safeDiscardReasonId);
+        params.put("donation_type", safeDonationType);
+        params.put("from_date", fromDate);
+        params.put("to_date", toDate);
+        params.put("path", Objects.requireNonNull(getClass().getResource(ReportConstants.ASSET_LOGO)).toString());
+
+        try{
+            if (ReportConstants.REPORT_FLAG_DOWNLOAD.equalsIgnoreCase(flag)) {
+                byte[] viewPdf = JasperReportUtil.generateAndViewPdfReport(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.WARD_OT_JASPER, params, dataSource);
+                return buildPdfResponse(viewPdf, ReportConstants.WARD_OT_REPORT);
+            } else if (ReportConstants.REPORT_FLAG_PRINT.equalsIgnoreCase(flag)) {
+                JasperPrint jasperPrint = JasperReportUtil.getJasperPrintObject(ReportConstants.JASPER_BASE_PATH_BLOOD_BANK, ReportConstants.WARD_OT_JASPER, params, dataSource);
+                JasperReportUtil.printJasperReport(jasperPrint);
+                return ResponseEntity.ok().build();
+            }else {
+                return ResponseEntity.badRequest()
+                        .body(ResponseUtils.createNotFoundResponse(
+                                ReportConstants.ERROR_INVALID_FLAG, ReportConstants.HTTP_STATUS_BAD_REQUEST));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ReportConstants.ERROR_FAILED_TO_GENERATE_REPORT + e.getMessage());
+        }
+    }
+
     private ResponseEntity<byte[]> buildPdfResponse(
             byte[] pdfData,
             String fileName) {

@@ -578,11 +578,8 @@ WHERE opd.visit_id = $P{visit_id}]]>
 	<columnHeader>
 		<band splitType="Stretch"/>
 	</columnHeader>
-	<columnFooter>
-		<band splitType="Stretch"/>
-	</columnFooter>
 	<summary>
-		<band height="225" splitType="Stretch">
+		<band height="225" splitType="Immediate">
 			<subreport isUsingCache="true">
 				<reportElement key="subreport-25" positionType="Float" isPrintRepeatedValues="false" mode="Opaque" x="1" y="5" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="26155b52-9de3-4371-81a0-ffaa2397c4f2"/>
 				<subreportParameter name="SUBREPORT_DIR">
@@ -783,7 +780,7 @@ WHERE opd.visit_id = $P{visit_id}]]>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "ENT_subreport.jasper"]]></subreportExpression>
 			</subreport>
 			<subreport isUsingCache="true">
-				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="98" width="359" height="10" isRemoveLineWhenBlank="true" isPrintInFirstWholeBand="true" uuid="2739fe55-13de-43c0-8095-766baf592ff9"/>
+				<reportElement key="subreport-22" positionType="Float" isPrintRepeatedValues="false" mode="Transparent" x="1" y="98" width="359" height="10" isRemoveLineWhenBlank="true" uuid="2739fe55-13de-43c0-8095-766baf592ff9"/>
 				<subreportParameter name="SUBREPORT_DIR">
 					<subreportParameterExpression><![CDATA[$P{SUBREPORT_DIR}]]></subreportParameterExpression>
 				</subreportParameter>

@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Discard_analysis_report" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="f6c2d07c-3926-4857-a78b-ab4c7c086b2a">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="hims_dev_db"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<parameter name="from_date" class="java.util.Date"/>
+	<parameter name="to_date" class="java.util.Date"/>
+	<parameter name="component_id" class="java.lang.Long"/>
+	<parameter name="discard_reason_id" class="java.lang.Long"/>
+	<parameter name="donation_type" class="java.lang.Long"/>
+	<parameter name="path" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT
+    bci.unit_no,
+    mbc.component_code AS component,
+    mbg.blood_group_code AS blood_group,
+    mbdr.discard_reason_name AS discard_reason,
+    bcd.discard_datetime AS discard_date,
+    mbdt.donation_type_name AS donation_type
+FROM blood_component_discard bcd
+left join blood_component_inventory bci on bcd.inventory_id = bci.inventory_id
+left join mas_blood_component mbc on bci.component_id = mbc.component_id
+left join mas_blood_group mbg on bci.blood_group_id = mbg.blood_group_id
+left join mas_blood_discard_reason mbdr on bcd.discard_reason_id = mbdr.discard_reason_id
+left join blood_donation_dt bdd on bci.donation_dt_id = bdd.donation_dt_id
+left join blood_donation_hdr bdh on bdd.donation_hd_id = bdh.donation_id
+left join mas_blood_donation_type mbdt on bdh.donation_type_id = mbdt.donation_type_id
+where (bcd.discard_datetime >= $P{from_date} or $P{from_date} is null)
+and (bcd.discard_datetime <= $P{to_date} or $P{to_date} is null)
+and (bci.component_id = $P{component_id} or $P{component_id} = 0)
+and (bcd.discard_reason_id = $P{discard_reason_id} or $P{discard_reason_id} = 0)
+and (bdh.donation_type_id = $P{donation_type} or $P{donation_type} = 0)]]>
+	</queryString>
+	<field name="unit_no" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="unit_no"/>
+		<property name="com.jaspersoft.studio.field.label" value="unit_no"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="blood_component_inventory"/>
+	</field>
+	<field name="component" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="component"/>
+		<property name="com.jaspersoft.studio.field.label" value="component"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_blood_component"/>
+	</field>
+	<field name="blood_group" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="blood_group"/>
+		<property name="com.jaspersoft.studio.field.label" value="blood_group"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_blood_group"/>
+	</field>
+	<field name="discard_reason" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="discard_reason"/>
+		<property name="com.jaspersoft.studio.field.label" value="discard_reason"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_blood_discard_reason"/>
+	</field>
+	<field name="discard_date" class="java.sql.Timestamp">
+		<property name="com.jaspersoft.studio.field.name" value="discard_date"/>
+		<property name="com.jaspersoft.studio.field.label" value="discard_date"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="blood_component_discard"/>
+	</field>
+	<field name="donation_type" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="donation_type"/>
+		<property name="com.jaspersoft.studio.field.label" value="donation_type"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="mas_blood_donation_type"/>
+	</field>
+	<variable name="S.No." class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[new Integer(0)]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="73" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="5" width="555" height="16" uuid="1ff01330-9bc3-4d4e-b794-5a4d69edcfa8"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Donor Deferral History]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="330" y="59" width="73" height="14" uuid="4383009e-d03b-40fd-9e3e-b209ff90fc20"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Generated on]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="403" y="59" width="7" height="14" uuid="abb8a7e0-2910-4efb-b25f-d592439a3094"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="412" y="59" width="141" height="14" uuid="0d9441e0-0830-4d64-8d52-fe027cb26b70"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date()).toLowerCase()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="4" y="59" width="80" height="14" uuid="9120fee5-c8ee-488e-8ca3-93598a9dafc4">
+					<printWhenExpression><![CDATA[($P{from_date} != null) && ($P{to_date}!= null)]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Report Range]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="84" y="59" width="7" height="14" uuid="4cf69075-a98e-4011-b1af-71e5a933721e">
+					<printWhenExpression><![CDATA[($P{from_date} != null) && ($P{to_date}!= null)]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement x="95" y="59" width="52" height="14" uuid="a9931f71-1daf-4cbf-ba75-179722d509ba"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{from_date}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="149" y="59" width="14" height="14" uuid="0a448453-f13f-4c12-b2a6-410fbfcb9224">
+					<printWhenExpression><![CDATA[($P{from_date} != null) && ($P{to_date}!= null)]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[to]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement x="163" y="59" width="70" height="14" uuid="c04717bd-26c1-45b9-bf9b-80b4e11c5e43"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{to_date}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="5" y="3" width="135" height="50" uuid="8c1e24ed-7eaa-4ef1-8682-0c95b82d2fc1"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="39" splitType="Stretch">
+			<line>
+				<reportElement key="line-35" x="386" y="10" width="1" height="28" uuid="f3f1e852-6023-4583-8cf1-5b61059bccdd"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="236" y="10" width="1" height="28" uuid="fac7a5b1-4f82-4b02-b892-bd1f80b8d45e"/>
+			</line>
+			<staticText>
+				<reportElement x="242" y="13" width="59" height="26" uuid="e1591cfa-176e-4adc-957f-75706254c26b">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Blood Group]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="460" y="10" width="1" height="28" uuid="4d54b8b7-bb2b-4161-a3ee-97452217e53f"/>
+			</line>
+			<staticText>
+				<reportElement x="4" y="13" width="26" height="26" uuid="0d7a6557-2a1d-4e3c-ac39-9feb2fb3ceb7">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S. No.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="391" y="13" width="62" height="24" uuid="acbfb5b4-f4c8-43ea-a579-3c64b8ddda6e">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Discard Date]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="554" y="11" width="1" height="28" uuid="706e5368-430c-42fb-8e87-be24868ae93c"/>
+			</line>
+			<staticText>
+				<reportElement x="151" y="13" width="81" height="13" uuid="871c3707-eec0-4c3c-9aec-84a22474eb9b">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Component]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="0" y="10" width="1" height="28" uuid="d3458084-e87f-4701-a567-9251a509ed88"/>
+			</line>
+			<staticText>
+				<reportElement x="40" y="13" width="101" height="13" uuid="bd00f309-777f-4fa3-a09e-aeca0f0784e4">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Unit No.]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="145" y="10" width="1" height="28" uuid="8fe9938e-9b6b-4dfd-b16f-30930fc21c1e"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="35" y="10" width="1" height="28" uuid="6e2c8595-abda-4dd8-96e3-196da60d1311"/>
+			</line>
+			<line>
+				<reportElement x="0" y="38" width="555" height="1" uuid="f6eba1b5-6354-4479-905a-6ac180423e34"/>
+			</line>
+			<line>
+				<reportElement x="0" y="10" width="555" height="1" uuid="5bbf5be3-d997-44cf-8bbd-222b6039d378"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="305" y="10" width="1" height="28" uuid="b10c0932-ad23-470b-82b6-b3bee1837f6f"/>
+			</line>
+			<staticText>
+				<reportElement x="311" y="13" width="70" height="24" uuid="eaa515b7-5fe9-48a3-a544-6c1fcc1d702d">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Discard Reason]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="465" y="13" width="84" height="24" uuid="9b5760d3-3357-4db1-bb59-cf30ca92f859">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Donation Type]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="29" splitType="Stretch">
+			<line>
+				<reportElement key="line-35" x="0" y="0" width="1" height="28" uuid="6ec6a34a-0206-486d-b0be-800aae7aee69"/>
+			</line>
+			<line>
+				<reportElement x="0" y="28" width="555" height="1" uuid="13490a14-1dfd-429c-b1f6-529b8c1fdc86"/>
+			</line>
+			<textField>
+				<reportElement x="4" y="3" width="26" height="26" uuid="1a43151a-59e3-4d8a-b2b4-70ac58de53d5">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="35" y="0" width="1" height="28" uuid="6e819a71-b2f6-4d38-a16d-8cb091969098"/>
+			</line>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="40" y="3" width="101" height="13" uuid="f1e9d35e-4184-4fa9-a6bd-c498d55cfe3e">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{unit_no}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="145" y="0" width="1" height="28" uuid="9266e14a-2c09-4ecd-9272-4c6bad5bb241"/>
+			</line>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="151" y="3" width="81" height="13" uuid="836eccce-71b3-4b87-be25-009fd66b2376">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{component}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="236" y="0" width="1" height="28" uuid="52ab8c33-b230-424a-868a-12bd5bb54b28"/>
+			</line>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="242" y="3" width="59" height="26" uuid="554c4901-ec48-4b70-8fe8-85f15f7052c7">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{blood_group}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="305" y="0" width="1" height="28" uuid="9c6cb9c2-1156-484b-8560-1272a37056b9"/>
+			</line>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="311" y="3" width="70" height="24" uuid="cf9dfc5c-344a-42aa-ac49-5932633b84f9">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{discard_reason}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="386" y="0" width="1" height="28" uuid="041e09c0-d1aa-4909-a191-e928abf20d82"/>
+			</line>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yy">
+				<reportElement x="391" y="3" width="62" height="24" uuid="fb5a4dd0-ce8a-405f-9b44-a1734d3c023c">
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{discard_date}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="460" y="0" width="1" height="28" uuid="cbd3ea0c-ad31-43f7-a451-41fa64689a02"/>
+			</line>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="465" y="3" width="84" height="24" uuid="3fab96a5-0e49-4292-8245-60e0a6630cf5">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement>
+					<font fontName="DejaVu Sans Condensed" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{donation_type}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" x="554" y="1" width="1" height="28" uuid="349b5303-4285-4a2d-a1b9-47f805056540"/>
+			</line>
+		</band>
+	</detail>
+</jasperReport>
