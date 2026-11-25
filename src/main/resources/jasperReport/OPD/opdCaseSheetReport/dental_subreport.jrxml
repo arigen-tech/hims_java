@@ -195,7 +195,7 @@ left join mas_tooth_master mtm on otpc.tooth_id = mtm.tooth_id
 		<band splitType="Stretch"/>
 	</background>
 	<summary>
-		<band height="169">
+		<band height="129">
 			<staticText>
 				<reportElement x="0" y="5" width="220" height="13" uuid="0349abe2-b5a8-4579-95c2-1428a872abae"/>
 				<textElement>
@@ -365,7 +365,7 @@ left join mas_tooth_master mtm on otpc.tooth_id = mtm.tooth_id
 				</textField>
 			</frame>
 			<staticText>
-				<reportElement positionType="Float" x="0" y="125" width="106" height="13" isRemoveLineWhenBlank="true" uuid="36cd7ebc-821e-489b-bcc4-34f80515c9df">
+				<reportElement positionType="Float" x="0" y="85" width="106" height="13" isRemoveLineWhenBlank="true" uuid="36cd7ebc-821e-489b-bcc4-34f80515c9df">
 					<printWhenExpression><![CDATA[$F{remarks} != null && !$F{remarks}.trim().isEmpty()]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">
@@ -374,84 +374,14 @@ left join mas_tooth_master mtm on otpc.tooth_id = mtm.tooth_id
 				<text><![CDATA[Adult Notes / Remarks :]]></text>
 			</staticText>
 			<staticText>
-				<reportElement positionType="Float" x="0" y="145" width="220" height="13" isRemoveLineWhenBlank="true" uuid="b5bfcfef-0fe2-4966-9c64-65bb88fb43b2"/>
+				<reportElement positionType="Float" x="0" y="105" width="220" height="13" isRemoveLineWhenBlank="true" uuid="b5bfcfef-0fe2-4966-9c64-65bb88fb43b2"/>
 				<textElement>
 					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
 				</textElement>
 				<text><![CDATA[Dental Procedure History:]]></text>
 			</staticText>
-			<textField>
-				<reportElement x="0" y="52" width="220" height="13" uuid="fc19443c-bca3-4692-ae4e-706af5bd79d7"/>
-				<textElement>
-					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="true"/>
-				</textElement>
-				<textFieldExpression><![CDATA[$F{tooth_type} != null && $F{tooth_type}.equals("Permanent")
-    ? "Adult Teeth Chart :"
-    : $F{tooth_type} != null && $F{tooth_type}.equals("Primary")
-        ? "Child Teeth Chart :"
-        : "Teeth Chart :"]]></textFieldExpression>
-			</textField>
-			<staticText>
-				<reportElement x="3" y="84" width="46" height="13" uuid="2d84a482-0260-4b7c-adae-6431c2efa531"/>
-				<textElement textAlignment="Left">
-					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="false"/>
-				</textElement>
-				<text><![CDATA[Upper Jaw]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="3" y="103" width="46" height="13" uuid="40c332b9-505a-4c5b-aca9-6fafb9177924"/>
-				<textElement textAlignment="Left">
-					<font fontName="DejaVu Sans Condensed" size="8" isBold="true" isUnderline="false"/>
-				</textElement>
-				<text><![CDATA[Lower Jaw]]></text>
-			</staticText>
-			<componentElement>
-				<reportElement isPrintRepeatedValues="false" x="55" y="82" width="288" height="36" uuid="907f89d6-372c-415b-981f-fe379c9565c4">
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-					<property name="com.jaspersoft.studio.unit.CONTENTS.height" value="px"/>
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
-					<property name="com.jaspersoft.studio.unit.CONTENTS.width" value="px"/>
-				</reportElement>
-				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Horizontal" ignoreWidth="false">
-					<datasetRun subDataset="tooth" uuid="f28d83f5-cc94-4c3e-8e09-fddf67614c64">
-						<datasetParameter name="visit_id">
-							<datasetParameterExpression><![CDATA[$P{visit_id}]]></datasetParameterExpression>
-						</datasetParameter>
-						<datasetParameter name="tooth_type">
-							<datasetParameterExpression><![CDATA[$F{tooth_type}]]></datasetParameterExpression>
-						</datasetParameter>
-						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
-					</datasetRun>
-					<jr:listContents height="18" width="18">
-						<frame>
-							<reportElement x="0" y="0" width="15" height="15" uuid="c819ca4f-f090-401c-8ed7-ed47247cf6c5">
-								<property name="com.jaspersoft.studio.unit.y" value="px"/>
-								<property name="com.jaspersoft.studio.unit.width" value="px"/>
-								<property name="com.jaspersoft.studio.unit.height" value="px"/>
-							</reportElement>
-							<rectangle radius="4">
-								<reportElement style="tooth_condition_style" mode="Opaque" x="0" y="0" width="15" height="15" uuid="4e939ac8-80a2-4924-921c-af4ac933c08b">
-									<property name="com.jaspersoft.studio.unit.height" value="px"/>
-									<property name="com.jaspersoft.studio.unit.width" value="px"/>
-									<property name="com.jaspersoft.studio.unit.y" value="px"/>
-								</reportElement>
-							</rectangle>
-							<textField>
-								<reportElement mode="Transparent" x="2" y="2" width="10" height="10" forecolor="#FFFFFF" uuid="14a94451-a3cd-4b2b-ad2f-c83b75ece8b0">
-									<property name="com.jaspersoft.studio.unit.width" value="px"/>
-									<property name="com.jaspersoft.studio.unit.height" value="px"/>
-								</reportElement>
-								<textElement textAlignment="Center" verticalAlignment="Middle">
-									<font fontName="DejaVu Sans Condensed" size="6" isBold="true" isUnderline="false"/>
-								</textElement>
-								<textFieldExpression><![CDATA[$F{tooth_number}]]></textFieldExpression>
-							</textField>
-						</frame>
-					</jr:listContents>
-				</jr:list>
-			</componentElement>
 			<subreport>
-				<reportElement positionType="Float" x="0" y="158" width="350" height="11" isRemoveLineWhenBlank="true" uuid="63b15e7a-0808-4f62-af43-5cfcf56ba18b">
+				<reportElement positionType="Float" x="0" y="118" width="350" height="11" isRemoveLineWhenBlank="true" uuid="63b15e7a-0808-4f62-af43-5cfcf56ba18b">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
 				</reportElement>
 				<subreportParameter name="visit_id">
@@ -461,7 +391,7 @@ left join mas_tooth_master mtm on otpc.tooth_id = mtm.tooth_id
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "dental_procedure_history_subreport.jasper"]]></subreportExpression>
 			</subreport>
 			<textField textAdjust="StretchHeight" isBlankWhenNull="true">
-				<reportElement positionType="Float" x="99" y="125" width="244" height="13" isRemoveLineWhenBlank="true" uuid="ae45f876-fd53-4315-8973-5feb03b5d5ff">
+				<reportElement positionType="Float" x="99" y="85" width="244" height="13" isRemoveLineWhenBlank="true" uuid="ae45f876-fd53-4315-8973-5feb03b5d5ff">
 					<printWhenExpression><![CDATA[$F{remarks} != null && !$F{remarks}.trim().isEmpty()
     ? $F{remarks}
     : null]]></printWhenExpression>
@@ -471,58 +401,28 @@ left join mas_tooth_master mtm on otpc.tooth_id = mtm.tooth_id
 				</textElement>
 				<textFieldExpression><![CDATA[$F{remarks}]]></textFieldExpression>
 			</textField>
-			<rectangle>
-				<reportElement mode="Opaque" x="101" y="70" width="6" height="6" forecolor="#FFFFFF" backcolor="#198764" uuid="dd9d5d77-dbf0-4b04-878b-b2f2daa8ed1e">
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+			<subreport>
+				<reportElement positionType="Float" x="0" y="53" width="350" height="11" isRemoveLineWhenBlank="true" uuid="dcaec5da-32fb-4f8b-b2f5-9b1bfe29b99d">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<printWhenExpression><![CDATA[$F{tooth_type} .equalsIgnoreCase("Permanent")]]></printWhenExpression>
 				</reportElement>
-			</rectangle>
-			<staticText>
-				<reportElement x="110" y="69" width="30" height="8" uuid="9908cb5a-1507-4446-a271-777cb8b61d13"/>
-				<textElement textAlignment="Center">
-					<font fontName="DejaVu Sans Condensed" size="6" isBold="true" isUnderline="false"/>
-				</textElement>
-				<text><![CDATA[Normal]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="203" y="69" width="30" height="8" uuid="b6dff38e-9b19-4f47-b0bd-354f32c629af"/>
-				<textElement textAlignment="Center">
-					<font fontName="DejaVu Sans Condensed" size="6" isBold="true" isUnderline="false"/>
-				</textElement>
-				<text><![CDATA[Missing]]></text>
-			</staticText>
-			<rectangle>
-				<reportElement mode="Opaque" x="194" y="70" width="6" height="6" forecolor="#FFFFFF" backcolor="#DC3545" uuid="5c1332cd-2d30-4f08-b7c2-ac7d594ca90e">
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				<subreportParameter name="visit_id">
+					<subreportParameterExpression><![CDATA[$P{visit_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "dental_adult_tooth.jasper"]]></subreportExpression>
+			</subreport>
+			<subreport>
+				<reportElement positionType="Float" x="0" y="64" width="350" height="11" isRemoveLineWhenBlank="true" uuid="cd2a7975-b4ed-41af-957f-e1123eb308b0">
 					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<printWhenExpression><![CDATA[$F{tooth_type} .equalsIgnoreCase("Primary")]]></printWhenExpression>
 				</reportElement>
-			</rectangle>
-			<staticText>
-				<reportElement x="156" y="69" width="30" height="8" uuid="e73d4e2e-81f8-4168-bb58-c4044a62494d"/>
-				<textElement textAlignment="Center">
-					<font fontName="DejaVu Sans Condensed" size="6" isBold="true" isUnderline="false"/>
-				</textElement>
-				<text><![CDATA[Condition]]></text>
-			</staticText>
-			<rectangle>
-				<reportElement mode="Opaque" x="147" y="70" width="6" height="6" forecolor="#FFFFFF" backcolor="#FFC107" uuid="1d533ef2-c2a0-43e3-b115-4e35c7bd60f2">
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-				</reportElement>
-			</rectangle>
-			<rectangle>
-				<reportElement mode="Opaque" x="241" y="70" width="6" height="6" forecolor="#FFFFFF" backcolor="#FD7E14" uuid="4846fd82-49cd-4aac-9a65-c064499cf12b">
-					<property name="com.jaspersoft.studio.unit.height" value="px"/>
-					<property name="com.jaspersoft.studio.unit.width" value="px"/>
-				</reportElement>
-			</rectangle>
-			<staticText>
-				<reportElement x="250" y="69" width="50" height="8" uuid="c0d7b80e-9a24-4c83-b7b1-043b59e4ef50"/>
-				<textElement textAlignment="Center">
-					<font fontName="DejaVu Sans Condensed" size="6" isBold="true" isUnderline="false"/>
-				</textElement>
-				<text><![CDATA[Unsalvageable]]></text>
-			</staticText>
+				<subreportParameter name="visit_id">
+					<subreportParameterExpression><![CDATA[$P{visit_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "dental_child_tooth.jasper"]]></subreportExpression>
+			</subreport>
 		</band>
 	</summary>
 </jasperReport>
