@@ -88,6 +88,7 @@ public class SecurityConfig {
                         .requestMatchers("/master/mas-common-status/**").permitAll()
                         .requestMatchers("/api/hiecm/**").permitAll()
                         .requestMatchers("DgMasInvestigation/price-details").permitAll()
+                        .requestMatchers("/MobilePrivacy/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(point))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
