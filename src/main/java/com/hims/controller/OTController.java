@@ -8,11 +8,15 @@ import com.hims.request.OtBookingCancelRequest;
 import com.hims.request.OtPacAssessmentRequest;
 import com.hims.request.OtChecklistSubmitRequest;
 import com.hims.request.PatientConsentRequest;
+import com.hims.request.OtSurgeryAnaesthesiaRequest;
+import com.hims.request.OtSurgeryExecutionRequest;
+import com.hims.request.SurgeryDrugConsumableTemplateRequest;
 import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ActiveAdmissionResponse;
 import com.hims.response.ApiResponse;
 import com.hims.response.PendingForOtResponse;
 import com.hims.response.OtBookingHistoryResponse;
+import com.hims.response.OtBookingHistoryExecutionResponse;
 import com.hims.response.OtTeamMemberResponse;
 import com.hims.response.OtDashboardResponse;
 import com.hims.response.OtDepartmentResponse;
@@ -20,10 +24,14 @@ import com.hims.response.PacPendingResponse;
 import com.hims.response.OtPacAssessmentResponse;
 import com.hims.response.OtChecklistSubmitResponse;
 import com.hims.response.PatientConsentResponse;
+import com.hims.response.OtSurgeryAnaesthesiaResponse;
+import com.hims.response.OtSurgeryExecutionResponse;
+import com.hims.response.SurgeryDrugConsumableTemplateResponse;
 import com.hims.service.OtService;
 import com.hims.service.OtPacAssessmentService;
 import com.hims.service.OtChecklistSubmissionService;
 import com.hims.service.PatientConsentService;
+import com.hims.service.OtSurgeryExecutionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -59,6 +67,7 @@ public class OTController {
     private final OtPacAssessmentService otPacAssessmentService;
     private final OtChecklistSubmissionService otChecklistSubmissionService;
     private final PatientConsentService patientConsentService;
+    private final OtSurgeryExecutionService otSurgeryExecutionService;
 
 
     @GetMapping("/activeAdmissionList")
@@ -137,6 +146,18 @@ public class OTController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size) {
         return ResponseEntity.ok(otService.getPatientReceivedInOtList(search, departmentId, checklistStatus, page, size));
+    }
+
+    @GetMapping("/patientSurgeryWorklist")
+    @Operation(summary = "Get paginated OT list with surgery execution status")
+    public ResponseEntity<ApiResponse<Page<OtBookingHistoryExecutionResponse>>> getPatientReceivedInOtListWithExecutionStatus(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @Positive Long departmentId,
+            @RequestParam(required = false) String checklistStatus,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "5") @Min(1) @Max(100) int size) {
+        return ResponseEntity.ok(otService.getPatientReceivedInOtListWithExecutionStatus(
+                search, departmentId, checklistStatus, page, size));
     }
 
     @GetMapping("/dashboard")
@@ -258,6 +279,50 @@ public class OTController {
     public ResponseEntity<ApiResponse<List<OtBookingHistoryResponse.SurgeryDetail>>> getSurgeriesByInpatientId(
             @PathVariable @Positive Long inpatientId) {
         return ResponseEntity.ok(otService.getSurgeriesByInpatientId(inpatientId));
+    }
+
+    @PostMapping("/surgeryAnaesthesia")
+    @Operation(summary = "Save or update surgery execution and anaesthesia by OT booking")
+    public ResponseEntity<ApiResponse<OtSurgeryAnaesthesiaResponse>> saveSurgeryAnaesthesia(
+            @Valid @RequestBody OtSurgeryAnaesthesiaRequest request) {
+        return ResponseEntity.ok(otSurgeryExecutionService.saveAnaesthesia(request));
+    }
+
+    @PostMapping("/surgeryExecution")
+    @Operation(summary = "Create or update surgery execution")
+    public ResponseEntity<ApiResponse<OtSurgeryExecutionResponse>> saveSurgeryExecution(
+            @Valid @RequestBody OtSurgeryExecutionRequest request) {
+        return ResponseEntity.ok(otSurgeryExecutionService.saveExecution(request));
+    }
+
+    @GetMapping("/surgeryAnaesthesia/{otBookingId}")
+    @Operation(summary = "Get surgery execution and anaesthesia by OT booking")
+    public ResponseEntity<ApiResponse<OtSurgeryAnaesthesiaResponse>> getSurgeryAnaesthesia(
+            @PathVariable @Positive Long otBookingId) {
+        return ResponseEntity.ok(otSurgeryExecutionService.getAnaesthesiaByBookingId(otBookingId));
+    }
+
+    @PostMapping("/surgeryDrugConsumableTemplate")
+    @Operation(summary = "Create or update a surgery drug or consumable template")
+    public ResponseEntity<ApiResponse<SurgeryDrugConsumableTemplateResponse>> saveSurgeryDrugConsumableTemplate(
+            @Valid @RequestBody SurgeryDrugConsumableTemplateRequest request) {
+        return ResponseEntity.ok(otSurgeryExecutionService.saveDrugConsumableTemplate(request));
+    }
+
+    @GetMapping("/surgeryDrugConsumableTemplate/{templateId}")
+    @Operation(summary = "Get a surgery drug or consumable template by ID")
+    public ResponseEntity<ApiResponse<SurgeryDrugConsumableTemplateResponse>> getSurgeryDrugConsumableTemplate(
+            @PathVariable @Positive Long templateId) {
+        return ResponseEntity.ok(otSurgeryExecutionService.getDrugConsumableTemplateById(templateId));
+    }
+
+    @GetMapping("/surgeryDrugConsumableTemplate/active")
+    @Operation(summary = "Get active templates by surgery and item section category")
+    public ResponseEntity<ApiResponse<List<SurgeryDrugConsumableTemplateResponse>>> getActiveSurgeryDrugConsumableTemplates(
+            @RequestParam @Positive Long surgeryId,
+            @RequestParam @NotBlank String sectionCode) {
+        return ResponseEntity.ok(otSurgeryExecutionService
+                .getActiveDrugConsumableTemplates(surgeryId, sectionCode));
     }
 
     @PostMapping(value = "/patientConsent", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

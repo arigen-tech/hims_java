@@ -6,6 +6,7 @@ import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ApiResponse;
 import com.hims.response.PendingForOtResponse;
 import com.hims.response.OtBookingHistoryResponse;
+import com.hims.response.OtBookingHistoryExecutionResponse;
 import com.hims.request.OtTeamMemberRequest;
 import com.hims.request.OtBookingRescheduleRequest;
 import com.hims.request.OtBookingCancelRequest;
@@ -30,6 +31,7 @@ public interface OtService {
     ApiResponse<Page<OtBookingHistoryResponse>> getOtBookingHistory(String patient, Long patientId, java.time.LocalDate scheduledDate, Boolean ipd, Long statusId, Long otId, Long departmentId, int page, int size);
     ApiResponse<Page<OtBookingHistoryResponse>> getPatientReceiptList(String search, Long departmentId, int page, int size);
     ApiResponse<Page<OtBookingHistoryResponse>> getPatientReceivedInOtList(String search, Long departmentId, String checklistStatus, int page, int size);
+    ApiResponse<Page<OtBookingHistoryExecutionResponse>> getPatientReceivedInOtListWithExecutionStatus(String search, Long departmentId, String checklistStatus, int page, int size);
     ApiResponse<List<OtBookingHistoryResponse.SurgeryDetail>> getSurgeriesByInpatientId(Long inpatientId);
 
     ApiResponse<String> saveAcceptAndReject(Long otBookingRequestId, String flag, String remark);

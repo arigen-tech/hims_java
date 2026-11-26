@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface IpdBillingDetailsRepository extends JpaRepository<IpdBillingDetails,Long> {
+    java.util.Optional<IpdBillingDetails> findFirstByReferenceNo(String referenceNo);
 }

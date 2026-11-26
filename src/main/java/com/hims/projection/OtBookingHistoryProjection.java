@@ -32,4 +32,5 @@ public interface OtBookingHistoryProjection {
     String getCancelledBy();
     Long getBookingStatusId();
     String getStatusName();
+    String getExecutionStatus();
 }

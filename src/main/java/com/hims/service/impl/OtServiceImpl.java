@@ -491,6 +491,38 @@ public class OtServiceImpl implements OtService {
     }
 
     @Override
+    @Transactional
+    public ApiResponse<Page<OtBookingHistoryExecutionResponse>> getPatientReceivedInOtListWithExecutionStatus(
+            String search, Long departmentId, String checklistStatus, int page, int size) {
+        Long receivedStatusId = otBookingRepository.findActiveBookingStatusId(otBookingStatusReceivedInOt).orElse(null);
+        Pageable pageable = PageRequest.of(page, size);
+        String normalizedChecklistStatus = normalizeChecklistStatus(checklistStatus);
+        Page<OtBookingHistoryProjection> projectionPage = receivedStatusId == null
+                ? Page.empty(pageable)
+                : otBookingRepository.findBookingHistoryWithExecutionStatus(
+                        search == null || search.isBlank() ? null : search.trim(), null, null, null,
+                        receivedStatusId, normalizedChecklistStatus, null, departmentId, pageable);
+        List<Long> requestIds = projectionPage.getContent().stream()
+                .map(OtBookingHistoryProjection::getHeaderid)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, List<OtBookingHistoryResponse.SurgeryDetail>> surgeryDetailsByRequestId = requestIds.isEmpty()
+                ? Collections.emptyMap()
+                : dtRepository.findSurgeriesByRequestIds(requestIds).stream()
+                        .collect(Collectors.groupingBy(
+                                PendingForOtSurgeryProjection::getOtBookingRequestId,
+                                Collectors.mapping(otBookingHistoryMapper::toSurgeryResponse, Collectors.toList())));
+        Page<OtBookingHistoryExecutionResponse> responsePage = projectionPage.map(projection -> {
+            OtBookingHistoryExecutionResponse response = otBookingHistoryMapper.toExecutionResponse(projection);
+            response.setSurgeries(surgeryDetailsByRequestId.getOrDefault(
+                    projection.getHeaderid(), Collections.emptyList()));
+            return response;
+        });
+        return ResponseUtils.createSuccessResponse(responsePage, new TypeReference<>() {});
+    }
+
+    @Override
     @Transactional(Transactional.TxType.SUPPORTS)
     public ApiResponse<List<OtBookingHistoryResponse.SurgeryDetail>> getSurgeriesByInpatientId(Long inpatientId) {
         List<OtBookingHistoryResponse.SurgeryDetail> surgeries = dtRepository
@@ -571,6 +603,7 @@ public class OtServiceImpl implements OtService {
                 .lastChgDate(now)
                 .isPacRequired(anesthesiaRequired ? "Y" : "N")
                 .isPacDone("N")
+                .isChecklistDone("N")
                 .pacStatus(anesthesiaRequired ? "PENDING" : "NOT_REQUIRED")
                 .build();
 

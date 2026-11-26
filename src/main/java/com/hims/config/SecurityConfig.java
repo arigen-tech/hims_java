@@ -87,6 +87,7 @@ public class SecurityConfig {
                         .requestMatchers("/v3/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/master/mas-common-status/**").permitAll()
                         .requestMatchers("/api/hiecm/**").permitAll()
+                        .requestMatchers("DgMasInvestigation/price-details").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(point))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
