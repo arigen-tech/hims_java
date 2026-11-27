@@ -9,6 +9,8 @@ import java.util.Optional;
 
 @Repository
 public interface MasIpdServiceCategoryRepository extends JpaRepository<MasIpdServiceCategory,Long> {
+    Optional<MasIpdServiceCategory> findByCategoryCodeIgnoreCase(String categoryCode);
+
     List<MasIpdServiceCategory> findByStatusIgnoreCaseOrderByCategoryNameAsc(String lowerCase);
 
     List<MasIpdServiceCategory> findAllByOrderByStatusDescLastChgDateDesc();

@@ -4,18 +4,27 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hims.entity.*;
 import com.hims.entity.repository.*;
 import com.hims.exception.SDDException;
+import com.hims.mapper.OtSurgeryDrugMapper;
 import com.hims.request.OtSurgeryAnaesthesiaRequest;
 import com.hims.request.OtSurgeryExecutionRequest;
+import com.hims.request.OtSurgeryDrugRequest;
+import com.hims.request.OtSurgeryConsumableRequest;
 import com.hims.request.SurgeryDrugConsumableTemplateRequest;
 import com.hims.response.ApiResponse;
 import com.hims.response.OtSurgeryAnaesthesiaResponse;
 import com.hims.response.OtSurgeryExecutionResponse;
+import com.hims.response.OtSurgeryDrugResponse;
+import com.hims.response.OtSurgeryConsumableResponse;
+import com.hims.response.UserContext;
 import com.hims.response.SurgeryDrugConsumableTemplateResponse;
 import com.hims.service.OtSurgeryExecutionService;
 import com.hims.service.UserContextService;
 import com.hims.utils.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,13 +51,28 @@ public class OtSurgeryExecutionServiceImpl implements OtSurgeryExecutionService 
     @Value("${nonDrugSectionCode}")
     private String nonDrugSectionCode;
 
+    @Value("${ot.billing.category.anaesthesia.code}")
+    private String anaesthesiaBillingCategoryCode;
+
+    @Value("${ot.billing.category.drug.code}")
+    private String drugBillingCategoryCode;
+
+    @Value("${ot.billing.category.medicalConsumable.code}")
+    private String consumableBillingCategoryCode;
+
+
     private final OtBookingRepository bookingRepository;
     private final OtBookingRequestDtRepository bookingRequestDtRepository;
     private final OtSurgeryExecutionRepository executionRepository;
+    private final OtSurgeryDrugRepository surgeryDrugRepository;
+    private final OtSurgeryConsumableRepository surgeryConsumableRepository;
+    private final OtSurgeryDrugMapper surgeryDrugMapper;
+    private final StoreItemBatchStockRepository batchStockRepository;
     private final OtSurgeryAnaesthesiaRepository anaesthesiaRepository;
     private final MasAnaesthesiaTypeRepository anaesthesiaTypeRepository;
     private final IpdBillingHeaderRepository ipdBillingHeaderRepository;
     private final IpdBillingDetailsRepository ipdBillingDetailsRepository;
+    private final MasIpdServiceCategoryRepository ipdServiceCategoryRepository;
     private final SurgeryDrugConsumableTemplateHdRepository templateHeaderRepository;
     private final SurgeryDrugConsumableTemplateDtRepository templateDetailRepository;
     private final MasSurgeryRepository surgeryRepository;
@@ -61,6 +85,307 @@ public class OtSurgeryExecutionServiceImpl implements OtSurgeryExecutionService 
         OtSurgeryExecution execution = persistExecution(request,
                 userContextService.getCurrentUserFullNameFromToken()).execution();
         return success(toExecutionResponse(request.getOtBookingId(), execution));
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<List<OtSurgeryDrugResponse>> saveDrug(OtSurgeryDrugRequest request) {
+        String actor = userContextService.getCurrentUserFullNameFromToken();
+        OtSurgeryExecution execution = executionRepository
+                .findByOtBooking_OtBookingId(request.getOtBookingId())
+                .orElse(null);
+        if (execution == null) {
+            if (request.getOtBookingRequestDtId() == null) {
+                throw new SDDException(HttpStatus.BAD_REQUEST.value(),
+                        "otBookingRequestDtId is required when no surgery execution exists for the OT booking");
+            }
+            OtSurgeryExecutionRequest executionRequest = new OtSurgeryExecutionRequest();
+            executionRequest.setOtBookingId(request.getOtBookingId());
+            executionRequest.setOtBookingRequestDtId(request.getOtBookingRequestDtId());
+            execution = persistExecution(executionRequest, actor).execution();
+        }
+
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null || userContext.getHospitalId() == null || userContext.getDepartmentId() == null) {
+            throw new SDDException(HttpStatus.BAD_REQUEST.value(), "Hospital and department are required in access token");
+        }
+        List<OtSurgeryDrugResponse> responses = new java.util.ArrayList<>(request.getItems().size());
+        for (OtSurgeryDrugRequest.DrugItem drugItem : request.getItems()) {
+            responses.add(saveDrugItem(execution, drugItem, userContext, actor));
+        }
+        return success(responses);
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<List<OtSurgeryConsumableResponse>> saveConsumables(OtSurgeryConsumableRequest request) {
+        String actor = userContextService.getCurrentUserFullNameFromToken();
+        OtSurgeryExecution execution = executionRepository
+                .findByOtBooking_OtBookingId(request.getOtBookingId())
+                .orElse(null);
+        if (execution == null) {
+            if (request.getOtBookingRequestDtId() == null) {
+                throw new SDDException(HttpStatus.BAD_REQUEST.value(),
+                        "otBookingRequestDtId is required when no surgery execution exists for the OT booking");
+            }
+            OtSurgeryExecutionRequest executionRequest = new OtSurgeryExecutionRequest();
+            executionRequest.setOtBookingId(request.getOtBookingId());
+            executionRequest.setOtBookingRequestDtId(request.getOtBookingRequestDtId());
+            execution = persistExecution(executionRequest, actor).execution();
+        }
+
+        UserContext userContext = userContextService.getCurrentUserContext();
+        if (userContext == null || userContext.getHospitalId() == null || userContext.getDepartmentId() == null) {
+            throw new SDDException(HttpStatus.BAD_REQUEST.value(), "Hospital and department are required in access token");
+        }
+        List<OtSurgeryConsumableResponse> responses = new java.util.ArrayList<>(request.getItems().size());
+        for (OtSurgeryConsumableRequest.ConsumableItem itemRequest : request.getItems()) {
+            responses.add(saveConsumableItem(execution, itemRequest, userContext, actor));
+        }
+        return success(responses);
+    }
+
+    private OtSurgeryConsumableResponse saveConsumableItem(OtSurgeryExecution execution,
+                                                      OtSurgeryConsumableRequest.ConsumableItem request,
+                                                      UserContext userContext,
+                                                      String actor) {
+        long quantity;
+        try {
+            quantity = request.getQuantity().longValueExact();
+        } catch (ArithmeticException ex) {
+            throw new SDDException(HttpStatus.BAD_REQUEST.value(), "Consumable quantity must be a whole number");
+        }
+        MasStoreItem item = storeItemRepository.findById(request.getItemId())
+                .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(),
+                        "Store item not found: " + request.getItemId()));
+        List<StoreItemBatchStock> batches = batchStockRepository.findAvailableBatchesForUpdate(
+                item.getItemId(), userContext.getHospitalId(), userContext.getDepartmentId(), java.time.LocalDate.now());
+        if ((request.getBatchNo() == null || request.getBatchNo().isBlank()) && batches.size() > 1) {
+            throw new SDDException(HttpStatus.BAD_REQUEST.value(),
+                    "batchNo is required when the item has multiple available batches: " + request.getItemId());
+        }
+        if (request.getBatchNo() != null && !request.getBatchNo().isBlank()) {
+            batches = batches.stream().filter(stock -> stock.getBatchNo() != null
+                    && stock.getBatchNo().trim().equalsIgnoreCase(request.getBatchNo().trim())).toList();
+        }
+        StoreItemBatchStock selected = batches.stream()
+                .filter(stock -> stock.getClosingStock() != null && stock.getClosingStock() >= quantity)
+                .findFirst()
+                .orElseThrow(() -> new SDDException(HttpStatus.BAD_REQUEST.value(),
+                        "Insufficient stock for item " + request.getItemId() + " and selected batch"));
+
+        selected.setClosingStock(selected.getClosingStock() - quantity);
+        selected.setIpdIssueQty(zero(selected.getIpdIssueQty()).add(request.getQuantity()));
+        selected.setLastChgBy(actor);
+
+        OtSurgeryConsumable consumable = OtSurgeryConsumable.builder()
+                .otSurgeryExecution(execution)
+                .itemId(item.getItemId())
+                .itemName(item.getNomenclature())
+                .plannedQuantity(request.getPlannedQuantity())
+                .usedQuantity(request.getQuantity())
+                .batchNo(selected.getBatchNo())
+                .remarks(request.getRemarks())
+                .lastChgBy(actor)
+                .build();
+        consumable = surgeryConsumableRepository.save(consumable);
+        updateIpdConsumableBilling(execution.getOtBooking(), consumable, selected);
+        return OtSurgeryConsumableResponse.builder()
+                .otSurgeryConsumableId(consumable.getOtSurgeryConsumableId())
+                .otSurgeryExecutionId(execution.getOtSurgeryExecutionId())
+                .itemId(consumable.getItemId())
+                .itemName(consumable.getItemName())
+                .quantity(consumable.getUsedQuantity())
+                .plannedQuantity(consumable.getPlannedQuantity())
+                .batchNo(consumable.getBatchNo())
+                .remarks(consumable.getRemarks())
+                .lastChgDate(consumable.getLastChgDate())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<OtSurgeryConsumableResponse>> getConsumables(Long otBookingId) {
+        return success(surgeryConsumableRepository.findActive(otBookingId).stream()
+                .map(this::toConsumableResponse).toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<OtSurgeryConsumableResponse>> getConsumables(Long otBookingId, int page, int size) {
+        Page<OtSurgeryConsumableResponse> results = surgeryConsumableRepository
+                .findActive(otBookingId, PageRequest.of(page, size,
+                        Sort.by(Sort.Direction.DESC, "otSurgeryConsumableId")))
+                .map(this::toConsumableResponse);
+        return success(results);
+    }
+
+    private OtSurgeryConsumableResponse toConsumableResponse(OtSurgeryConsumable consumable) {
+        return OtSurgeryConsumableResponse.builder()
+                .otSurgeryConsumableId(consumable.getOtSurgeryConsumableId())
+                .otSurgeryExecutionId(consumable.getOtSurgeryExecution().getOtSurgeryExecutionId())
+                .itemId(consumable.getItemId())
+                .itemName(consumable.getItemName())
+                .quantity(consumable.getUsedQuantity())
+                .plannedQuantity(consumable.getPlannedQuantity())
+                .batchNo(consumable.getBatchNo())
+                .remarks(consumable.getRemarks())
+                .lastChgDate(consumable.getLastChgDate())
+                .build();
+    }
+
+    private OtSurgeryDrugResponse saveDrugItem(OtSurgeryExecution execution,
+                                                OtSurgeryDrugRequest.DrugItem request,
+                                                UserContext userContext,
+                                                String actor) {
+        long quantity;
+        try {
+            quantity = request.getQuantity().longValueExact();
+        } catch (ArithmeticException ex) {
+            throw new SDDException(HttpStatus.BAD_REQUEST.value(), "Drug quantity must be a whole number");
+        }
+        MasStoreItem item = storeItemRepository.findById(request.getItemId())
+                .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(),
+                        "Store item not found: " + request.getItemId()));
+        List<StoreItemBatchStock> batches = batchStockRepository.findAvailableBatchesForUpdate(
+                item.getItemId(), userContext.getHospitalId(), userContext.getDepartmentId(), java.time.LocalDate.now());
+        if ((request.getBatchNo() == null || request.getBatchNo().isBlank()) && batches.size() > 1) {
+            throw new SDDException(HttpStatus.BAD_REQUEST.value(),
+                    "batchNo is required when the item has multiple available batches: " + request.getItemId());
+        }
+        if (request.getBatchNo() != null && !request.getBatchNo().isBlank()) {
+            batches = batches.stream().filter(stock -> stock.getBatchNo() != null
+                    && stock.getBatchNo().trim().equalsIgnoreCase(request.getBatchNo().trim())).toList();
+        }
+        StoreItemBatchStock selected = batches.stream()
+                .filter(stock -> stock.getClosingStock() != null && stock.getClosingStock() >= quantity)
+                .findFirst()
+                .orElseThrow(() -> new SDDException(HttpStatus.BAD_REQUEST.value(),
+                        "Insufficient stock for item " + request.getItemId() + " and selected batch"));
+
+        selected.setClosingStock(selected.getClosingStock() - quantity);
+        selected.setIpdIssueQty(zero(selected.getIpdIssueQty()).add(request.getQuantity()));
+        selected.setLastChgBy(actor);
+
+        OtSurgeryDrug drug = OtSurgeryDrug.builder()
+                .otSurgeryExecution(execution)
+                .item(item)
+                .itemName(item.getNomenclature())
+                .quantity(request.getQuantity())
+                .batchNo(selected.getBatchNo())
+                .remarks(request.getRemarks())
+                .usedBy(userContext.getUserId())
+                .lastChgBy(actor)
+                .build();
+        drug = surgeryDrugRepository.save(drug);
+        updateIpdDrugBilling(execution.getOtBooking(), drug, selected);
+        return surgeryDrugMapper.toResponse(drug);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<List<OtSurgeryDrugResponse>> getDrugs(Long otBookingId) {
+        return success(surgeryDrugRepository.findActive(otBookingId).stream().map(this::toDrugResponse).toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<OtSurgeryDrugResponse>> getDrugs(Long otBookingId, int page, int size) {
+        Page<OtSurgeryDrugResponse> results = surgeryDrugRepository
+                .findActive(otBookingId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "otSurgeryDrugId")))
+                .map(this::toDrugResponse);
+        return success(results);
+    }
+
+    private OtSurgeryDrugResponse toDrugResponse(OtSurgeryDrug drug) {
+        return surgeryDrugMapper.toResponse(drug);
+    }
+
+    private void updateIpdDrugBilling(OtBooking booking, OtSurgeryDrug drug, StoreItemBatchStock stock) {
+        Inpatient admission = booking.getOtBookingRequest() == null
+                ? null : booking.getOtBookingRequest().getAdmissionId();
+        if (admission == null) return;
+        IpdBillingHeader header = ipdBillingHeaderRepository.findByInpatientId_InpatientId(admission.getInpatientId())
+                .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(),
+                        "IPD billing header not found for OT admission"));
+        BigDecimal quantity = drug.getQuantity();
+        BigDecimal rate = stock.getMrpPerUnit() == null ? BigDecimal.ZERO : stock.getMrpPerUnit();
+        BigDecimal amount = rate.multiply(quantity);
+        IpdBillingDetails detail = IpdBillingDetails.builder()
+                .billHeader(header)
+                .category(getRequiredIpdBillingCategory(drugBillingCategoryCode))
+                .sourceType("DRUG")
+                .sourceId(drug.getOtSurgeryDrugId())
+                .referenceNo("OT_SURGERY_DRUG_" + drug.getOtSurgeryDrugId())
+                .itemName(drug.getItemName())
+                .serviceDate(LocalDateTime.now())
+                .quantity(quantity)
+                .rate(rate)
+                .amount(amount)
+                .gstPercent(BigDecimal.ZERO)
+                .gstAmount(BigDecimal.ZERO)
+                .discountAmount(BigDecimal.ZERO)
+                .netAmount(amount)
+                .payable(true)
+                .cancelled(false)
+                .itemStatus("ACTIVE")
+                .batchNo(stock.getBatchNo())
+                .expiryDate(stock.getExpiryDate())
+                .remarks(drug.getRemarks())
+                .createdAt(LocalDateTime.now())
+                .build();
+        ipdBillingDetailsRepository.save(detail);
+        header.setTotalAmount(zero(header.getTotalAmount()).add(amount));
+        header.setNetAmount(zero(header.getNetAmount()).add(amount));
+        header.setPatientPayableAmount(zero(header.getPatientPayableAmount()).add(amount));
+        header.setOutstandingAmount(zero(header.getOutstandingAmount()).add(amount));
+        header.setUpdatedBy(userContextService.getCurrentUserFullNameFromToken());
+        header.setUpdatedAt(LocalDateTime.now());
+        ipdBillingHeaderRepository.save(header);
+    }
+
+    private void updateIpdConsumableBilling(OtBooking booking, OtSurgeryConsumable consumable,
+                                            StoreItemBatchStock stock) {
+        Inpatient admission = booking.getOtBookingRequest() == null
+                ? null : booking.getOtBookingRequest().getAdmissionId();
+        if (admission == null) return;
+        IpdBillingHeader header = ipdBillingHeaderRepository.findByInpatientId_InpatientId(admission.getInpatientId())
+                .orElseThrow(() -> new SDDException(HttpStatus.NOT_FOUND.value(),
+                        "IPD billing header not found for OT admission"));
+        BigDecimal quantity = consumable.getUsedQuantity();
+        BigDecimal rate = stock.getMrpPerUnit() == null ? BigDecimal.ZERO : stock.getMrpPerUnit();
+        BigDecimal amount = rate.multiply(quantity).setScale(2, java.math.RoundingMode.HALF_UP);
+        IpdBillingDetails detail = IpdBillingDetails.builder()
+                .billHeader(header)
+                .category(getRequiredIpdBillingCategory(consumableBillingCategoryCode))
+                .sourceType("PROCEDURE")
+                .sourceId(consumable.getOtSurgeryConsumableId())
+                .referenceNo("OT_SURGERY_CONSUMABLE_" + consumable.getOtSurgeryConsumableId())
+                .itemName(consumable.getItemName())
+                .serviceDate(LocalDateTime.now())
+                .quantity(quantity)
+                .rate(rate)
+                .amount(amount)
+                .gstPercent(BigDecimal.ZERO)
+                .gstAmount(BigDecimal.ZERO)
+                .discountAmount(BigDecimal.ZERO)
+                .netAmount(amount)
+                .payable(true)
+                .cancelled(false)
+                .itemStatus("ACTIVE")
+                .batchNo(stock.getBatchNo())
+                .expiryDate(stock.getExpiryDate())
+                .remarks(consumable.getRemarks())
+                .createdAt(LocalDateTime.now())
+                .build();
+        ipdBillingDetailsRepository.save(detail);
+        header.setTotalAmount(zero(header.getTotalAmount()).add(amount));
+        header.setNetAmount(zero(header.getNetAmount()).add(amount));
+        header.setPatientPayableAmount(zero(header.getPatientPayableAmount()).add(amount));
+        header.setOutstandingAmount(zero(header.getOutstandingAmount()).add(amount));
+        header.setUpdatedBy(userContextService.getCurrentUserFullNameFromToken());
+        header.setUpdatedAt(LocalDateTime.now());
+        ipdBillingHeaderRepository.save(header);
     }
 
     @Override
@@ -106,17 +431,20 @@ public class OtSurgeryExecutionServiceImpl implements OtSurgeryExecutionService 
                     "Surgery detail does not belong to the specified OT booking");
         }
 
-        OtSurgeryExecution execution = executionRepository
-                .findByOtBooking_OtBookingIdAndOtBookingRequestDt_OtBookingRequestDtId(
-                        request.getOtBookingId(), request.getOtBookingRequestDtId())
+        OtSurgeryExecution execution = executionRepository.findByOtBooking_OtBookingId(request.getOtBookingId())
                 .orElseGet(() -> OtSurgeryExecution.builder()
                         .otBooking(booking).otBookingRequestDt(requestDt).build());
+        if (!execution.getOtBookingRequestDt().getOtBookingRequestDtId()
+                .equals(request.getOtBookingRequestDtId())) {
+            throw new SDDException(HttpStatus.CONFLICT.value(),
+                    "This OT booking already has an execution for a different surgery detail");
+        }
         execution.setSurgeryStartDatetime(request.getSurgeryStartDatetime());
         execution.setSurgeryEndDatetime(request.getSurgeryEndDatetime());
         if (request.getExecutionStatus() != null) execution.setExecutionStatus(request.getExecutionStatus());
-        execution.setProcedureConfirmed("Y");
-        execution.setInstrumentCountCorrect("Y");
-        execution.setSpecimenLabelVerified("Y");
+        execution.setProcedureConfirmed("N");
+        execution.setInstrumentCountCorrect("N");
+        execution.setSpecimenLabelVerified("N");
         execution.setEquipmentIssuesReviewed("N");
         execution.setRecoveryConcernsReviewed("N");
         execution.setSignoutRemarks(request.getSignoutRemarks());
@@ -261,6 +589,7 @@ public class OtSurgeryExecutionServiceImpl implements OtSurgeryExecutionService 
             detail = IpdBillingDetails.builder().billHeader(header).referenceNo(referenceNo)
                     .quantity(BigDecimal.ONE).createdAt(LocalDateTime.now()).build();
         }
+        detail.setCategory(getRequiredIpdBillingCategory(anaesthesiaBillingCategoryCode));
         detail.setItemName("Anaesthesia - " + type.getAnaesthesiaTypeName());
         detail.setServiceDate(LocalDateTime.now());
         detail.setRate(rate);
@@ -281,6 +610,12 @@ public class OtSurgeryExecutionServiceImpl implements OtSurgeryExecutionService 
         header.setUpdatedBy(userContextService.getCurrentUserFullNameFromToken());
         header.setUpdatedAt(LocalDateTime.now());
         ipdBillingHeaderRepository.save(header);
+    }
+
+    private MasIpdServiceCategory getRequiredIpdBillingCategory(String categoryCode) {
+        return ipdServiceCategoryRepository.findByCategoryCodeIgnoreCase(categoryCode)
+                .orElseThrow(() -> new SDDException(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "IPD billing service category not found for code: " + categoryCode));
     }
 
     private OtSurgeryAnaesthesiaResponse toAnaesthesiaResponse(Long bookingId, OtSurgeryExecution execution,

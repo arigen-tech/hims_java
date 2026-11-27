@@ -21,6 +21,21 @@ import java.util.Set;
 
 @Repository
 public interface StoreItemBatchStockRepository extends JpaRepository<StoreItemBatchStock,Long> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT s FROM StoreItemBatchStock s
+        WHERE s.itemId.itemId = :itemId
+          AND s.hospitalId.id = :hospitalId
+          AND s.departmentId.id = :departmentId
+          AND s.closingStock > 0
+          AND (s.expiryDate IS NULL OR s.expiryDate >= :today)
+        ORDER BY s.expiryDate ASC, s.stockId ASC
+        """)
+    List<StoreItemBatchStock> findAvailableBatchesForUpdate(
+            @Param("itemId") Long itemId,
+            @Param("hospitalId") Long hospitalId,
+            @Param("departmentId") Long departmentId,
+            @Param("today") LocalDate today);
     @Query("""
     SELECT s FROM StoreItemBatchStock s
     WHERE s.itemId = :itemId

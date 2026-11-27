@@ -7,7 +7,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ot_surgery_execution", schema = "public", indexes = {
+@Table(name = "ot_surgery_execution", schema = "public", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_ot_surgery_execution_booking", columnNames = "ot_booking_id")
+}, indexes = {
         @Index(name = "idx_ot_surgery_execution_booking", columnList = "ot_booking_id"),
         @Index(name = "idx_ot_surgery_execution_request_dt", columnList = "ot_booking_request_dt_id")
 })

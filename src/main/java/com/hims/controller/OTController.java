@@ -10,6 +10,8 @@ import com.hims.request.OtChecklistSubmitRequest;
 import com.hims.request.PatientConsentRequest;
 import com.hims.request.OtSurgeryAnaesthesiaRequest;
 import com.hims.request.OtSurgeryExecutionRequest;
+import com.hims.request.OtSurgeryDrugRequest;
+import com.hims.request.OtSurgeryConsumableRequest;
 import com.hims.request.SurgeryDrugConsumableTemplateRequest;
 import com.hims.response.ActiveAdmissionOtResponse;
 import com.hims.response.ActiveAdmissionResponse;
@@ -26,6 +28,8 @@ import com.hims.response.OtChecklistSubmitResponse;
 import com.hims.response.PatientConsentResponse;
 import com.hims.response.OtSurgeryAnaesthesiaResponse;
 import com.hims.response.OtSurgeryExecutionResponse;
+import com.hims.response.OtSurgeryDrugResponse;
+import com.hims.response.OtSurgeryConsumableResponse;
 import com.hims.response.SurgeryDrugConsumableTemplateResponse;
 import com.hims.service.OtService;
 import com.hims.service.OtPacAssessmentService;
@@ -293,6 +297,49 @@ public class OTController {
     public ResponseEntity<ApiResponse<OtSurgeryExecutionResponse>> saveSurgeryExecution(
             @Valid @RequestBody OtSurgeryExecutionRequest request) {
         return ResponseEntity.ok(otSurgeryExecutionService.saveExecution(request));
+    }
+
+    @PostMapping("/surgeryDrug")
+    public ResponseEntity<ApiResponse<List<OtSurgeryDrugResponse>>> saveSurgeryDrug(
+            @Valid @RequestBody OtSurgeryDrugRequest request) {
+        return ResponseEntity.ok(otSurgeryExecutionService.saveDrug(request));
+    }
+
+    @GetMapping("/surgeryDrug")
+    @Operation(summary = "Get active OT surgery drugs, optionally filtered and paginated")
+    public ResponseEntity<ApiResponse<?>> getSurgeryDrugs(
+            @RequestParam(required = false) @Positive Long otBookingId,
+            @RequestParam(required = false) @Min(0) Integer page,
+            @RequestParam(required = false) @Min(1) @Max(200) Integer size) {
+        if ((page == null) != (size == null)) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(400, "page and size must be provided together"));
+        }
+        ApiResponse<?> response = page == null
+                ? otSurgeryExecutionService.getDrugs(otBookingId)
+                : otSurgeryExecutionService.getDrugs(otBookingId, page, size);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/surgeryConsumable")
+    @Operation(summary = "Save OT surgery consumables")
+    public ResponseEntity<ApiResponse<List<OtSurgeryConsumableResponse>>> saveSurgeryConsumable(
+            @Valid @RequestBody OtSurgeryConsumableRequest request) {
+        return ResponseEntity.ok(otSurgeryExecutionService.saveConsumables(request));
+    }
+
+    @GetMapping("/surgeryConsumable")
+    @Operation(summary = "Get active OT surgery consumables, optionally filtered and paginated")
+    public ResponseEntity<ApiResponse<?>> getSurgeryConsumables(
+            @RequestParam(required = false) @Positive Long otBookingId,
+            @RequestParam(required = false) @Min(0) Integer page,
+            @RequestParam(required = false) @Min(1) @Max(200) Integer size) {
+        if ((page == null) != (size == null)) {
+        return ResponseEntity.badRequest().body(new ApiResponse<>(400, "page and size must be provided together"));
+        }
+        ApiResponse<?> response = page == null
+                ? otSurgeryExecutionService.getConsumables(otBookingId)
+                : otSurgeryExecutionService.getConsumables(otBookingId, page, size);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/surgeryAnaesthesia/{otBookingId}")
